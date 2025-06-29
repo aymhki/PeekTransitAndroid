@@ -45,10 +45,9 @@ import com.google.maps.android.compose.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-
-@OptIn(ExperimentalMaterial3Api::class)
+import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
+import com.aymanhki.peektransit.ui.components.CustomTopAppBar
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 @Composable
 fun LiveBusStopScreen(
     stopNumber: Int,
@@ -264,7 +263,7 @@ fun LiveBusStopScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // Top app bar
-            TopAppBar(
+            CustomTopAppBar(
                 title = {
                     Column {
                         Text(
@@ -281,7 +280,7 @@ fun LiveBusStopScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -304,11 +303,16 @@ fun LiveBusStopScreen(
             )
 
             // Add pull-to-refresh for live bus stop data
-            val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isLoading)
+            var isRefreshing by remember { mutableStateOf(false) }
             
-            SwipeRefresh(
-                state = swipeRefreshState,
+            LaunchedEffect(isLoading) {
+                isRefreshing = isLoading
+            }
+            
+            CustomPullToRefreshBox(
+                isRefreshing = isRefreshing,
                 onRefresh = {
+                    isRefreshing = true
                     fetchScheduleData(isManual = true)
                 }
             ) {

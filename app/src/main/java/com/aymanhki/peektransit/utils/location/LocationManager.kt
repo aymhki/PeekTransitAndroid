@@ -228,7 +228,7 @@ class LocationManager(private val context: Context) {
     }
     
     fun startLocationUpdates(
-        updateInterval: Long = 30000, 
+        updateInterval: Long = 5000,
         minDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS.toFloat(),
         callback: (Location) -> Unit
     ) {

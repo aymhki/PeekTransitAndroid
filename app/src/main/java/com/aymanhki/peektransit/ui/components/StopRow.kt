@@ -22,7 +22,7 @@ import com.aymanhki.peektransit.managers.SavedStopsManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun StopRow(
     stop: Stop,
@@ -106,14 +106,26 @@ fun StopRow(
                     val currentVariants = stop.variants.filter { variant ->
                         val effectiveFrom = variant.getEffectiveFromDate()
                         val effectiveTo = variant.getEffectiveToDate()
-                        currentDate >= effectiveFrom && currentDate <= effectiveTo
+                        (effectiveFrom == null || currentDate >= effectiveFrom) &&
+                                (effectiveTo == null || currentDate <= effectiveTo)
                     }.distinctBy { it.key.split("-")[0] } // Filter by main key only
                     
                     // Get future variants (matching iOS behavior)
                     val futureVariants = stop.variants.filter { variant ->
                         val effectiveFrom = variant.getEffectiveFromDate()
-                        effectiveFrom > currentDate
+                        (effectiveFrom != null && effectiveFrom > currentDate)
                     }.distinctBy { it.key.split("-")[0] } // Filter by main key only
+
+                    var theyAreBothTheSame = true
+
+                    if (futureVariants.size == currentVariants.size) {
+                        for (i in currentVariants.indices) {
+                            if (currentVariants[i].getRouteKey() != futureVariants[i].getRouteKey()) {
+                                theyAreBothTheSame = false
+                                break
+                            }
+                        }
+                    }
                     
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -133,7 +145,7 @@ fun StopRow(
                         }
                         
                         // Future variants section with grouping by effective date
-                        if (futureVariants.isNotEmpty()) {
+                        if (futureVariants.isNotEmpty() && !theyAreBothTheSame) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -148,7 +160,7 @@ fun StopRow(
                                     calendar.set(java.util.Calendar.MILLISECOND, 0)
                                     calendar.time
                                 }.toSortedMap()
-                                
+
                                 groupedFutureVariants.forEach { (effectiveDate, variants) ->
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -162,7 +174,7 @@ fun StopRow(
                                             ),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                        
+
                                         val chunkedVariants = variants.chunked(4)
                                         chunkedVariants.forEach { rowVariants ->
                                             Row(

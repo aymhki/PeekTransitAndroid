@@ -24,14 +24,12 @@ import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManager
 import com.aymanhki.peektransit.viewmodel.MainViewModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
+import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+// No experimental APIs needed! Using stable Android permission management
 @Composable
 fun ListViewScreen(
     viewModel: MainViewModel,
@@ -76,24 +74,35 @@ fun ListViewScreen(
     
     // Function to load stops with location change detection
     fun loadStopsWithLocationCheck(forceRefresh: Boolean = false) {
+        println("ListViewScreen: loadStopsWithLocationCheck called with forceRefresh=$forceRefresh")
         scope.launch {
             locationManager.getCurrentLocation(forceRefresh)?.let { location ->
+                println("ListViewScreen: Got location ${location.latitude}, ${location.longitude}")
                 val shouldUpdate = if (previousLocation != null) {
                     val distance = previousLocation!!.distanceTo(location)
+                    println("ListViewScreen: Distance from previous location: $distance")
                     distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS // Use same threshold as MapView
                 } else {
+                    println("ListViewScreen: No previous location, should update = true")
                     true // First time
                 }
                 
+                println("ListViewScreen: shouldUpdate=$shouldUpdate, forceRefresh=$forceRefresh, isInitialLoad=$isInitialLoad")
                 if (shouldUpdate || forceRefresh) {
-                    if (isInitialLoad) {
+                    if (isInitialLoad && !forceRefresh) {
+                        println("ListViewScreen: Calling viewModel.initializeWithLocation")
                         viewModel.initializeWithLocation(location)
                     } else {
+                        println("ListViewScreen: Calling viewModel.loadStops")
                         viewModel.loadStops(location, forceRefresh = forceRefresh)
                     }
+                } else {
+                    println("ListViewScreen: Skipping update due to shouldUpdate=false and forceRefresh=false")
                 }
                 previousLocation = location
                 isInitialLoad = false
+            } ?: run {
+                println("ListViewScreen: Failed to get location")
             }
         }
     }
@@ -217,114 +226,117 @@ fun ListViewScreen(
                 }
             }
             
-            isLoading || isSearching -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = if (isSearching) "Searching..." else "Loading nearby stops...",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-            
             else -> {
-                val stopsToShow = if (isSearchActive) searchResults else stops
-                val currentError = if (isSearchActive) searchError else error
-                
-                if (stopsToShow.isEmpty() && currentError == null) {
-                    // Empty state
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = if (isSearchActive) "No stops found for \"$searchQuery\"" else "No nearby stops found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        if (!isSearchActive) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            Button(
-                                onClick = {
-                                    loadStopsWithLocationCheck(forceRefresh = true)
+                // Pull-to-refresh wraps everything
+                CustomPullToRefreshBox(
+                    isRefreshing = isLoading || isSearching,
+                    onRefresh = {
+                        if (isSearchActive) {
+                            // Refresh search results
+                            scope.launch {
+                                locationManager.getCurrentLocation()?.let { location ->
+                                    viewModel.searchForStops(searchQuery, location)
                                 }
-                            ) {
-                                Text("Retry")
                             }
+                        } else {
+                            // Refresh nearby stops
+                            loadStopsWithLocationCheck(forceRefresh = true)
                         }
                     }
-                } else {
-                    // Stops list with pull-to-refresh
-                    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isLoading)
-                    
-                    SwipeRefresh(
-                        state = swipeRefreshState,
-                        onRefresh = {
-                            if (isSearchActive) {
-                                // Refresh search results
-                                scope.launch {
-                                    locationManager.getCurrentLocation()?.let { location ->
-                                        viewModel.searchForStops(searchQuery, location)
+                ) {
+                    when {
+                        isLoading || isSearching -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    CircularProgressIndicator()
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = if (isSearching) "Searching..." else "Loading nearby stops...",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                        }
+                        
+                        else -> {
+                            val stopsToShow = if (isSearchActive) searchResults else stops
+                            val currentError = if (isSearchActive) searchError else error
+                            
+                            if (stopsToShow.isEmpty() && currentError == null) {
+                                // Empty state
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = if (isSearchActive) "No stops found for \"$searchQuery\"" else "No nearby stops found",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    
+                                    if (!isSearchActive) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        Button(
+                                            onClick = {
+                                                loadStopsWithLocationCheck(forceRefresh = true)
+                                            }
+                                        ) {
+                                            Text("Retry")
+                                        }
                                     }
                                 }
                             } else {
-                                // Refresh nearby stops
-                                loadStopsWithLocationCheck(forceRefresh = true)
-                            }
-                        }
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(stopsToShow, key = { stop -> 
-                                "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
-                            }) { stop ->
-                                StopRow(
-                                    stop = stop,
-                                    distance = stop.getDistance(),
-                                    onNavigateToLiveStop = onNavigateToLiveStop
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                // Error display
-                currentError?.let { transitError ->
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        Snackbar(
-                            action = {
-                                TextButton(
-                                    onClick = {
-                                        if (isSearchActive) {
-                                            viewModel.clearSearchError()
-                                        } else {
-                                            viewModel.clearError()
-                                        }
-                                    }
+                                // Stops list
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(bottom = 16.dp)
                                 ) {
-                                    Text("Dismiss")
+                                    items(stopsToShow, key = { stop -> 
+                                        "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
+                                    }) { stop ->
+                                        StopRow(
+                                            stop = stop,
+                                            distance = stop.getDistance(),
+                                            onNavigateToLiveStop = onNavigateToLiveStop
+                                        )
+                                    }
                                 }
                             }
-                        ) {
-                            Text(transitError.message)
+                            
+                            // Error display
+                            currentError?.let { transitError ->
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.BottomCenter
+                                ) {
+                                    Snackbar(
+                                        action = {
+                                            TextButton(
+                                                onClick = {
+                                                    if (isSearchActive) {
+                                                        viewModel.clearSearchError()
+                                                    } else {
+                                                        viewModel.clearError()
+                                                    }
+                                                }
+                                            ) {
+                                                Text("Dismiss")
+                                            }
+                                        }
+                                    ) {
+                                        Text(transitError.message)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

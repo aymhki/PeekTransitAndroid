@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Note
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Note
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -36,15 +36,16 @@ import com.aymanhki.peektransit.ui.screens.WidgetsScreen
 import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManager
-import com.aymanhki.peektransit.data.cache.BookmarkManager
+import com.aymanhki.peektransit.utils.permissions.LocalPermissionManager
+import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
-    object Stops : BottomNavItem("stops", "Stops", Icons.Default.List)
+    object Stops : BottomNavItem("stops", "Stops", Icons.AutoMirrored.Filled.List)
     object Saved : BottomNavItem("saved", "Saved", Icons.Default.Bookmark)
-    object Widgets : BottomNavItem("widgets", "Widgets", Icons.Default.Note)
+    object Widgets : BottomNavItem("widgets", "Widgets", Icons.AutoMirrored.Filled.Note)
     object More : BottomNavItem("more", "More", Icons.Default.MoreHoriz)
 }
 
@@ -60,6 +61,8 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    
+    private lateinit var permissionManager: PermissionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,8 +71,8 @@ class MainActivity : ComponentActivity() {
         // Initialize LocationManager early
         getLocationManager(this)
         
-        // Initialize BookmarkManager early to ensure proper loading
-        BookmarkManager.getInstance(applicationContext)
+        // Initialize PermissionManager
+        permissionManager = PermissionManager(this)
         
         // Initialize MapSnapshotCache for persistent caching
         MapSnapshotCache.initialize(applicationContext)
@@ -77,25 +80,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PeekTransitTheme {
-                MainScreen()
-            }
-        }
-    }
-    
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        // Clear map snapshot cache when system is running low on memory
-        when (level) {
-            TRIM_MEMORY_BACKGROUND,
-            TRIM_MEMORY_MODERATE,
-            TRIM_MEMORY_COMPLETE -> {
-                MapSnapshotCache.clearCache()
+                CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
+                    MainScreen()
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()

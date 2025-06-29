@@ -20,11 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.managers.SavedStopsManager
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import kotlinx.coroutines.launch
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarkedStopsScreen(
     onNavigateToLiveStop: (Int) -> Unit = {}
@@ -168,13 +165,20 @@ fun BookmarkedStopsScreen(
             
             else -> {
                 // Show filtered saved stops with pull-to-refresh
-                val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isLoading)
+                var isRefreshing by remember { mutableStateOf(false) }
                 
-                SwipeRefresh(
-                    state = swipeRefreshState,
+                CustomPullToRefreshBox(
+                    isRefreshing = isRefreshing,
                     onRefresh = {
                         scope.launch {
-                            savedStopsManager.loadSavedStops()
+                            isRefreshing = true
+                            try {
+                                savedStopsManager.loadSavedStops()
+                                // Wait a bit to ensure the state has updated
+                                kotlinx.coroutines.delay(100)
+                            } finally {
+                                isRefreshing = false
+                            }
                         }
                     }
                 ) {

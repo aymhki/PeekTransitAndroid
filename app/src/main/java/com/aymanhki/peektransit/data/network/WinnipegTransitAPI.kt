@@ -138,7 +138,9 @@ class WinnipegTransitAPI private constructor() {
             val filteredStops = stops.filter { stop ->
                 val effectiveFrom = stop.getEffectiveFromDate()
                 val effectiveTo = stop.getEffectiveToDate()
-                currentDate >= effectiveFrom && currentDate <= effectiveTo
+
+                (effectiveFrom == null || currentDate >= effectiveFrom) &&
+                        (effectiveTo == null || currentDate <= effectiveTo)
             }.sortedBy { it.getDistance() }
                 .take(PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH)
             

@@ -1,3 +1,4 @@
+
 package com.aymanhki.peektransit.ui.screens
 
 import android.Manifest
@@ -12,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
-import androidx.compose.material3.BottomSheetDefaults
+import com.aymanhki.peektransit.ui.components.CustomModalBottomSheet
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -30,8 +31,7 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.MainActivity
 import com.aymanhki.peektransit.utils.location.LocationManager
 import com.aymanhki.peektransit.viewmodel.MainViewModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -44,7 +44,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.MapStyleOptions
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+// No experimental APIs needed! Using stable Android permission management
 @Composable
 fun MapViewScreen(
     viewModel: MainViewModel,
@@ -77,6 +77,7 @@ fun MapViewScreen(
     var isInitialLoad by remember { mutableStateOf(true) }
     var showMap by remember { mutableStateOf(false) }
     var isMapsInitialized by remember { mutableStateOf(false) }
+    var hasCameraInitializedToUserLocation by remember { mutableStateOf(false) }
     
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
@@ -159,6 +160,7 @@ fun MapViewScreen(
                                     ),
                                     1500 // 1.5 second animation
                                 )
+                                hasCameraInitializedToUserLocation = true
                             } catch (e: Exception) {
                                 // If animation fails, just move the camera directly
                                 cameraPositionState.move(
@@ -166,6 +168,7 @@ fun MapViewScreen(
                                         CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                                     )
                                 )
+                                hasCameraInitializedToUserLocation = true
                             }
                         }
                     } else if (forceRefresh && isMapsInitialized) {
@@ -236,6 +239,40 @@ fun MapViewScreen(
         }
     }
     
+    // Handle first-time map initialization when user switches to map tab
+    // This ensures camera zooms to user location even if app was opened from another tab
+    LaunchedEffect(showMap, isViewModelInitialized, isMapsInitialized, hasCameraInitializedToUserLocation) {
+        if (showMap && isViewModelInitialized && isMapsInitialized && !hasCameraInitializedToUserLocation) {
+            // User opened app from another tab and now switched to map tab
+            // ViewModel is already initialized with location, so zoom to it
+            liveLocation?.let { location ->
+                val latLng = LatLng(location.latitude, location.longitude)
+                userLocation = latLng
+                locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
+                
+                try {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                        ),
+                        1500 // 1.5 second animation
+                    )
+                    hasCameraInitializedToUserLocation = true
+                    println("MapViewScreen: Camera initialized to user location (switched from another tab)")
+                } catch (e: Exception) {
+                    // If animation fails, just move the camera directly
+                    cameraPositionState.move(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                        )
+                    )
+                    hasCameraInitializedToUserLocation = true
+                    println("MapViewScreen: Camera moved to user location (fallback)")
+                }
+            }
+        }
+    }
+    
     // Handle live location updates for camera panning and circle updates
     LaunchedEffect(liveLocation) {
         liveLocation?.let { location ->
@@ -276,9 +313,10 @@ fun MapViewScreen(
         }
     }
     
+    // Handle initial location fetch when map tab is the starting destination
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isViewModelInitialized, isCurrentDestination) {
         if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && !isViewModelInitialized && isCurrentDestination) {
-            println("MapViewScreen: Triggering fetchLocationAndUpdateMap (current destination)")
+            println("MapViewScreen: Triggering fetchLocationAndUpdateMap (app opened on map tab)")
             fetchLocationAndUpdateMap()
         } else if (!locationPermissionsState.allPermissionsGranted) {
             locationStatus = "Location permission required"
@@ -497,12 +535,10 @@ fun MapViewScreen(
         }
     }
     
-    // Bottom sheet for selected stop
+    // Custom modal bottom sheet for selected stop
     if (showBottomSheet && selectedStop != null) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            dragHandle = { BottomSheetDefaults.DragHandle() },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        CustomModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false }
         ) {
             val scrollState = rememberScrollState()
             
@@ -510,11 +546,12 @@ fun MapViewScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = "Bus Stop Details",
                     style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
@@ -531,12 +568,16 @@ fun MapViewScreen(
                         onNavigateToLiveStop(selectedStop!!.number)
                         showBottomSheet = false 
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Text("View Live Arrivals")
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(32.dp)) // Extra space for navigation bar
             }
         }
     }

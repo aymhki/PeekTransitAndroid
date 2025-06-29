@@ -30,19 +30,27 @@ data class Stop(
          return distances.direct
     }
 
-    fun getEffectiveFromDate(): Date {
-        return try {
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveFrom) ?: Date()
-        } catch (e: Exception) {
-            Date()
+    fun getEffectiveFromDate(): Date? {
+        return if (effectiveFrom.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveFrom)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
-    
-    fun getEffectiveToDate(): Date {
-        return try {
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveTo) ?: Date()
-        } catch (e: Exception) {
-            Date()
+
+    fun getEffectiveToDate(): Date? {
+        return if (effectiveTo.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveTo)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 }
@@ -83,19 +91,27 @@ data class Variant(
     @SerializedName("text-color")
     val textColor: String? = null
 ) {
-    fun getEffectiveFromDate(): Date {
-        return try {
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveFrom) ?: Date()
-        } catch (e: Exception) {
-            Date()
+    fun getEffectiveFromDate(): Date? {
+        return if (effectiveFrom.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveFrom)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
-    
-    fun getEffectiveToDate(): Date {
-        return try {
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveTo) ?: Date()
-        } catch (e: Exception) {
-            Date()
+
+    fun getEffectiveToDate(): Date? {
+        return if (effectiveTo.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(effectiveTo)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
     

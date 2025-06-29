@@ -51,7 +51,8 @@ dependencies {
     
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.6")
-    
+
+
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
@@ -80,8 +81,6 @@ dependencies {
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     
-    // Swipe refresh
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
     
     // Widget support (Glance)
     implementation("androidx.glance:glance-appwidget:1.0.0")
