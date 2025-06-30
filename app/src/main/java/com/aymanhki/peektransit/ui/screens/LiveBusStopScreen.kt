@@ -1,12 +1,10 @@
 package com.aymanhki.peektransit.ui.screens
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,9 +36,6 @@ import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.network.WinnipegTransitAPI
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.TimeFormat
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -49,6 +43,7 @@ import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 import com.aymanhki.peektransit.utils.StopViewTheme
 import com.aymanhki.peektransit.utils.FontUtils
 @Composable
@@ -541,6 +536,13 @@ fun LiveBusStopScreen(
 
                     else -> {
 
+                        items(PeekTransitConstants.TEST_ENTRIES) { testEntry ->
+                            BusArrivalCard(
+                                scheduleEntry = testEntry,
+                                theme = currentTheme
+                            )
+                        }
+
                         items(scheduleData) { scheduleEntry ->
                             BusArrivalCard(
                                 scheduleEntry = scheduleEntry,
@@ -600,13 +602,13 @@ fun BusArrivalCard(
         val routeName = parts[1]
         val status = parts[2]
         val arrivalTime = parts[3]
-        val fontSizeForBusArrivalCard = 12.5.sp
+        val fontSizeForBusArrivalCard = 15.sp
 
         val columnWidths: List<Float>  = listOf(
-            0.08f,
-            0.40f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.36f else 0.20f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.0f else 0.32f
+            0.12f,
+            0.43f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.44f else 0.20f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.01f else 0.25f
         )
 
         // Theme-based styling
@@ -622,7 +624,7 @@ fun BusArrivalCard(
         
         val fontFamily = when (theme) {
             StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-            StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+            StopViewTheme.MODERN -> FontUtils.CourierFontFamily
         }
 
         Row(
@@ -631,7 +633,6 @@ fun BusArrivalCard(
                 .background(backgroundColor)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             CompositionLocalProvider(
                 LocalTextStyle provides LocalTextStyle.current.copy(
@@ -640,50 +641,49 @@ fun BusArrivalCard(
                     fontFamily = fontFamily
                 )
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        textAlign = TextAlign.Start,
-                        text = routeNumber,
-                        modifier = Modifier.fillMaxWidth(columnWidths[0]),
-                        color = textColor
-                    )
 
-                    Text(
-                        text = routeName,
-                        modifier = Modifier.fillMaxWidth(columnWidths[1]),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = textColor
-                    )
-                }
-
-                if (status != PeekTransitConstants.OK_STATUS_TEXT && status != PeekTransitConstants.DUE_STATUS_TEXT) {
-                    Text(
-                        text = status,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth(columnWidths[2]),
-                        color = when (theme) {
-                            StopViewTheme.CLASSIC -> textColor
-                            StopViewTheme.MODERN -> when (status) {
-                                PeekTransitConstants.LATE_STATUS_TEXT -> MaterialTheme.colorScheme.error
-                                PeekTransitConstants.EARLY_STATUS_TEXT -> MaterialTheme.colorScheme.primary
-                                PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        }
-                    )
-                }
-
-                // Arrival time
                 Text(
-                    text = arrivalTime,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth(columnWidths[3]),
+                    textAlign = TextAlign.Start,
+                    text = routeNumber,
+                    modifier = Modifier.weight(columnWidths[0]),
+                    color = textColor
+                )
+
+                Text(
+                    textAlign = TextAlign.Start,
+                    text = routeName,
+                    modifier = Modifier.weight(columnWidths[1]),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = textColor
+                )
+
+
+                Text(
+                    text =  if (status != PeekTransitConstants.OK_STATUS_TEXT &&
+                        status != PeekTransitConstants.DUE_STATUS_TEXT) status else "",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(columnWidths[2]),
                     color = when (theme) {
                         StopViewTheme.CLASSIC -> textColor
                         StopViewTheme.MODERN -> when (status) {
+                            PeekTransitConstants.LATE_STATUS_TEXT -> MaterialTheme.colorScheme.error
+                            PeekTransitConstants.EARLY_STATUS_TEXT -> MaterialTheme.colorScheme.primary
+                            PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    }
+                )
+
+
+                // Arrival time
+                Text(
+                    text = if (status != PeekTransitConstants.CANCELLED_STATUS_TEXT) arrivalTime else "",
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(columnWidths[3]),
+                    color = when (theme) {
+                        StopViewTheme.CLASSIC -> textColor
+                        StopViewTheme.MODERN -> when (arrivalTime) {
                             PeekTransitConstants.DUE_STATUS_TEXT -> MaterialTheme.colorScheme.primary
                             PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.onSurface

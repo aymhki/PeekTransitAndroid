@@ -10,5 +10,7 @@ object FontUtils {
         Font(R.font.lcd_dot, FontWeight.Black)
     )
     
-    val ConsolasFontFamily = FontFamily.Default
+    val CourierFontFamily = FontFamily(
+        Font(R.font.courier_prime_bold, FontWeight.Black)
+    )
 } 

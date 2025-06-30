@@ -52,7 +52,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -66,7 +66,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -85,7 +85,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -99,7 +99,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -125,7 +125,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -139,7 +139,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -158,7 +158,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -172,7 +172,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -198,7 +198,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -212,7 +212,7 @@ fun PreviewContent(
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
                     fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                         StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                     },
                     color = when (theme) {
@@ -227,7 +227,7 @@ fun PreviewContent(
                 fontSize = previewFontSize,
                 fontWeight = FontWeight.Bold,
                 fontFamily = when (theme) {
-                    StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
                     StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
                 },
                 color = when (theme) {
