@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aymanhki.peektransit.MainActivity
+import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManager
@@ -66,7 +67,6 @@ fun ListViewScreen(
     
     // Search state
     var searchQuery by remember { mutableStateOf("") }
-    var isSearchActive by remember { mutableStateOf(false) }
     
     // Location state for change detection
     var previousLocation by remember { mutableStateOf<android.location.Location?>(null) }
@@ -118,18 +118,12 @@ fun ListViewScreen(
         }
     }
     
-    // Handle search
+    // Handle search (matching iOS behavior)
     LaunchedEffect(searchQuery) {
-        if (searchQuery.isNotEmpty()) {
-            isSearchActive = true
-            scope.launch {
-                locationManager.getCurrentLocation()?.let { location ->
-                    viewModel.searchForStops(searchQuery, location)
-                }
+        scope.launch {
+            locationManager.getCurrentLocation()?.let { location ->
+                viewModel.searchForStops(searchQuery, location)
             }
-        } else {
-            isSearchActive = false
-            viewModel.clearSearchResults()
         }
     }
     
@@ -231,7 +225,7 @@ fun ListViewScreen(
                 CustomPullToRefreshBox(
                     isRefreshing = isLoading || isSearching,
                     onRefresh = {
-                        if (isSearchActive) {
+                        if (searchQuery.isNotEmpty()) {
                             // Refresh search results
                             scope.launch {
                                 locationManager.getCurrentLocation()?.let { location ->
@@ -264,10 +258,34 @@ fun ListViewScreen(
                         }
                         
                         else -> {
-                            val stopsToShow = if (isSearchActive) searchResults else stops
-                            val currentError = if (isSearchActive) searchError else error
+                            // Combine stops like iOS (local stops + search results)
+                            val combinedStops = mutableListOf<Stop>().apply {
+                                addAll(stops)
+                                val existingStopNumbers = stops.map { it.number }.toSet()
+                                for (stop in searchResults) {
+                                    if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
+                                        add(stop)
+                                    }
+                                }
+                            }
                             
-                            if (stopsToShow.isEmpty() && currentError == null) {
+                            // Filter combined stops based on search query (like iOS)
+                            val filteredStops = if (searchQuery.isEmpty()) {
+                                combinedStops
+                            } else {
+                                combinedStops.filter { stop ->
+                                    stop.name.contains(searchQuery, ignoreCase = true) ||
+                                    stop.number.toString().contains(searchQuery) ||
+                                    stop.variants.any { variant ->
+                                        variant.key.contains(searchQuery, ignoreCase = true) ||
+                                        variant.name.contains(searchQuery, ignoreCase = true)
+                                    }
+                                }
+                            }
+                            
+                            val currentError = if (searchQuery.isNotEmpty()) searchError else error
+                            
+                            if (filteredStops.isEmpty() && currentError == null) {
                                 // Empty state
                                 Column(
                                     modifier = Modifier
@@ -277,12 +295,12 @@ fun ListViewScreen(
                                     verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
-                                        text = if (isSearchActive) "No stops found for \"$searchQuery\"" else "No nearby stops found",
+                                        text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
                                         style = MaterialTheme.typography.bodyLarge,
                                         textAlign = TextAlign.Center
                                     )
                                     
-                                    if (!isSearchActive) {
+                                    if (searchQuery.isEmpty()) {
                                         Spacer(modifier = Modifier.height(16.dp))
                                         
                                         Button(
@@ -300,7 +318,7 @@ fun ListViewScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(bottom = 16.dp)
                                 ) {
-                                    items(stopsToShow, key = { stop -> 
+                                    items(filteredStops, key = { stop -> 
                                         "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
                                     }) { stop ->
                                         StopRow(
@@ -322,7 +340,7 @@ fun ListViewScreen(
                                         action = {
                                             TextButton(
                                                 onClick = {
-                                                    if (isSearchActive) {
+                                                    if (searchQuery.isNotEmpty()) {
                                                         viewModel.clearSearchError()
                                                     } else {
                                                         viewModel.clearError()

@@ -292,43 +292,24 @@ class StopsDataStore private constructor() {
                 // Add debounce delay (matching iOS)
                 delay(1000)
                 
-                // First, filter local stops (matching iOS combined search behavior)
-                val currentStops = _stops.value ?: emptyList()
-                println("StopsDataStore: Current local stops count: ${currentStops.size}")
-                
-                val filteredLocalStops = currentStops.filter { stop ->
-                    stop.name.contains(query, ignoreCase = true) ||
-                    stop.number.toString().contains(query) ||
-                    stop.variants.any { variant -> 
-                        variant.key.contains(query, ignoreCase = true) ||
-                        variant.name.contains(query, ignoreCase = true)
-                    }
-                }
-                println("StopsDataStore: Filtered local stops count: ${filteredLocalStops.size}")
-                
-                // Then, search API for additional stops
+                // Only do API search (matching iOS behavior - local filtering happens in UI)
                 println("StopsDataStore: Starting API search...")
                 val searchedStops = api.searchStops(query, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
                 println("StopsDataStore: API search returned ${searchedStops.size} stops")
                 
-                // Combine results, avoiding duplicates (matching iOS logic)
-                val combinedStops = mutableListOf<Stop>()
-                combinedStops.addAll(filteredLocalStops)
-                
-                val existingStopNumbers = filteredLocalStops.map { it.number }.toSet()
-                for (stop in searchedStops) {
-                    if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
-                        combinedStops.add(stop)
-                    }
+                // Log each returned stop for debugging
+                searchedStops.forEachIndexed { index, stop ->
+                    println("StopsDataStore: Search result $index: ${stop.number} - ${stop.name}")
                 }
                 
-                println("StopsDataStore: Combined search results count: ${combinedStops.size}")
-                _searchResults.postValue(combinedStops)
+                println("StopsDataStore: Posting search results to LiveData...")
+                _searchResults.postValue(searchedStops)
+                println("StopsDataStore: Search results posted successfully")
                 
                 // Start enrichment for search results that need it
                 launch {
                     try {
-                        enrichStops(combinedStops.filter { it.variants.isEmpty() })
+                        enrichStops(searchedStops.filter { it.variants.isEmpty() })
                     } catch (e: Exception) {
                         // Log but don't fail
                         println("Error enriching search results: ${e.message}")

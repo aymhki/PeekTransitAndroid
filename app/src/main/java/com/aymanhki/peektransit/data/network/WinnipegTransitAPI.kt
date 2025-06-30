@@ -30,11 +30,9 @@ interface WinnipegTransitApiService {
         @Query("api-key") apiKey: String
     ): Response<JsonObject>
     
-    @GET("stops:{query}.json")
+    @GET
     suspend fun searchStops(
-        @Path("query") query: String,
-        @Query("usage") usage: String,
-        @Query("api-key") apiKey: String
+        @Url url: String
     ): Response<JsonObject>
     
     @GET("routes.json")
@@ -81,7 +79,7 @@ class WinnipegTransitAPI private constructor() {
     private val gson = Gson()
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC
+        level = HttpLoggingInterceptor.Level.BODY
     }
     
     private val okHttpClient = OkHttpClient.Builder()
@@ -157,18 +155,40 @@ class WinnipegTransitAPI private constructor() {
         rateLimiter.waitIfNeeded()
         
         try {
-            val response = apiService.searchStops(
-                query = query,
-                usage = if (forShort) "short" else "long",
-                apiKey = PeekTransitConstants.TRANSIT_API_KEY
-            )
+            println("WinnipegTransitAPI: Making search API call for query: '$query', forShort: $forShort")
+            
+            // Manually construct URL like iOS version (stops:QUERY.json)
+            val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+            val usage = if (forShort) "short" else "long"
+            val fullUrl = "${PeekTransitConstants.BASE_URL}stops:${encodedQuery}.json?usage=${usage}&api-key=${PeekTransitConstants.TRANSIT_API_KEY}"
+            
+            println("WinnipegTransitAPI: Constructed URL: $fullUrl")
+            
+            val response = apiService.searchStops(fullUrl)
+            
+            println("WinnipegTransitAPI: Search API response - isSuccessful: ${response.isSuccessful}, code: ${response.code()}")
             
             if (!response.isSuccessful) {
-                throw TransitError.NetworkError(IOException("HTTP ${response.code()}"))
+                val errorMsg = "HTTP ${response.code()}: ${response.message()}"
+                println("WinnipegTransitAPI: Search API failed with: $errorMsg")
+                throw TransitError.NetworkError(IOException(errorMsg))
             }
             
-            val jsonResponse = response.body() ?: throw TransitError.InvalidData
-            val stopsArray = jsonResponse.getAsJsonArray("stops") ?: throw TransitError.ParseError("No stops array found")
+            val jsonResponse = response.body()
+            if (jsonResponse == null) {
+                println("WinnipegTransitAPI: Search API returned null body")
+                throw TransitError.InvalidData
+            }
+            
+            println("WinnipegTransitAPI: Search API response body: $jsonResponse")
+            
+            val stopsArray = jsonResponse.getAsJsonArray("stops")
+            if (stopsArray == null) {
+                println("WinnipegTransitAPI: No 'stops' array found in response")
+                throw TransitError.ParseError("No stops array found")
+            }
+            
+            println("WinnipegTransitAPI: Found ${stopsArray.size()} stops in response")
             
             val stops = mutableListOf<Stop>()
             for (element in stopsArray) {
@@ -180,13 +200,20 @@ class WinnipegTransitAPI private constructor() {
                         stop
                     }
                     stops.add(processedStop)
+                    println("WinnipegTransitAPI: Successfully parsed stop: ${processedStop.number} - ${processedStop.name}")
                 } catch (e: Exception) {
+                    println("WinnipegTransitAPI: Failed to parse stop element: ${e.message}")
                     continue
                 }
             }
             
-            stops.take(PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH)
+            val finalStops = stops.take(PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH)
+            println("WinnipegTransitAPI: Returning ${finalStops.size} stops after limiting to ${PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH}")
+            
+            finalStops
         } catch (e: Exception) {
+            println("WinnipegTransitAPI: Search failed with exception: ${e.javaClass.simpleName}: ${e.message}")
+            e.printStackTrace()
             when (e) {
                 is TransitError -> throw e
                 else -> throw TransitError.NetworkError(e)
