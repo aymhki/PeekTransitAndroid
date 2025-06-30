@@ -27,6 +27,7 @@ import com.aymanhki.peektransit.utils.location.LocationManager
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
+import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import kotlinx.coroutines.launch
 
 
@@ -40,7 +41,7 @@ fun ListViewScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationManager = remember { MainActivity.getLocationManager(context) }
-    
+
     // Permission state
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
@@ -48,11 +49,11 @@ fun ListViewScreen(
             Manifest.permission.ACCESS_COARSE_LOCATION,
         )
     )
-    
+
     // ViewModel states
     val stops by viewModel.stops.observeAsState(emptyList())
     val searchResults by viewModel.searchResults.observeAsState(emptyList())
-    
+
     // Debug logging
     LaunchedEffect(stops) {
         println("ListViewScreen: Stops list updated with ${stops.size} stops")
@@ -64,14 +65,14 @@ fun ListViewScreen(
     val isSearching by viewModel.isSearching.observeAsState(false)
     val error by viewModel.error.observeAsState()
     val searchError by viewModel.searchError.observeAsState()
-    
+
     // Search state
     var searchQuery by remember { mutableStateOf("") }
-    
+
     // Location state for change detection
     var previousLocation by remember { mutableStateOf<android.location.Location?>(null) }
     var isInitialLoad by remember { mutableStateOf(true) }
-    
+
     // Function to load stops with location change detection
     fun loadStopsWithLocationCheck(forceRefresh: Boolean = false) {
         println("ListViewScreen: loadStopsWithLocationCheck called with forceRefresh=$forceRefresh")
@@ -86,7 +87,7 @@ fun ListViewScreen(
                     println("ListViewScreen: No previous location, should update = true")
                     true // First time
                 }
-                
+
                 println("ListViewScreen: shouldUpdate=$shouldUpdate, forceRefresh=$forceRefresh, isInitialLoad=$isInitialLoad")
                 if (shouldUpdate || forceRefresh) {
                     if (isInitialLoad && !forceRefresh) {
@@ -106,10 +107,10 @@ fun ListViewScreen(
             }
         }
     }
-    
+
     // Observe initialization state
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
-    
+
     // Load stops when permission is granted and viewModel is not initialized
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, isViewModelInitialized, isCurrentDestination) {
         if (locationPermissionsState.allPermissionsGranted && !isViewModelInitialized && isCurrentDestination) {
@@ -117,7 +118,7 @@ fun ListViewScreen(
             loadStopsWithLocationCheck()
         }
     }
-    
+
     // Handle search (matching iOS behavior)
     LaunchedEffect(searchQuery) {
         scope.launch {
@@ -126,63 +127,21 @@ fun ListViewScreen(
             }
         }
     }
-    
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Modern rounded search bar
-        if (locationPermissionsState.allPermissionsGranted) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(28.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { 
-                        Text(
-                            "Search stops, routes...",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        ) 
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Search, 
-                            contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(
-                                    Icons.Default.Clear,
-                                    contentDescription = "Clear search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-            }
+
+    Scaffold(
+        topBar = {
+            CustomTopAppBar(
+                title = { Text("Nearby Stops") }
+            )
         }
-        
+    ) { paddingValues ->
         when {
             !locationPermissionsState.allPermissionsGranted -> {
                 // Permission request UI
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(paddingValues)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -193,25 +152,25 @@ fun ListViewScreen(
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Text(
                         text = "Location Permission Required",
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     Text(
                         text = "This app needs location access to show nearby bus stops.",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Button(
                         onClick = { locationPermissionsState.launchMultiplePermissionRequest() }
                     ) {
@@ -219,10 +178,11 @@ fun ListViewScreen(
                     }
                 }
             }
-            
+
             else -> {
                 // Pull-to-refresh wraps everything
                 CustomPullToRefreshBox(
+                    modifier = Modifier.padding(paddingValues),
                     isRefreshing = isLoading || isSearching,
                     onRefresh = {
                         if (searchQuery.isNotEmpty()) {
@@ -238,87 +198,143 @@ fun ListViewScreen(
                         }
                     }
                 ) {
-                    when {
-                        isLoading || isSearching -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                    // Always show LazyColumn with search bar as first item
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        // Search bar as first item - always visible
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                shape = RoundedCornerShape(28.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    CircularProgressIndicator()
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = if (isSearching) "Searching..." else "Loading nearby stops...",
-                                        style = MaterialTheme.typography.bodyMedium
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    placeholder = {
+                                        Text(
+                                            "Search stops, routes...",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = "Search",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        if (searchQuery.isNotEmpty()) {
+                                            IconButton(onClick = { searchQuery = "" }) {
+                                                Icon(
+                                                    Icons.Default.Clear,
+                                                    contentDescription = "Clear search",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(28.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                                     )
-                                }
+                                )
                             }
                         }
-                        
-                        else -> {
-                            // Combine stops like iOS (local stops + search results)
-                            val combinedStops = mutableListOf<Stop>().apply {
-                                addAll(stops)
-                                val existingStopNumbers = stops.map { it.number }.toSet()
-                                for (stop in searchResults) {
-                                    if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
-                                        add(stop)
-                                    }
-                                }
-                            }
-                            
-                            // Filter combined stops based on search query (like iOS)
-                            val filteredStops = if (searchQuery.isEmpty()) {
-                                combinedStops
-                            } else {
-                                combinedStops.filter { stop ->
-                                    stop.name.contains(searchQuery, ignoreCase = true) ||
-                                    stop.number.toString().contains(searchQuery) ||
-                                    stop.variants.any { variant ->
-                                        variant.key.contains(searchQuery, ignoreCase = true) ||
-                                        variant.name.contains(searchQuery, ignoreCase = true)
-                                    }
-                                }
-                            }
-                            
-                            val currentError = if (searchQuery.isNotEmpty()) searchError else error
-                            
-                            if (filteredStops.isEmpty() && currentError == null) {
-                                // Empty state
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    
-                                    if (searchQuery.isEmpty()) {
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        
-                                        Button(
-                                            onClick = {
-                                                loadStopsWithLocationCheck(forceRefresh = true)
-                                            }
+                    
+                        when {
+                            isLoading || isSearching -> {
+                                // Loading state
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.padding(16.dp)
                                         ) {
-                                            Text("Retry")
+                                            CircularProgressIndicator()
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Text(
+                                                text = if (isSearching) "Searching..." else "Loading nearby stops...",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
                                         }
                                     }
                                 }
-                            } else {
-                                // Stops list
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(bottom = 16.dp)
-                                ) {
-                                    items(filteredStops, key = { stop -> 
+                            }
+
+                            else -> {
+                                // Combine stops like iOS (local stops + search results)
+                                val combinedStops = mutableListOf<Stop>().apply {
+                                    addAll(stops)
+                                    val existingStopNumbers = stops.map { it.number }.toSet()
+                                    for (stop in searchResults) {
+                                        if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
+                                            add(stop)
+                                        }
+                                    }
+                                }
+
+                                // Filter combined stops based on search query (like iOS)
+                                val filteredStops = if (searchQuery.isEmpty()) {
+                                    combinedStops
+                                } else {
+                                    combinedStops.filter { stop ->
+                                        stop.name.contains(searchQuery, ignoreCase = true) ||
+                                        stop.number.toString().contains(searchQuery) ||
+                                        stop.variants.any { variant ->
+                                            variant.key.contains(searchQuery, ignoreCase = true) ||
+                                            variant.name.contains(searchQuery, ignoreCase = true)
+                                        }
+                                    }
+                                }
+
+                                val currentError = if (searchQuery.isNotEmpty()) searchError else error
+
+                                if (filteredStops.isEmpty() && currentError == null) {
+                                    // Empty state
+                                    item {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                textAlign = TextAlign.Center
+                                            )
+
+                                            if (searchQuery.isEmpty()) {
+                                                Spacer(modifier = Modifier.height(16.dp))
+
+                                                Button(
+                                                    onClick = {
+                                                        loadStopsWithLocationCheck(forceRefresh = true)
+                                                    }
+                                                ) {
+                                                    Text("Retry")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Show stops list
+                                    items(filteredStops, key = { stop ->
                                         "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
                                     }) { stop ->
                                         StopRow(
@@ -328,30 +344,32 @@ fun ListViewScreen(
                                         )
                                     }
                                 }
-                            }
-                            
-                            // Error display
-                            currentError?.let { transitError ->
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.BottomCenter
-                                ) {
-                                    Snackbar(
-                                        action = {
-                                            TextButton(
-                                                onClick = {
-                                                    if (searchQuery.isNotEmpty()) {
-                                                        viewModel.clearSearchError()
-                                                    } else {
-                                                        viewModel.clearError()
+
+                                // Error display
+                                currentError?.let { transitError ->
+                                    item {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Snackbar(
+                                                action = {
+                                                    TextButton(
+                                                        onClick = {
+                                                            if (searchQuery.isNotEmpty()) {
+                                                                viewModel.clearSearchError()
+                                                            } else {
+                                                                viewModel.clearError()
+                                                            }
+                                                        }
+                                                    ) {
+                                                        Text("Dismiss")
                                                     }
                                                 }
                                             ) {
-                                                Text("Dismiss")
+                                                Text(transitError.message)
                                             }
                                         }
-                                    ) {
-                                        Text(transitError.message)
                                     }
                                 }
                             }

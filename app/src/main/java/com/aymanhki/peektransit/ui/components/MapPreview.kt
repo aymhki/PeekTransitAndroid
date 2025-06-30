@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
+import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +47,15 @@ fun MapPreview(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val isDarkMode = isSystemInDarkTheme()
+    val settingsManager = remember { SettingsManager.getInstance(context) }
+    val currentTheme = settingsManager.stopViewTheme
+    val systemDarkTheme = isSystemInDarkTheme()
+    
+    // Force dark theme for Classic theme, otherwise follow system theme for Modern
+    val isDarkMode = when (currentTheme) {
+        StopViewTheme.CLASSIC -> true
+        StopViewTheme.MODERN -> systemDarkTheme
+    }
     val scope = rememberCoroutineScope()
     
     var snapshotBitmap by remember { mutableStateOf<Bitmap?>(null) }

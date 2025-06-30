@@ -34,7 +34,7 @@ fun CustomPullToRefreshBox(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
-    refreshTriggerDistance: Dp = 100.dp,
+    refreshTriggerDistance: Dp = 120.dp,
     content: @Composable () -> Unit
 ) {
     val density = LocalDensity.current
@@ -186,7 +186,7 @@ private fun PullRefreshIndicator(
                 rotationZ = if (isRefreshing) infiniteRotation else rotation
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (pullDistance > 0f) 6.dp else 0.dp
@@ -201,14 +201,14 @@ private fun PullRefreshIndicator(
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
                 CircularProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }

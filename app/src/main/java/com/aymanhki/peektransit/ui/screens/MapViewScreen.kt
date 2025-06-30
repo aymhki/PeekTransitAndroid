@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import com.aymanhki.peektransit.ui.components.CustomModalBottomSheet
+import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -54,7 +56,15 @@ fun MapViewScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationManager = remember { MainActivity.getLocationManager(context) }
-    val isDarkTheme = isSystemInDarkTheme()
+    val settingsManager = remember { SettingsManager.getInstance(context) }
+    val currentTheme = settingsManager.stopViewTheme
+    val systemDarkTheme = isSystemInDarkTheme()
+    
+    // Force dark theme for Classic theme, otherwise follow system theme for Modern
+    val isDarkTheme = when (currentTheme) {
+        StopViewTheme.CLASSIC -> true
+        StopViewTheme.MODERN -> systemDarkTheme
+    }
     
     // Permission state
     val locationPermissionsState = rememberMultiplePermissionsState(

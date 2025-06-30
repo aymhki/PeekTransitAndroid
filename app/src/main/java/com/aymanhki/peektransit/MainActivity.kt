@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -33,6 +34,10 @@ import com.aymanhki.peektransit.ui.screens.LiveBusStopScreen
 import com.aymanhki.peektransit.ui.screens.MapViewScreen
 import com.aymanhki.peektransit.ui.screens.MoreScreen
 import com.aymanhki.peektransit.ui.screens.WidgetsScreen
+import com.aymanhki.peektransit.ui.screens.ThemeSelectionScreen
+import com.aymanhki.peektransit.ui.screens.AboutScreen
+import com.aymanhki.peektransit.ui.screens.CreditsScreen
+import com.aymanhki.peektransit.ui.screens.TermsAndPrivacyScreen
 import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManager
@@ -40,6 +45,7 @@ import com.aymanhki.peektransit.utils.permissions.LocalPermissionManager
 import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
+import com.aymanhki.peektransit.managers.SettingsManager
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
@@ -79,7 +85,22 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            PeekTransitTheme {
+            val context = LocalContext.current
+            val settingsManager = remember { SettingsManager.getInstance(context) }
+            var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
+            
+            // Listen for theme changes by polling or using a state that updates when navigating back
+            LaunchedEffect(Unit) {
+                while (true) {
+                    currentTheme = settingsManager.stopViewTheme
+                    kotlinx.coroutines.delay(100) // Check every 100ms for theme changes
+                }
+            }
+            
+            // Force dark theme when classic theme is selected
+            val forceDarkTheme = currentTheme == com.aymanhki.peektransit.utils.StopViewTheme.CLASSIC
+            
+            PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
                 CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
                     MainScreen()
                 }
@@ -91,6 +112,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager.getInstance(context) }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -105,6 +128,18 @@ fun MainScreen() {
         BottomNavItem.Widgets,
         BottomNavItem.More
     )
+    
+    // Read default tab only once on initialization to avoid navigation issues
+    val startDestination = remember {
+        val defaultTab = settingsManager.defaultTab
+        when (defaultTab) {
+            com.aymanhki.peektransit.utils.DefaultTab.MAP -> BottomNavItem.Map.route
+            com.aymanhki.peektransit.utils.DefaultTab.STOPS -> BottomNavItem.Stops.route
+            com.aymanhki.peektransit.utils.DefaultTab.SAVED -> BottomNavItem.Saved.route
+            com.aymanhki.peektransit.utils.DefaultTab.WIDGETS -> BottomNavItem.Widgets.route
+            com.aymanhki.peektransit.utils.DefaultTab.MORE -> BottomNavItem.More.route
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -131,7 +166,7 @@ fun MainScreen() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Map.route,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Map.route) {
@@ -163,7 +198,12 @@ fun MainScreen() {
                 WidgetsScreen()
             }
             composable(BottomNavItem.More.route) {
-                MoreScreen()
+                MoreScreen(
+                    onNavigateToThemeSelection = { navController.navigate("theme_selection") },
+                    onNavigateToAbout = { navController.navigate("about") },
+                    onNavigateToCredits = { navController.navigate("credits") },
+                    onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") }
+                )
             }
             composable(
                 "live_stop/{stopNumber}",
@@ -172,6 +212,26 @@ fun MainScreen() {
                 val stopNumber = backStackEntry.arguments?.getInt("stopNumber") ?: return@composable
                 LiveBusStopScreen(
                     stopNumber = stopNumber,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("theme_selection") {
+                ThemeSelectionScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("about") {
+                AboutScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("credits") {
+                CreditsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("terms_privacy") {
+                TermsAndPrivacyScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

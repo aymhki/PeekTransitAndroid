@@ -7,17 +7,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 
 
 @Composable
 fun WidgetsScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    Scaffold(
+        topBar = {
+            CustomTopAppBar(
+                title = { Text("Widgets") }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -32,9 +41,10 @@ fun WidgetsScreen() {
                     text = "Widgets\n(Will show widget configurations and previews)",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
-                )
-            }
+                        )
         }
+    }
+}
         
         Spacer(modifier = Modifier.height(16.dp))
         

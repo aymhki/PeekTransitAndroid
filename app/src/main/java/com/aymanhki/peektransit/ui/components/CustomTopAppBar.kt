@@ -22,7 +22,7 @@ fun CustomTopAppBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.background,
         shadowElevation = 0.dp,
         tonalElevation = 0.dp
     ) {

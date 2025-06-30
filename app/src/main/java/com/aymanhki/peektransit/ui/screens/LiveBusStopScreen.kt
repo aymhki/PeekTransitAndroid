@@ -48,6 +48,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.utils.StopViewTheme
+import com.aymanhki.peektransit.utils.FontUtils
 @Composable
 fun LiveBusStopScreen(
     stopNumber: Int,
@@ -57,10 +60,21 @@ fun LiveBusStopScreen(
     val scope = rememberCoroutineScope()
     val api = WinnipegTransitAPI.getInstance()
     val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
+    val settingsManager = remember { SettingsManager.getInstance(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
     val sharedPreferences: SharedPreferences = remember { 
         context.getSharedPreferences("peek_transit_prefs", Context.MODE_PRIVATE) 
+    }
+    
+    // Theme state
+    var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
+    
+    // Update theme state when app resumes (to catch theme changes from settings)
+    LaunchedEffect(lifecycleState) {
+        if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+            currentTheme = settingsManager.stopViewTheme
+        }
     }
     
     // State for stop data and live updates
@@ -258,7 +272,17 @@ fun LiveBusStopScreen(
     }
     
     
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Apply theme-based background
+    val backgroundColor = when (currentTheme) {
+        StopViewTheme.CLASSIC -> Color.Black
+        StopViewTheme.MODERN -> Color.Transparent
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -385,21 +409,25 @@ fun LiveBusStopScreen(
                     }
                 }
 
-                item {
-                    // Stop map preview with real map that scrolls with content
-                    stop?.let { stopData ->
-                        RealMapPreview(
-                            latitude = stopData.centre.geographic.latitude,
-                            longitude = stopData.centre.geographic.longitude,
-                            direction = stopData.direction,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .padding(horizontal = 16.dp)
-
-                        )
+                    item {
+                        // Stop map preview with real map that scrolls with content
+                        // Force the exact height and ensure it takes full width
+                        stop?.let { stopData ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp) // Enforce exact height
+                            ) {
+                                RealMapPreview(
+                                    latitude = stopData.centre.geographic.latitude,
+                                    longitude = stopData.centre.geographic.longitude,
+                                    direction = stopData.direction,
+                                    modifier = Modifier
+                                        .fillMaxSize() // Fill the entire Box
+                                )
+                            }
+                        }
                     }
-                }
 
 
                 item {
@@ -514,7 +542,10 @@ fun LiveBusStopScreen(
                     else -> {
 
                         items(scheduleData) { scheduleEntry ->
-                            BusArrivalCard(scheduleEntry = scheduleEntry)
+                            BusArrivalCard(
+                                scheduleEntry = scheduleEntry,
+                                theme = currentTheme
+                            )
                         }
 
                     }
@@ -559,33 +590,54 @@ fun LiveBusStopScreen(
 }
 
 @Composable
-fun BusArrivalCard(scheduleEntry: String) {
+fun BusArrivalCard(
+    scheduleEntry: String,
+    theme: StopViewTheme = StopViewTheme.MODERN
+) {
     val parts = scheduleEntry.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
     if (parts.size >= 4) {
         val routeNumber = parts[0]
         val routeName = parts[1]
         val status = parts[2]
         val arrivalTime = parts[3]
-
+        val fontSizeForBusArrivalCard = 12.5.sp
 
         val columnWidths: List<Float>  = listOf(
-            0.1f,
-            0.38f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.36f else 0.18f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.0f else 0.34f
+            0.08f,
+            0.40f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.36f else 0.20f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.0f else 0.32f
         )
+
+        // Theme-based styling
+        val backgroundColor = when (theme) {
+            StopViewTheme.CLASSIC -> Color.Black
+            StopViewTheme.MODERN -> Color.Transparent
+        }
+        
+        val textColor = when (theme) {
+            StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
+            StopViewTheme.MODERN -> MaterialTheme.colorScheme.onSurface
+        }
+        
+        val fontFamily = when (theme) {
+            StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
+            StopViewTheme.MODERN -> FontUtils.ConsolasFontFamily
+        }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(backgroundColor)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             CompositionLocalProvider(
                 LocalTextStyle provides LocalTextStyle.current.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = fontSizeForBusArrivalCard,
+                    fontFamily = fontFamily
                 )
             ) {
                 Row(
@@ -595,13 +647,15 @@ fun BusArrivalCard(scheduleEntry: String) {
                         textAlign = TextAlign.Start,
                         text = routeNumber,
                         modifier = Modifier.fillMaxWidth(columnWidths[0]),
+                        color = textColor
                     )
 
                     Text(
                         text = routeName,
                         modifier = Modifier.fillMaxWidth(columnWidths[1]),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = textColor
                     )
                 }
 
@@ -610,11 +664,14 @@ fun BusArrivalCard(scheduleEntry: String) {
                         text = status,
                         textAlign = TextAlign.End,
                         modifier = Modifier.fillMaxWidth(columnWidths[2]),
-                        color = when (status) {
-                            PeekTransitConstants.LATE_STATUS_TEXT -> MaterialTheme.colorScheme.error
-                            PeekTransitConstants.EARLY_STATUS_TEXT -> MaterialTheme.colorScheme.primary
-                            PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        color = when (theme) {
+                            StopViewTheme.CLASSIC -> textColor
+                            StopViewTheme.MODERN -> when (status) {
+                                PeekTransitConstants.LATE_STATUS_TEXT -> MaterialTheme.colorScheme.error
+                                PeekTransitConstants.EARLY_STATUS_TEXT -> MaterialTheme.colorScheme.primary
+                                PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         }
                     )
                 }
@@ -624,15 +681,17 @@ fun BusArrivalCard(scheduleEntry: String) {
                     text = arrivalTime,
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth(columnWidths[3]),
-                    color = when (status) {
-                        PeekTransitConstants.DUE_STATUS_TEXT -> MaterialTheme.colorScheme.primary
-                        PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurface
+                    color = when (theme) {
+                        StopViewTheme.CLASSIC -> textColor
+                        StopViewTheme.MODERN -> when (status) {
+                            PeekTransitConstants.DUE_STATUS_TEXT -> MaterialTheme.colorScheme.primary
+                            PeekTransitConstants.CANCELLED_STATUS_TEXT -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
                     }
                 )
             }
         }
-
     }
 }
 

@@ -1,5 +1,7 @@
 package com.aymanhki.peektransit.utils
 
+import androidx.compose.ui.graphics.Color
+
 
 object PeekTransitConstants {
 
@@ -73,23 +75,65 @@ object PeekTransitConstants {
 
     // Global API Usage
     const val GLOBAL_API_FOR_SHORT_USAGE = true
+    
+    // Font Sizes
+    const val NORMAL_FONT_SIZE_LARGE = 14f
+    const val NORMAL_FONT_SIZE_MEDIUM = 13f
+    const val NORMAL_FONT_SIZE_SMALL = 12f
+    const val NORMAL_FONT_SIZE_LOCKSCREEN = 12f
+    const val NORMAL_FONT_SIZE_DEFAULT = 10f
+    
+    const val STOP_NAME_FONT_SIZE_LARGE = 11f
+    const val STOP_NAME_FONT_SIZE_MEDIUM = 11f
+    const val STOP_NAME_FONT_SIZE_SMALL = 9f
+    const val STOP_NAME_FONT_SIZE_LOCKSCREEN = 9f
+    const val STOP_NAME_FONT_SIZE_DEFAULT = 8f
+    
+    const val LAST_SEEN_FONT_SIZE = 10f
+    const val LAST_SEEN_FONT_SIZE_DEFAULT = 8f
+    
+    // Theme Colors
+    const val CLASSIC_THEME_COLOR = "#EB8634"
+    const val CLASSIC_THEME_BACKGROUND_COLOR = "#000000"
+
+    val CLASSIC_THEM_TEXT_COLOR = Color(0xFFEB8634)
 }
 
-enum class DefaultTab(val index: Int, val displayName: String) {
-    MAP(0, "Map"),
-    STOPS(1, "Stops"),
-    SAVED(2, "Saved"),
-    WIDGETS(3, "Widgets"),
-    MORE(4, "More")
+enum class DefaultTab(val index: Int, val displayName: String, val icon: String) {
+    MAP(0, "Map", "map"),
+    STOPS(1, "Stops", "list"),
+    SAVED(2, "Saved", "bookmark"),
+    WIDGETS(3, "Widgets", "note"),
+    MORE(4, "More", "more_horiz");
+    
+    companion object {
+        fun fromIndex(index: Int): DefaultTab {
+            return values().find { it.index == index } ?: MAP
+        }
+    }
 }
 
 enum class StopViewTheme(val displayName: String, val description: String) {
     MODERN("Modern", "Auto"),
-    CLASSIC("Classic", "Always Dark")
+    CLASSIC("Classic", "Always Dark");
+    
+    companion object {
+        val DEFAULT = MODERN
+        
+        fun fromString(value: String?): StopViewTheme {
+            return values().find { it.displayName == value } ?: DEFAULT
+        }
+    }
 }
 
 enum class TimeFormat {
     MINUTES_ONLY,
     CLOCK_TIME,
     MIXED
+}
+
+object SettingsKeys {
+    const val DEFAULT_TAB = "default_tab_preference"
+    const val STOP_VIEW_THEME = "stop_view_theme_preference"
+    const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
 }

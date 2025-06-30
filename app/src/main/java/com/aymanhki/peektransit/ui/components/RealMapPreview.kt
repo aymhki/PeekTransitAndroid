@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +34,15 @@ fun RealMapPreview(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isDarkTheme = isSystemInDarkTheme()
+    val settingsManager = remember { SettingsManager.getInstance(context) }
+    val currentTheme = settingsManager.stopViewTheme
+    val systemDarkTheme = isSystemInDarkTheme()
+    
+    // Force dark theme for Classic theme, otherwise follow system theme for Modern
+    val isDarkTheme = when (currentTheme) {
+        StopViewTheme.CLASSIC -> true
+        StopViewTheme.MODERN -> systemDarkTheme
+    }
     val position = LatLng(latitude, longitude)
     var isMapsInitialized by remember { mutableStateOf(false) }
     
@@ -59,7 +69,7 @@ fun RealMapPreview(
     }
     
     Box(
-        modifier = modifier.clip(RoundedCornerShape(8.dp))
+       // modifier = modifier.clip(RoundedCornerShape(8.dp))
     ) {
         if (isMapsInitialized) {
             GoogleMap(
