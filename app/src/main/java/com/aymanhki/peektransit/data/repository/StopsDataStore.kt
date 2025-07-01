@@ -18,20 +18,17 @@ class StopsDataStore private constructor() {
     private var variantsCache: VariantsCacheManager? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    // Cache configuration (matching iOS implementation)
     private var lastFetchTime: Long? = null
     private var lastFetchLocation: Location? = null
     private var cachedStops: List<Stop> = emptyList()
-    private val cacheDuration: Long = 30000 // 30 seconds like iOS
-    private val locationDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS.toFloat() // Use consistent threshold
+    private val cacheDuration: Long = 30000
+    private val locationDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS.toFloat()
     
-    // Current loading tasks
     private var searchJob: Job? = null
     private var loadStopsJob: Job? = null
     private var enrichmentJob: Job? = null
     private var isCurrentlyLoading = false
     
-    // LiveData for UI observation
     private val _stops = MutableLiveData<List<Stop>>(emptyList())
     val stops: LiveData<List<Stop>> = _stops
     
@@ -75,7 +72,6 @@ class StopsDataStore private constructor() {
     suspend fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         if (isCurrentlyLoading) return
         
-        // Check cache first (matching iOS behavior)
         if (!forceRefresh && isCacheValid(userLocation)) {
             _stops.postValue(cachedStops)
             _error.postValue(null)
@@ -111,18 +107,14 @@ class StopsDataStore private constructor() {
                         _error.postValue(TransitError.ParseError("No stops could be loaded"))
                     }
                 } else {
-                    // Start enrichment in background using the main scope, not the loadStopsJob scope
-                    enrichmentJob?.cancel() // Cancel any previous enrichment
+                    enrichmentJob?.cancel()
                     enrichmentJob = scope.launch {
                         try {
                             enrichStops(nearbyStops)
                             updateCache(userLocation)
                         } catch (e: Exception) {
                             if (e !is CancellationException) {
-                                // Log errors but don't spam console
                                 println("StopsDataStore: Error in background enrichment: ${e.message}")
-
-
                             }
                         }
                     }
@@ -154,19 +146,15 @@ class StopsDataStore private constructor() {
         
         try {
             getVariantsForStops(stopsNeedingEnrichment) { enrichedStop ->
-                // Ensure UI updates happen on main thread
                 withContext(Dispatchers.Main) {
-                    // Real-time UI update - find and replace the stop in current list
                     val currentStops = _stops.value?.toMutableList() ?: mutableListOf()
                     val index = currentStops.indexOfFirst { it.number == enrichedStop.number }
                     if (index != -1) {
                         currentStops[index] = enrichedStop
-                        // Create a completely new list to ensure reference change and post it
                         val newStopsList = currentStops.toList()
                         _stops.postValue(newStopsList)
                     }
                     
-                    // Also update search results if applicable
                     val currentSearchResults = _searchResults.value?.toMutableList() ?: mutableListOf()
                     val searchIndex = currentSearchResults.indexOfFirst { it.number == enrichedStop.number }
                     if (searchIndex != -1) {
@@ -179,7 +167,6 @@ class StopsDataStore private constructor() {
             
         } catch (e: Exception) {
             if (e !is CancellationException) {
-                // Log error but don't fail the whole operation
                 println("Error enriching stops: ${e.message}")
 
             }
@@ -194,22 +181,18 @@ class StopsDataStore private constructor() {
         
         for (stop in stops) {
             try {
-                // Check cache first (matching iOS cache-first strategy)
                 val cachedVariants = cache?.getCachedVariants(stop.number)
                 
                 val stopVariants = if (cachedVariants != null && cachedVariants.isNotEmpty()) {
                     cachedVariants
                 } else {
-                    // Fetch from API if not cached
                     val variants = api.getVariantsForStop(stop.number)
                     
-                    // Filter out unwanted variants (matching iOS logic)
                     val filteredVariants = variants.filter { variant ->
                         val key = variant.key
                         !(key.startsWith("S") || key.startsWith("W") || key.startsWith("I"))
                     }
                     
-                    // Cache the results (matching iOS implementation)
                     if (filteredVariants.isNotEmpty() && cache != null) {
                         cache.cacheVariants(filteredVariants, stop.number)
                     }
@@ -217,7 +200,6 @@ class StopsDataStore private constructor() {
                     filteredVariants
                 }
                 
-                // Create enriched stop and notify callback for real-time UI update
                 val enrichedStop = stop.copy(variants = stopVariants)
                 onStopEnriched(enrichedStop)
                 
@@ -227,13 +209,11 @@ class StopsDataStore private constructor() {
                     println("Error fetching variants for stop ${stop.number}: ${e.message}")
 
 
-                    // Still call callback with original stop to update UI
                     onStopEnriched(stop)
                 }
             }
         }
         
-        // After all stops are enriched, validate caches (matching iOS pattern)
         try {
             validateVariantCaches(stops.map { it.number })
         } catch (e: Exception) {
@@ -241,18 +221,15 @@ class StopsDataStore private constructor() {
         }
     }
     
-    // Add cache validation method like iOS
     private suspend fun validateVariantCaches(stopNumbers: List<Int>) {
         try {
             val bulkVariants = api.getBulkVariantsForStops(stopNumbers)
             val cache = variantsCache ?: return
 
-            // Extract route identifiers from bulk variants (first part before "-")
             val bulkVariantIdentifiers = bulkVariants.mapNotNull { variant ->
                 variant.key.split("-").firstOrNull()
             }.toSet()
 
-            // Check each stop's cached variants
             for (stopNumber in stopNumbers) {
                 val cachedVariants = cache.getCachedVariants(stopNumber) ?: continue
 
@@ -294,22 +271,16 @@ class StopsDataStore private constructor() {
                 _isSearching.postValue(true)
                 _searchError.postValue(null)
                 
-                // Add debounce delay (matching iOS)
                 delay(1000)
                 
-                // Only do API search (matching iOS behavior - local filtering happens in UI)
                 val searchedStops = api.searchStops(query, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
                 _searchResults.postValue(searchedStops)
                 
-                // Start enrichment for search results that need it
                 launch {
                     try {
                         enrichStops(searchedStops.filter { it.variants.isEmpty() })
                     } catch (e: Exception) {
-                        // Log but don't fail
-
                         println("Error enriching search results: ${e.message}")
-
                     }
                 }
                 
@@ -329,15 +300,11 @@ class StopsDataStore private constructor() {
     }
     
     suspend fun getStop(stopNumber: Int): Stop? {
-        // First check if we already have this stop
         _stops.value?.find { it.number == stopNumber }?.let { return it }
         _searchResults.value?.find { it.number == stopNumber }?.let { return it }
         
         return try {
             _isLoading.postValue(true)
-            
-            // This would make an API call to get the specific stop
-            // For now, return null to indicate not found
             _error.postValue(null)
             null
             

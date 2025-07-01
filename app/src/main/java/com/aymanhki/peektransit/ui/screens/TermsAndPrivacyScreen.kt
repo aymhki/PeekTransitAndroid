@@ -53,7 +53,6 @@ fun TermsAndPrivacyScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
             
-            // Introduction Section
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -72,7 +71,6 @@ fun TermsAndPrivacyScreen(
                 )
             }
             
-            // Data Usage Section
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -91,7 +89,6 @@ fun TermsAndPrivacyScreen(
                 )
             }
             
-            // Privacy Policy Section
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -113,7 +110,6 @@ fun TermsAndPrivacyScreen(
                 )
             }
             
-            // Disclaimer Section
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -132,7 +128,6 @@ fun TermsAndPrivacyScreen(
                 )
             }
             
-            // Contact Section
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

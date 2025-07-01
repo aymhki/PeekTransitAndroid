@@ -46,7 +46,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.MapStyleOptions
 
 
-// No experimental APIs needed! Using stable Android permission management
 @Composable
 fun MapViewScreen(
     viewModel: MainViewModel,
@@ -60,13 +59,11 @@ fun MapViewScreen(
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()
     
-    // Force dark theme for Classic theme, otherwise follow system theme for Modern
     val isDarkTheme = when (currentTheme) {
         StopViewTheme.CLASSIC -> true
         StopViewTheme.MODERN -> systemDarkTheme
     }
     
-    // Permission state
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -74,12 +71,10 @@ fun MapViewScreen(
         )
     )
     
-    // ViewModel states
     val stops by viewModel.stops.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     
-    // Map state
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var previousUserLocation by remember { mutableStateOf<LatLng?>(null) }
     var locationStatus by remember { mutableStateOf("Initializing...") }
@@ -91,16 +86,14 @@ fun MapViewScreen(
     
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(49.8951, -97.1384), // Start from Winnipeg (app location)
+            LatLng(49.8951, -97.1384),
             PeekTransitConstants.DEFAULT_MAP_ZOOM
         )
     }
     
-    // Selected stop for bottom sheet
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     
-    // Initialize Google Maps SDK
     LaunchedEffect(Unit) {
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
@@ -117,19 +110,16 @@ fun MapViewScreen(
             }
         } catch (e: Exception) {
             locationStatus = "Maps initialization failed: ${e.message}"
-            isMapsInitialized = true // Allow to proceed even if initialization fails
+            isMapsInitialized = true
         }
     }
     
-    // Function to fetch location and update map
     fun fetchLocationAndUpdateMap(forceRefresh: Boolean = false) {
         scope.launch {
             if (isInitialLoad) {
-                // For initial load, keep loading screen visible
                 isLocationLoading = true
                 showMap = false
             } else if (!forceRefresh) {
-                // For subsequent loads, show loading indicator on existing map
                 isLocationLoading = true
             }
             locationStatus = "Fetching location..."
@@ -141,12 +131,10 @@ fun MapViewScreen(
                     val previousLocation = userLocation
                     userLocation = latLng
                     
-                    // Update ViewModel with initial location if not set
                     if (viewModel.currentLocation.value == null) {
                         viewModel.updateCurrentLocation(location)
                     }
                     
-                    // Check if location changed significantly
                     val shouldUpdateStops = if (previousLocation != null) {
                         val distance = FloatArray(1)
                         android.location.Location.distanceBetween(
@@ -154,13 +142,12 @@ fun MapViewScreen(
                             latLng.latitude, latLng.longitude,
                             distance
                         )
-                        distance[0] > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS // Use constant from PeekTransitConstants
+                        distance[0] > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
                     } else {
-                        true // First time - always load stops
+                        true
                     }
                     
                     if (isInitialLoad) {
-                        // First time: show map and animate to user location
                         showMap = true
                         if (isMapsInitialized) {
                             try {
@@ -168,11 +155,10 @@ fun MapViewScreen(
                                     CameraUpdateFactory.newCameraPosition(
                                         CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                                     ),
-                                    1500 // 1.5 second animation
+                                    1500
                                 )
                                 hasCameraInitializedToUserLocation = true
                             } catch (e: Exception) {
-                                // If animation fails, just move the camera directly
                                 cameraPositionState.move(
                                     CameraUpdateFactory.newCameraPosition(
                                         CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
@@ -182,7 +168,6 @@ fun MapViewScreen(
                             }
                         }
                     } else if (forceRefresh && isMapsInitialized) {
-                        // Manual refresh: animate to new location
                         try {
                             cameraPositionState.animate(
                                 CameraUpdateFactory.newCameraPosition(
@@ -190,7 +175,6 @@ fun MapViewScreen(
                                 )
                             )
                         } catch (e: Exception) {
-                            // If animation fails, just move the camera directly
                             cameraPositionState.move(
                                 CameraUpdateFactory.newCameraPosition(
                                     CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
@@ -199,14 +183,11 @@ fun MapViewScreen(
                         }
                     }
                     
-                    // Update location status after camera positioning
                     locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
                     
-                    // Load nearby stops if location changed significantly or forced refresh
                     if (shouldUpdateStops || forceRefresh) {
-                        // Add a small delay after camera animation to ensure map is ready
                         if (isInitialLoad || forceRefresh) {
-                            kotlinx.coroutines.delay(500) // Wait 500ms for animation to complete
+                            kotlinx.coroutines.delay(500)
                         }
                         if (isInitialLoad) {
                             viewModel.initializeWithLocation(location)
@@ -220,13 +201,13 @@ fun MapViewScreen(
                 } else {
                     locationStatus = "Could not get location"
                     if (isInitialLoad) {
-                        showMap = true // Show map even if location failed
+                        showMap = true
                     }
                 }
             } catch (e: Exception) {
                 locationStatus = "Location error: ${e.message}"
                 if (isInitialLoad) {
-                    showMap = true // Show map even if location failed
+                    showMap = true
                 }
             } finally {
                 isLocationLoading = false
@@ -234,13 +215,10 @@ fun MapViewScreen(
         }
     }
     
-    // Observe initialization state
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
     
-    // Observe live location updates from ViewModel
     val liveLocation by viewModel.currentLocation.observeAsState()
     
-    // Show map immediately if ViewModel is already initialized
     LaunchedEffect(isViewModelInitialized) {
         if (isViewModelInitialized) {
             showMap = true
@@ -248,13 +226,9 @@ fun MapViewScreen(
             isLocationLoading = false
         }
     }
-    
-    // Handle first-time map initialization when user switches to map tab
-    // This ensures camera zooms to user location even if app was opened from another tab
+
     LaunchedEffect(showMap, isViewModelInitialized, isMapsInitialized, hasCameraInitializedToUserLocation) {
         if (showMap && isViewModelInitialized && isMapsInitialized && !hasCameraInitializedToUserLocation) {
-            // User opened app from another tab and now switched to map tab
-            // ViewModel is already initialized with location, so zoom to it
             liveLocation?.let { location ->
                 val latLng = LatLng(location.latitude, location.longitude)
                 userLocation = latLng
@@ -265,12 +239,11 @@ fun MapViewScreen(
                         CameraUpdateFactory.newCameraPosition(
                             CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                         ),
-                        1500 // 1.5 second animation
+                        1500
                     )
                     hasCameraInitializedToUserLocation = true
                     println("MapViewScreen: Camera initialized to user location (switched from another tab)")
                 } catch (e: Exception) {
-                    // If animation fails, just move the camera directly
                     cameraPositionState.move(
                         CameraUpdateFactory.newCameraPosition(
                             CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
@@ -283,16 +256,13 @@ fun MapViewScreen(
         }
     }
     
-    // Handle live location updates for camera panning and circle updates
     LaunchedEffect(liveLocation) {
         liveLocation?.let { location ->
             val newLatLng = LatLng(location.latitude, location.longitude)
             val previousLocation = userLocation
             
-            // Update user location for circle
             userLocation = newLatLng
             
-            // Auto-pan camera to new location if it's significantly different
             if (previousLocation != null && isMapsInitialized && showMap) {
                 val distance = FloatArray(1)
                 android.location.Location.distanceBetween(
@@ -301,17 +271,15 @@ fun MapViewScreen(
                     distance
                 )
                 
-                // Pan camera if moved more than 50 meters (less than stop reload threshold)
                 if (distance[0] > 50.0f) {
                     try {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newCameraPosition(
                                 CameraPosition.fromLatLngZoom(newLatLng, cameraPositionState.position.zoom)
                             ),
-                            1000 // 1 second smooth animation
+                            1000
                         )
                     } catch (e: Exception) {
-                        // Fallback to direct move if animation fails
                         cameraPositionState.move(
                             CameraUpdateFactory.newCameraPosition(
                                 CameraPosition.fromLatLngZoom(newLatLng, cameraPositionState.position.zoom)
@@ -323,7 +291,6 @@ fun MapViewScreen(
         }
     }
     
-    // Handle initial location fetch when map tab is the starting destination
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isViewModelInitialized, isCurrentDestination) {
         if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && !isViewModelInitialized && isCurrentDestination) {
             println("MapViewScreen: Triggering fetchLocationAndUpdateMap (app opened on map tab)")
@@ -335,20 +302,17 @@ fun MapViewScreen(
         }
     }
     
-    // Map style for dark mode
     val mapStyle = if (isDarkTheme) {
         MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark)
     } else {
         null
     }
     
-    // Extension function to format coordinates
     fun Double.format(decimals: Int): String = "%.${decimals}f".format(this)
     
     Box(modifier = Modifier.fillMaxSize()) {
         if (locationPermissionsState.allPermissionsGranted) {
             if (!showMap && isInitialLoad && !isViewModelInitialized) {
-                // Show loading screen for initial map load
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -393,18 +357,16 @@ fun MapViewScreen(
                     scrollGesturesEnabled = true,
                 )
             ) {
-                // Circle showing search radius around user location
                 userLocation?.let { location ->
                     Circle(
                         center = location,
                         radius = PeekTransitConstants.STOPS_DISTANCE_RADIUS,
                         strokeColor = MaterialTheme.colorScheme.secondary,
-                        fillColor = androidx.compose.ui.graphics.Color.Transparent, // Transparent fill
+                        fillColor = androidx.compose.ui.graphics.Color.Transparent,
                         strokeWidth = 3f
                     )
                 }
                 
-                // Bus stop markers
                 stops.forEach { stop ->
                     val position = LatLng(
                         stop.centre.geographic.latitude,
@@ -428,7 +390,6 @@ fun MapViewScreen(
             }
             }
             
-            // Status indicator at the top
             if (locationPermissionsState.allPermissionsGranted) {
                 Card(
                     modifier = Modifier
@@ -455,7 +416,6 @@ fun MapViewScreen(
                 }
             }
             
-            // Floating action button for centering on user location
             FloatingActionButton(
                 onClick = { fetchLocationAndUpdateMap(forceRefresh = true) },
                 modifier = Modifier
@@ -477,7 +437,6 @@ fun MapViewScreen(
             }
             
         } else {
-            // Permission request UI
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -518,7 +477,6 @@ fun MapViewScreen(
             }
         }
         
-        // Loading indicator
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -530,7 +488,6 @@ fun MapViewScreen(
             }
         }
         
-        // Error display
         error?.let { transitError ->
             Snackbar(
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -545,7 +502,6 @@ fun MapViewScreen(
         }
     }
     
-    // Custom modal bottom sheet for selected stop
     if (showBottomSheet && selectedStop != null) {
         CustomModalBottomSheet(
             onDismissRequest = { showBottomSheet = false }
@@ -587,7 +543,7 @@ fun MapViewScreen(
                     Text("View Live Arrivals")
                 }
                 
-                Spacer(modifier = Modifier.height(32.dp)) // Extra space for navigation bar
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -610,7 +566,6 @@ private fun getCustomMarkerIcon(context: Context, direction: String): BitmapDesc
         it.setBounds(0, 0, targetSize, targetSize)
         it.draw(canvas)
         
-        // Create a more precise hit area by ensuring the bitmap is properly sized
         val descriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
         return descriptor
     }

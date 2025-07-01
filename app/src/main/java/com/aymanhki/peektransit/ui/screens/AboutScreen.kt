@@ -98,7 +98,6 @@ fun AboutScreen(
         ) {
             Spacer(modifier = Modifier.height(30.dp))
             
-            // App Icon
             Image(
                 painter = painterResource(id = R.drawable.app_icon),
                 contentDescription = "App Icon",
@@ -107,7 +106,6 @@ fun AboutScreen(
                     .clip(RoundedCornerShape(30.dp))
             )
             
-            // App Info
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -138,7 +136,6 @@ fun AboutScreen(
                 )
             }
             
-            // Contact Links
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 100.dp),
                 horizontalArrangement = Arrangement.spacedBy(20.dp),

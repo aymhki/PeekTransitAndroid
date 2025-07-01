@@ -31,7 +31,6 @@ import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import kotlinx.coroutines.launch
 
 
-// No experimental APIs needed! Using stable Android permission management
 @Composable
 fun ListViewScreen(
     viewModel: MainViewModel,
@@ -42,7 +41,6 @@ fun ListViewScreen(
     val scope = rememberCoroutineScope()
     val locationManager = remember { MainActivity.getLocationManager(context) }
 
-    // Permission state
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -50,11 +48,9 @@ fun ListViewScreen(
         )
     )
 
-    // ViewModel states
     val stops by viewModel.stops.observeAsState(emptyList())
     val searchResults by viewModel.searchResults.observeAsState(emptyList())
 
-    // Debug logging
     LaunchedEffect(stops) {
         println("ListViewScreen: Stops list updated with ${stops.size} stops")
         stops.forEach { stop ->
@@ -66,14 +62,11 @@ fun ListViewScreen(
     val error by viewModel.error.observeAsState()
     val searchError by viewModel.searchError.observeAsState()
 
-    // Search state
     var searchQuery by remember { mutableStateOf("") }
 
-    // Location state for change detection
     var previousLocation by remember { mutableStateOf<android.location.Location?>(null) }
     var isInitialLoad by remember { mutableStateOf(true) }
 
-    // Function to load stops with location change detection
     fun loadStopsWithLocationCheck(forceRefresh: Boolean = false) {
         println("ListViewScreen: loadStopsWithLocationCheck called with forceRefresh=$forceRefresh")
         scope.launch {
@@ -82,10 +75,10 @@ fun ListViewScreen(
                 val shouldUpdate = if (previousLocation != null) {
                     val distance = previousLocation!!.distanceTo(location)
                     println("ListViewScreen: Distance from previous location: $distance")
-                    distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS // Use same threshold as MapView
+                    distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
                 } else {
                     println("ListViewScreen: No previous location, should update = true")
-                    true // First time
+                    true
                 }
 
                 println("ListViewScreen: shouldUpdate=$shouldUpdate, forceRefresh=$forceRefresh, isInitialLoad=$isInitialLoad")
@@ -108,10 +101,8 @@ fun ListViewScreen(
         }
     }
 
-    // Observe initialization state
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
 
-    // Load stops when permission is granted and viewModel is not initialized
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, isViewModelInitialized, isCurrentDestination) {
         if (locationPermissionsState.allPermissionsGranted && !isViewModelInitialized && isCurrentDestination) {
             println("ListViewScreen: Triggering loadStopsWithLocationCheck (current destination)")
@@ -119,7 +110,6 @@ fun ListViewScreen(
         }
     }
 
-    // Handle search (matching iOS behavior)
     LaunchedEffect(searchQuery) {
         scope.launch {
             locationManager.getCurrentLocation()?.let { location ->
@@ -137,7 +127,6 @@ fun ListViewScreen(
     ) { paddingValues ->
         when {
             !locationPermissionsState.allPermissionsGranted -> {
-                // Permission request UI
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -180,32 +169,26 @@ fun ListViewScreen(
             }
 
             else -> {
-                // Box to overlay error at bottom
                 Box(modifier = Modifier.fillMaxSize()) {
-                    // Pull-to-refresh wraps the main content
                     CustomPullToRefreshBox(
                         modifier = Modifier.padding(paddingValues),
                         isRefreshing = isLoading || isSearching,
                         onRefresh = {
                             if (searchQuery.isNotEmpty()) {
-                                // Refresh search results
                                 scope.launch {
                                     locationManager.getCurrentLocation()?.let { location ->
                                         viewModel.searchForStops(searchQuery, location)
                                     }
                                 }
                             } else {
-                                // Refresh nearby stops
                                 loadStopsWithLocationCheck(forceRefresh = true)
                             }
                         }
                     ) {
-                        // Always show LazyColumn with search bar as first item
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            // Search bar as first item - always visible
                             item {
                                 Card(
                                     modifier = Modifier
@@ -256,7 +239,6 @@ fun ListViewScreen(
                         
                             when {
                                 isLoading || isSearching -> {
-                                    // Loading state - centered in remaining space
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -280,7 +262,6 @@ fun ListViewScreen(
                                 }
 
                                 else -> {
-                                    // Combine stops like iOS (local stops + search results)
                                     val combinedStops = mutableListOf<Stop>().apply {
                                         addAll(stops)
                                         val existingStopNumbers = stops.map { it.number }.toSet()
@@ -291,7 +272,6 @@ fun ListViewScreen(
                                         }
                                     }
 
-                                    // Filter combined stops based on search query (like iOS)
                                     val filteredStops = if (searchQuery.isEmpty()) {
                                         combinedStops
                                     } else {
@@ -308,7 +288,6 @@ fun ListViewScreen(
                                     val currentError = if (searchQuery.isNotEmpty()) searchError else error
 
                                     if (filteredStops.isEmpty() && currentError == null) {
-                                        // Empty state - centered in remaining space
                                         item {
                                             Box(
                                                 modifier = Modifier
@@ -342,7 +321,6 @@ fun ListViewScreen(
                                             }
                                         }
                                     } else {
-                                        // Show stops list
                                         items(filteredStops, key = { stop ->
                                             "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
                                         }) { stop ->
@@ -358,7 +336,6 @@ fun ListViewScreen(
                         }
                     }
 
-                    // Error display at bottom of screen
                     val currentError = if (searchQuery.isNotEmpty()) searchError else error
                     currentError?.let { transitError ->
                         Box(

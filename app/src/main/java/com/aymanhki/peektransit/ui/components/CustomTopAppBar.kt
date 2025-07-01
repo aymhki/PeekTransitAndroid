@@ -9,10 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * Custom Top App Bar that doesn't require experimental APIs
- * Replicates the Material 3 TopAppBar functionality using stable components
- */
 @Composable
 fun CustomTopAppBar(
     title: @Composable () -> Unit,
@@ -29,11 +25,10 @@ fun CustomTopAppBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp) // Standard TopAppBar height
+                .height(64.dp)
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Navigation icon
             navigationIcon?.let { icon ->
                 Box(
                     modifier = Modifier
@@ -49,7 +44,6 @@ fun CustomTopAppBar(
                 }
             }
             
-            // Title
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -69,7 +63,6 @@ fun CustomTopAppBar(
                 }
             }
             
-            // Actions
             Row(
                 modifier = Modifier.padding(end = 4.dp),
                 horizontalArrangement = Arrangement.End,

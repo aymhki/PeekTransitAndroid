@@ -34,11 +34,6 @@ import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/**
- * MapPreview component using individual MapViews with crash-safe snapshots.
- * Each preview gets its own MapView instance to avoid the blurry/identical snapshot issues.
- * Both cropped and uncropped versions render identical content, just with different crop margins.
- */
 @Composable
 fun MapPreview(
     latitude: Double,
@@ -51,7 +46,6 @@ fun MapPreview(
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()
     
-    // Force dark theme for Classic theme, otherwise follow system theme for Modern
     val isDarkMode = when (currentTheme) {
         StopViewTheme.CLASSIC -> true
         StopViewTheme.MODERN -> systemDarkTheme
@@ -63,7 +57,6 @@ fun MapPreview(
     var hasError by remember { mutableStateOf(false) }
     var isMapsInitialized by remember { mutableStateOf(false) }
     
-    // Check cache first (both memory and disk)
     LaunchedEffect(latitude, longitude, direction, isDarkMode) {
         val cachedSnapshot = MapSnapshotCache.getCachedSnapshot(latitude, longitude, direction, isDarkMode)
         if (cachedSnapshot != null) {
@@ -73,7 +66,6 @@ fun MapPreview(
             return@LaunchedEffect
         }
         
-        // If not cached, initialize Maps SDK for generation
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
                 isMapsInitialized = true
@@ -81,25 +73,20 @@ fun MapPreview(
         } catch (e: Exception) {
             hasError = true
             isLoading = false
-            isMapsInitialized = true // Allow to proceed even if initialization fails
+            isMapsInitialized = true
         }
     }
     
-    // Function to take snapshot with crash prevention and crop out Google logo
     fun takeSnapshotSafely(googleMap: com.google.android.gms.maps.GoogleMap) {
         try {
-            // 🔥 CRITICAL FIX: Use setOnMapLoadedCallback to prevent crashes
-            // This is the exact fix from the GitHub issue - ensures tiles are loaded
             googleMap.setOnMapLoadedCallback {
                 scope.launch {
-                    // Add small delay to ensure everything is fully rendered
                     delay(200)
                     
                     googleMap.snapshot { bitmap ->
                         if (bitmap != null) {
                             snapshotBitmap = bitmap
                             hasError = false
-                            // Cache the snapshot for future use (async)
                             scope.launch {
                                 MapSnapshotCache.cacheSnapshot(latitude, longitude, direction, isDarkMode, bitmap)
                             }
@@ -123,7 +110,6 @@ fun MapPreview(
     ) {
         when {
             snapshotBitmap != null -> {
-                // Show the captured and cropped snapshot
                 Image(
                     bitmap = snapshotBitmap!!.asImageBitmap(),
                     contentDescription = "Map preview for $direction",
@@ -133,13 +119,10 @@ fun MapPreview(
             }
             
             else -> {
-                // Only create MapView if we need to generate a snapshot and maps is initialized
                 if (isMapsInitialized) {
-                    // Use a properly sized but off-screen MapView for high-quality snapshots
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // Off-screen MapView for snapshot generation
                         AndroidView(
                             factory = { context ->
                                 MapView(context).apply {
@@ -148,7 +131,6 @@ fun MapPreview(
                                     
                                     getMapAsync { googleMap ->
                                         try {
-                                            // Configure map settings to hide all UI elements
                                             googleMap.uiSettings.apply {
                                                 isMapToolbarEnabled = false
                                                 isMyLocationButtonEnabled = false
@@ -161,10 +143,8 @@ fun MapPreview(
                                                 isIndoorLevelPickerEnabled = false
                                             }
                                             
-                                            // Set map type
                                             googleMap.mapType = com.google.android.gms.maps.GoogleMap.MAP_TYPE_NORMAL
                                             
-                                            // Apply dark theme if needed
                                             if (isDarkMode) {
                                                 try {
                                                     val darkStyle = MapStyleOptions.loadRawResourceStyle(
@@ -172,11 +152,10 @@ fun MapPreview(
                                                     )
                                                     googleMap.setMapStyle(darkStyle)
                                                 } catch (e: Exception) {
-                                                    // Ignore style errors
+                                                    println(e.message)
                                                 }
                                             }
                                             
-                                            // Set camera position with zoom level based on crop mode
                                             val target = LatLng(latitude, longitude)
                                             val zoomLevel = PeekTransitConstants.MAP_PREVIEW_ZOOM_LEVEL
                                             val cameraPosition = CameraPosition.Builder()
@@ -190,7 +169,6 @@ fun MapPreview(
                                                 )
                                             }
                                             
-                                            // Add marker
                                             googleMap.addMarker(
                                                 MarkerOptions()
                                                     .position(target)
@@ -198,7 +176,6 @@ fun MapPreview(
                                                     .anchor(0.5f, 1.0f)
                                             )
                                             
-                                            // Take snapshot with crash prevention and cropping
                                             takeSnapshotSafely(googleMap)
                                             
                                         } catch (e: Exception) {
@@ -210,10 +187,8 @@ fun MapPreview(
                             },
                             modifier = Modifier
                                 .size(width = PeekTransitConstants.MAP_PREVIEW_RENDER_WIDTH_SIZE_DP.dp ,height = PeekTransitConstants.MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP.dp)
-                               // .offset(x = (-500).dp, y = (-500).dp) // Move far off-screen
                         )
                         
-                        // Loading/Error overlay that covers the visible area
                         if (isLoading || hasError) {
                             Box(
                                 modifier = Modifier
@@ -241,7 +216,6 @@ fun MapPreview(
                         }
                     }
                 } else {
-                    // Show loading indicator while waiting for cache check or maps initialization
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -261,28 +235,21 @@ fun MapPreview(
     
     DisposableEffect(Unit) {
         onDispose {
-            // Cleanup is handled by MapView lifecycle
-            // Note: Cached snapshots are retained for performance
+
         }
     }
 }
 
-/**
- * Get direction-based color for UI elements
- */
 private fun getDirectionColor(direction: String): Color {
     return when (direction.lowercase()) {
-        "northbound", "north" -> Color(0xFF4CAF50) // Green  
-        "southbound", "south" -> Color(0xFFFF9800) // Orange
-        "eastbound", "east" -> Color(0xFF2196F3) // Blue
-        "westbound", "west" -> Color(0xFFE91E63) // Pink
-        else -> Color(0xFF9E9E9E) // Gray
+        "northbound", "north" -> Color(0xFF4CAF50)
+        "southbound", "south" -> Color(0xFFFF9800)
+        "eastbound", "east" -> Color(0xFF2196F3)
+        "westbound", "west" -> Color(0xFFE91E63)
+        else -> Color(0xFF9E9E9E)
     }
 }
 
-/**
- * Get custom marker icon for preview with size based on cropping mode
- */
 private fun getCustomMarkerIconForPreview(context: Context, direction: String): BitmapDescriptor {
     val drawableId = when (direction.lowercase()) {
         "southbound", "south" -> R.drawable.green_ball

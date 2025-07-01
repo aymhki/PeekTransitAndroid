@@ -34,7 +34,6 @@ fun BookmarkedStopsScreen(
     val isLoading by savedStopsManager.isLoading.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     
-    // Filter saved stops based on search query
     val filteredStops = if (searchQuery.isEmpty()) {
         savedStops.map { it.stopData }
     } else {
@@ -56,9 +55,7 @@ fun BookmarkedStopsScreen(
             )
         }
     ) { paddingValues ->
-        // Box for consistent structure (even though no error overlay currently)
         Box(modifier = Modifier.fillMaxSize()) {
-            // Always show search bar and content in LazyColumn
             var isRefreshing by remember { mutableStateOf(false) }
             
             CustomPullToRefreshBox(
@@ -69,7 +66,6 @@ fun BookmarkedStopsScreen(
                         isRefreshing = true
                         try {
                             savedStopsManager.loadSavedStops()
-                            // Wait a bit to ensure the state has updated
                             kotlinx.coroutines.delay(100)
                         } finally {
                             isRefreshing = false
@@ -81,7 +77,6 @@ fun BookmarkedStopsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    // Search bar as first item - always visible
                     item {
                         Card(
                             modifier = Modifier
@@ -132,7 +127,6 @@ fun BookmarkedStopsScreen(
                     
                     when {
                         isLoading -> {
-                            // Loading state - centered in remaining space
                             item {
                                 Box(
                                     modifier = Modifier
@@ -154,7 +148,6 @@ fun BookmarkedStopsScreen(
                         }
                         
                         savedStops.isEmpty() -> {
-                            // Empty state - no bookmarked stops - centered in remaining space
                             item {
                                 Box(
                                     modifier = Modifier
@@ -195,7 +188,6 @@ fun BookmarkedStopsScreen(
                         }
                         
                         filteredStops.isEmpty() && searchQuery.isNotEmpty() -> {
-                            // Empty search results - centered in remaining space
                             item {
                                 Box(
                                     modifier = Modifier
@@ -219,13 +211,12 @@ fun BookmarkedStopsScreen(
                         }
                         
                         else -> {
-                            // Show filtered saved stops
-                            items(filteredStops, key = { stop -> 
+                            items(filteredStops, key = { stop ->
                                 "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
                             }) { stop ->
                                 StopRow(
                                     stop = stop,
-                                    distance = null, // Don't show distance for saved stops
+                                    distance = null,
                                     onNavigateToLiveStop = onNavigateToLiveStop
                                 )
                             }

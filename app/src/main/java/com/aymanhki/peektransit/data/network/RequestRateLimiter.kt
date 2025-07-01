@@ -16,14 +16,12 @@ class RequestRateLimiter {
     suspend fun waitIfNeeded() {
         val currentTime = System.currentTimeMillis()
         
-        // Check if we need to reset the minute counter
         val timeElapsedSinceMinuteStart = currentTime - minuteStartTime
         if (timeElapsedSinceMinuteStart >= 60_000) {
             callCount.set(0)
             minuteStartTime = currentTime
         }
         
-        // Check if we've hit the rate limit
         if (callCount.get() >= maxCallsPerMinute) {
             val timeToWaitForNewMinute = 60_000 - timeElapsedSinceMinuteStart + minimumRequestInterval
             if (timeToWaitForNewMinute > 0) {
@@ -33,7 +31,6 @@ class RequestRateLimiter {
             }
         }
         
-        // Ensure minimum interval between requests
         val timeSinceLastRequest = currentTime - lastRequestTime
         if (timeSinceLastRequest < minimumRequestInterval) {
             delay(minimumRequestInterval - timeSinceLastRequest)

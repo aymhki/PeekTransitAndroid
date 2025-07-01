@@ -26,7 +26,6 @@ class VariantsCacheManager private constructor(context: Context) {
         "transit_variants_cache", Context.MODE_PRIVATE
     )
     
-    // Use Gson with ISO8601 date formatting to match iOS implementation
     private val gson = GsonBuilder()
         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
         .create()
@@ -34,7 +33,6 @@ class VariantsCacheManager private constructor(context: Context) {
     private val cacheKey = "transit_variants_cache"
     private val lastUpdateKey = "transit_variants_last_update"
     
-    // Cache property (getter/setter) matching iOS implementation
     private var cache: MutableMap<String, List<Variant>>
         get() {
             val cacheJson = preferences.getString(cacheKey, null)
@@ -61,12 +59,10 @@ class VariantsCacheManager private constructor(context: Context) {
             }
         }
     
-    // Matching iOS method signature exactly
     fun getCachedVariants(stopNumber: Int): List<Variant>? {
         return cache[stopNumber.toString()]
     }
     
-    // Matching iOS method signature exactly
     fun cacheVariants(variants: List<Variant>, stopNumber: Int) {
         val currentCache = cache.toMutableMap()
         currentCache[stopNumber.toString()] = variants
@@ -113,7 +109,6 @@ class RouteCacheManager private constructor(context: Context) {
     private val cacheKey = "route_cache"
     private val lastUpdateKey = "route_last_update"
     
-    // Since Route model doesn't exist in Android yet, using a simple data class
     data class Route(
         val key: String,
         val name: String,
@@ -149,7 +144,7 @@ class RouteCacheManager private constructor(context: Context) {
                 .apply()
                 
         } catch (e: Exception) {
-            // Silently fail - caching is not critical
+            println(e.message)
         }
     }
     

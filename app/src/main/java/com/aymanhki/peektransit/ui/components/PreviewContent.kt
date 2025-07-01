@@ -31,13 +31,11 @@ fun PreviewContent(
                     StopViewTheme.CLASSIC -> Color.Black
                 }
             ),
-            //.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
 
         val previewFontSize = 14.sp
 
-        // First route row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -110,7 +108,6 @@ fun PreviewContent(
             }
         }
         
-        // Second route row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -183,7 +180,6 @@ fun PreviewContent(
             }
         }
         
-        // Third route row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

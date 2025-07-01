@@ -17,15 +17,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialize(application.applicationContext)
     }
     
-    // Track initialization state to prevent redundant API calls
     private val _isInitialized = MutableLiveData(false)
     val isInitialized: LiveData<Boolean> = _isInitialized
     
-    // Location monitoring
     private val locationManager = MainActivity.getLocationManager(application)
     private var isLocationMonitoringActive = false
     
-    // Live location updates
     private val _currentLocation = MutableLiveData<Location?>()
     val currentLocation: LiveData<Location?> = _currentLocation
     
@@ -56,11 +53,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (!isLocationMonitoringActive && locationManager.hasLocationPermission()) {
             isLocationMonitoringActive = true
             locationManager.startLocationUpdates(
-                updateInterval = 5000L, // Check every 5 seconds for immediate detection like iOS
+                updateInterval = 5000L,
                 callback = { newLocation ->
-                    // Update current location for UI
                     _currentLocation.postValue(newLocation)
-                    // Automatically reload stops when location changes significantly
                     loadStops(newLocation, forceRefresh = false)
                 }
             )

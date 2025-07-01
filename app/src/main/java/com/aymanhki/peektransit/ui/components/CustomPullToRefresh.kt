@@ -25,10 +25,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.pow
 
-/**
- * Custom Pull-to-Refresh implementation that adapts to Material 3 theme
- * without requiring experimental APIs
- */
+
 @Composable
 fun CustomPullToRefreshBox(
     isRefreshing: Boolean,
@@ -40,12 +37,10 @@ fun CustomPullToRefreshBox(
     val density = LocalDensity.current
     val refreshTriggerPx = with(density) { refreshTriggerDistance.toPx() }
     
-    // State for pull distance and refresh trigger
     val pullDistance = remember { Animatable(0f) }
     val refreshTriggered = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     
-    // Handle refresh completion
     LaunchedEffect(isRefreshing) {
         if (!isRefreshing && refreshTriggered.value) {
             refreshTriggered.value = false
@@ -53,11 +48,9 @@ fun CustomPullToRefreshBox(
         }
     }
     
-    // Nested scroll connection to handle pull gesture
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                // Only consume scroll if we're pulling down and not refreshing
                 if (source == NestedScrollSource.UserInput && available.y < 0 && pullDistance.value > 0f && !isRefreshing) {
                     scope.launch {
                         val newDistance = (pullDistance.value + available.y).coerceAtLeast(0f)
@@ -73,10 +66,9 @@ fun CustomPullToRefreshBox(
                 available: androidx.compose.ui.geometry.Offset,
                 source: NestedScrollSource
             ): androidx.compose.ui.geometry.Offset {
-                // Handle pull down gesture when at the top
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !isRefreshing) {
                     scope.launch {
-                        val dragFactor = 0.5f // Resistance factor
+                        val dragFactor = 0.5f
                         val newDistance = pullDistance.value + (available.y * dragFactor)
                         pullDistance.snapTo(newDistance.coerceAtLeast(0f))
                     }
@@ -86,15 +78,12 @@ fun CustomPullToRefreshBox(
             }
             
             override suspend fun onPreFling(available: Velocity): Velocity {
-                // Handle release gesture
                 if (pullDistance.value > 0f && !isRefreshing) {
                     if (pullDistance.value >= refreshTriggerPx) {
-                        // Trigger refresh
                         refreshTriggered.value = true
                         onRefresh()
                         pullDistance.animateTo(refreshTriggerPx * 0.6f, animationSpec = tween(200))
                     } else {
-                        // Snap back
                         pullDistance.animateTo(0f, animationSpec = tween(200))
                     }
                 }
@@ -107,7 +96,6 @@ fun CustomPullToRefreshBox(
         modifier = modifier
             .nestedScroll(nestedScrollConnection)
     ) {
-        // Main content with offset
         val contentOffset = with(density) { pullDistance.value.toDp() }
         Box(
             modifier = Modifier
@@ -119,7 +107,6 @@ fun CustomPullToRefreshBox(
             content()
         }
         
-        // Pull indicator
         PullRefreshIndicator(
             isRefreshing = isRefreshing,
             pullDistance = pullDistance.value,
@@ -138,7 +125,6 @@ private fun PullRefreshIndicator(
 ) {
     val density = LocalDensity.current
     
-    // Calculate indicator progress
     val progress = (pullDistance / refreshTriggerDistance).coerceIn(0f, 1f)
     val scale by animateFloatAsState(
         targetValue = if (pullDistance > 0f) (0.6f + (progress * 0.4f)) else 0f,
@@ -152,7 +138,6 @@ private fun PullRefreshIndicator(
         label = "indicator_alpha"
     )
     
-    // Rotation animation for loading state
     val rotation by animateFloatAsState(
         targetValue = if (isRefreshing) 360f else 0f,
         animationSpec = if (isRefreshing) 
@@ -161,7 +146,6 @@ private fun PullRefreshIndicator(
         label = "indicator_rotation"
     )
     
-    // Infinite rotation effect when refreshing
     var infiniteRotation by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(isRefreshing) {
         if (isRefreshing) {
@@ -174,7 +158,6 @@ private fun PullRefreshIndicator(
         }
     }
     
-    // Add subtle shadow/elevation effect with Card
     Card(
         modifier = modifier
             .offset(y = with(density) { (pullDistance * 0.5f).toDp() })

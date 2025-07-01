@@ -74,13 +74,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         PeekTransitConstants.TRANSIT_API_KEY = getTransitApiKey(applicationContext)
 
-        // Initialize LocationManager early
         getLocationManager(this)
         
-        // Initialize PermissionManager
         permissionManager = PermissionManager(this)
         
-        // Initialize MapSnapshotCache for persistent caching
         MapSnapshotCache.initialize(applicationContext)
 
         enableEdgeToEdge()
@@ -89,15 +86,13 @@ class MainActivity : ComponentActivity() {
             val settingsManager = remember { SettingsManager.getInstance(context) }
             var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
             
-            // Listen for theme changes by polling or using a state that updates when navigating back
             LaunchedEffect(Unit) {
                 while (true) {
                     currentTheme = settingsManager.stopViewTheme
-                    kotlinx.coroutines.delay(100) // Check every 100ms for theme changes
+                    kotlinx.coroutines.delay(100)
                 }
             }
             
-            // Force dark theme when classic theme is selected
             val forceDarkTheme = currentTheme == com.aymanhki.peektransit.utils.StopViewTheme.CLASSIC
             
             PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
@@ -118,7 +113,6 @@ fun MainScreen() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Create a single ViewModel instance for the entire app to persist across navigation
     val mainViewModel: MainViewModel = viewModel()
 
     val items = listOf(
@@ -129,7 +123,6 @@ fun MainScreen() {
         BottomNavItem.More
     )
     
-    // Read default tab only once on initialization to avoid navigation issues
     val startDestination = remember {
         val defaultTab = settingsManager.defaultTab
         when (defaultTab) {

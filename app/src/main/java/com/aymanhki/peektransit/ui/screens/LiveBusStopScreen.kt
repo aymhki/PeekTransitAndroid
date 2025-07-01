@@ -62,17 +62,14 @@ fun LiveBusStopScreen(
         context.getSharedPreferences("peek_transit_prefs", Context.MODE_PRIVATE) 
     }
     
-    // Theme state
     var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
     
-    // Update theme state when app resumes (to catch theme changes from settings)
     LaunchedEffect(lifecycleState) {
         if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
             currentTheme = settingsManager.stopViewTheme
         }
     }
     
-    // State for stop data and live updates
     var stop by remember { mutableStateOf<Stop?>(null) }
     var isLiveUpdatesEnabled by remember { mutableStateOf(true) }
     var scheduleData by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -84,10 +81,8 @@ fun LiveBusStopScreen(
     var isRefreshCooldown by remember { mutableStateOf(false) }
     var isNetworkAvailable by remember { mutableStateOf(true) }
     
-    // Cooldown duration (1 second like iOS)
     val cooldownDuration = 1000L
     
-    // Functions for live updates preference management
     fun saveLiveUpdatesPreference(enabled: Boolean) {
         sharedPreferences.edit()
             .putBoolean("live_updates_stop_$stopNumber", enabled)
@@ -99,7 +94,6 @@ fun LiveBusStopScreen(
     }
     
     fun shouldEnableLiveUpdates(): Boolean {
-        // Disable if there's an error, no internet, or empty schedule
         return if (error != null || scheduleData.isEmpty()) {
             false
         } else {
@@ -107,14 +101,13 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Smooth pulsating animation with easing
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.1f,
-        targetValue = 4f, // Much bigger radius
+        targetValue = 4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut), // Slower with smooth easing
+            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
             repeatMode = RepeatMode.Restart
         ),
         label = "scale"
@@ -124,13 +117,12 @@ fun LiveBusStopScreen(
         initialValue = 1f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut), // Slower with smooth easing
+            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
             repeatMode = RepeatMode.Restart
         ),
         label = "alpha"
     )
     
-    // Function to fetch stop data
     fun fetchStopData() {
         scope.launch {
             isLoadingStop = true
@@ -140,7 +132,6 @@ fun LiveBusStopScreen(
                 if (stop == null) {
                     error = "Stop #$stopNumber not found"
                 } else {
-                    // Update bookmark status
                     isBookmarked = savedStopsManager.isStopSaved(stop!!)
                 }
             } catch (e: Exception) {
@@ -151,7 +142,6 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Function to fetch schedule data
     fun fetchScheduleData(isManual: Boolean = false) {
         scope.launch {
             if (isManual) {
@@ -170,10 +160,8 @@ fun LiveBusStopScreen(
                 scheduleData = cleanedSchedule
                 lastUpdated = System.currentTimeMillis()
                 
-                // Clear any previous error on successful fetch
                 error = null
             } catch (e: Exception) {
-                // Only update error for manual refreshes or if there's no existing error
                 if (isManual || error == null) {
                     error = when {
                         e.message?.contains("Network error") == true -> e.message
@@ -183,7 +171,6 @@ fun LiveBusStopScreen(
                     }
                 }
                 
-                // Log the error for debugging
                 println("LiveBusStopScreen: Error fetching schedule (manual=$isManual): ${e.message}")
             } finally {
                 isLoading = false
@@ -191,11 +178,9 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Simplified network monitoring - less aggressive, more reliable
     LaunchedEffect(Unit) {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         
-        // Check network state periodically instead of using callbacks (less prone to false positives)
         fun checkNetworkState() {
             val activeNetwork = connectivityManager.activeNetwork
             val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
@@ -205,34 +190,28 @@ fun LiveBusStopScreen(
             val wasNetworkAvailable = isNetworkAvailable
             isNetworkAvailable = hasInternet && isValidated
             
-            // Only update error if network state actually changed and went from available to unavailable
             if (wasNetworkAvailable && !isNetworkAvailable && error == null) {
                 error = "No internet connection"
             }
         }
         
-        // Initial check
         checkNetworkState()
         
-        // Periodic checks (every 10 seconds) - less aggressive than callbacks
         while (true) {
-            delay(10000) // Check every 10 seconds
+            delay(10000)
             if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
                 checkNetworkState()
             }
         }
     }
     
-    // Load stop data on first launch
     LaunchedEffect(stopNumber) {
         fetchStopData()
     }
     
-    // Clear network error when connection is restored and retry data fetch
     LaunchedEffect(isNetworkAvailable) {
         if (isNetworkAvailable && error == "No internet connection") {
             error = null
-            // Automatically retry fetching data when network comes back
             delay(cooldownDuration)
             
             if (stop != null) {
@@ -241,9 +220,7 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Load live updates preference after successful data fetch
     LaunchedEffect(scheduleData, error) {
-        // Only update preference when we have data or after errors are resolved
         if (scheduleData.isNotEmpty() && error == null) {
             isLiveUpdatesEnabled = loadLiveUpdatesPreference()
         } else if (error != null || scheduleData.isEmpty()) {
@@ -251,25 +228,21 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Auto-refresh logic for schedule - initial load
     LaunchedEffect(stopNumber, stop) {
         if (stop != null) {
             fetchScheduleData()
         }
     }
     
-    // Live updates loop - simplified and more reliable
     LaunchedEffect(isLiveUpdatesEnabled, stop, lifecycleState) {
         if (isLiveUpdatesEnabled && stop != null) {
             while (isLiveUpdatesEnabled && stop != null) {
-                delay(60000) // 60 seconds
+                delay(60000)
                 
-                // Only fetch if app is in foreground
                 if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
                     try {
                         fetchScheduleData(isManual = false)
                     } catch (e: Exception) {
-                        // Log error but don't break the loop
                         println("LiveBusStopScreen: Auto-refresh failed: ${e.message}")
                     }
                 }
@@ -278,7 +251,6 @@ fun LiveBusStopScreen(
     }
     
     
-    // Apply theme-based background
     val backgroundColor = when (currentTheme) {
         StopViewTheme.CLASSIC -> Color.Black
         StopViewTheme.MODERN -> Color.Transparent
@@ -292,7 +264,6 @@ fun LiveBusStopScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top app bar
             CustomTopAppBar(
                 title = {
                     Column {
@@ -314,7 +285,6 @@ fun LiveBusStopScreen(
                     }
                 },
                 actions = {
-                    // Bookmark toggle icon
                     stop?.let { stopData ->
                         IconButton(
                             onClick = {
@@ -332,7 +302,6 @@ fun LiveBusStopScreen(
                 }
             )
 
-            // Add pull-to-refresh for live bus stop data
             var isRefreshing by remember { mutableStateOf(false) }
             
             LaunchedEffect(isLoading) {
@@ -369,16 +338,14 @@ fun LiveBusStopScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Live indicator with pulsating animation
                             Box(
-                                modifier = Modifier.size(48.dp), // Larger container for bigger pulse
+                                modifier = Modifier.size(48.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // Pulsating outer ring - only visible when live updates enabled
                                 if (isLiveUpdatesEnabled) {
                                     Box(
                                         modifier = Modifier
-                                            .size(12.dp) // Base size for scaling
+                                            .size(12.dp)
                                             .graphicsLayer {
                                                 scaleX = pulseScale
                                                 scaleY = pulseScale
@@ -391,7 +358,6 @@ fun LiveBusStopScreen(
                                     )
                                 }
 
-                                // Main indicator dot
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
@@ -416,20 +382,18 @@ fun LiveBusStopScreen(
                 }
 
                     item {
-                        // Stop map preview with real map that scrolls with content
-                        // Force the exact height and ensure it takes full width
                         stop?.let { stopData ->
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp) // Enforce exact height
+                                    .height(200.dp)
                             ) {
                                 RealMapPreview(
                                     latitude = stopData.centre.geographic.latitude,
                                     longitude = stopData.centre.geographic.longitude,
                                     direction = stopData.direction,
                                     modifier = Modifier
-                                        .fillMaxSize() // Fill the entire Box
+                                        .fillMaxSize()
                                 )
                             }
                         }
@@ -440,7 +404,6 @@ fun LiveBusStopScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Schedule list
                 when {
                     isLoadingStop -> {
                         item {
@@ -547,12 +510,12 @@ fun LiveBusStopScreen(
 
                     else -> {
 
-                        items(PeekTransitConstants.TEST_ENTRIES) { testEntry ->
-                            BusArrivalCard(
-                                scheduleEntry = testEntry,
-                                theme = currentTheme
-                            )
-                        }
+//                        items(PeekTransitConstants.TEST_ENTRIES) { testEntry ->
+//                            BusArrivalCard(
+//                                scheduleEntry = testEntry,
+//                                theme = currentTheme
+//                            )
+//                        }
 
                         items(scheduleData) { scheduleEntry ->
                             BusArrivalCard(
@@ -570,7 +533,6 @@ fun LiveBusStopScreen(
 
         }
         
-        // Floating refresh button matching iOS design
         FloatingActionButton(
             onClick = { 
                 if (!isRefreshCooldown) {
@@ -613,7 +575,10 @@ fun BusArrivalCard(
         val routeName = parts[1]
         val status = parts[2]
         val arrivalTime = parts[3]
-        val fontSizeForBusArrivalCard = 15.sp
+        val fontSizeForBusArrivalCard = when (theme) {
+            StopViewTheme.CLASSIC -> 14.sp
+            StopViewTheme.MODERN -> 15.sp
+        }
 
         val columnWidths: List<Float>  = listOf(
             0.12f,
@@ -622,7 +587,6 @@ fun BusArrivalCard(
             if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.01f else 0.25f
         )
 
-        // Theme-based styling
         val backgroundColor = when (theme) {
             StopViewTheme.CLASSIC -> Color.Black
             StopViewTheme.MODERN -> Color.Transparent
@@ -687,7 +651,6 @@ fun BusArrivalCard(
                 )
 
 
-                // Arrival time
                 Text(
                     text = if (status != PeekTransitConstants.CANCELLED_STATUS_TEXT) arrivalTime else "",
                     textAlign = TextAlign.End,

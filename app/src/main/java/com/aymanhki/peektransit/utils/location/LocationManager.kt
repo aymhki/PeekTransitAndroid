@@ -23,7 +23,7 @@ class LocationManager(private val context: Context) {
     
     companion object {
         private const val TAG = "LocationManager"
-        private const val LOCATION_TIMEOUT = 15000L // 15 seconds
+        private const val LOCATION_TIMEOUT = 15000L
     }
     
     suspend fun getCurrentLocation(forceRefresh: Boolean = false): Location? {
@@ -34,13 +34,11 @@ class LocationManager(private val context: Context) {
             return null
         }
         
-        // Check if location services are enabled
         if (!isLocationEnabled()) {
             Log.e(TAG, "Location services are disabled")
             return null
         }
         
-        // Method 1: Try to get cached location from FusedLocationProvider (skip if forcing refresh)
         if (!forceRefresh) {
             Log.d(TAG, "Method 1: Attempting to get cached location from FusedLocationProvider")
             val cachedLocation = getCachedLocation()
@@ -54,7 +52,6 @@ class LocationManager(private val context: Context) {
             Log.d(TAG, "Method 1: Skipped - Force refresh requested")
         }
         
-        // Method 2: Request fresh location from FusedLocationProvider
         Log.d(TAG, "Method 2: Requesting fresh location from FusedLocationProvider")
         val freshLocation = requestFreshLocationWithTimeout()
         if (freshLocation != null) {
@@ -64,7 +61,6 @@ class LocationManager(private val context: Context) {
             Log.d(TAG, "Method 2: Failed - Could not get fresh location from FusedLocationProvider")
         }
         
-        // Method 3: Try GPS provider directly
         Log.d(TAG, "Method 3: Attempting to get location from GPS provider")
         val gpsLocation = getLocationFromProvider(AndroidLocationManager.GPS_PROVIDER)
         if (gpsLocation != null) {
@@ -74,7 +70,6 @@ class LocationManager(private val context: Context) {
             Log.d(TAG, "Method 3: Failed - Could not get GPS location")
         }
         
-        // Method 4: Try Network provider
         Log.d(TAG, "Method 4: Attempting to get location from Network provider")
         val networkLocation = getLocationFromProvider(AndroidLocationManager.NETWORK_PROVIDER)
         if (networkLocation != null) {
@@ -84,11 +79,10 @@ class LocationManager(private val context: Context) {
             Log.d(TAG, "Method 4: Failed - Could not get Network location")
         }
         
-        // Method 5: Use mock location for testing (Winnipeg coordinates)
         Log.d(TAG, "Method 5: All location methods failed, using mock Winnipeg location for testing")
         return Location("mock").apply {
-            latitude = 49.8951 // Winnipeg latitude
-            longitude = -97.1384 // Winnipeg longitude
+            latitude = 49.8951
+            longitude = -97.1384
             accuracy = 1000f
             time = System.currentTimeMillis()
         }
@@ -166,7 +160,6 @@ class LocationManager(private val context: Context) {
                 return@suspendCancellableCoroutine
             }
             
-            // Try to get last known location first
             val lastKnownLocation = androidLocationManager.getLastKnownLocation(provider)
             if (lastKnownLocation != null && isLocationRecent(lastKnownLocation)) {
                 Log.d(TAG, "Using last known location from $provider")
@@ -174,7 +167,6 @@ class LocationManager(private val context: Context) {
                 return@suspendCancellableCoroutine
             }
             
-            // Request fresh location
             val listener = object : LocationListener {
                 override fun onLocationChanged(location: Location) {
                     Log.d(TAG, "Location received from $provider: ${location.latitude}, ${location.longitude}")
@@ -214,7 +206,7 @@ class LocationManager(private val context: Context) {
     
     private fun isLocationRecent(location: Location): Boolean {
         val ageInMinutes = (System.currentTimeMillis() - location.time) / (1000 * 60)
-        val isRecent = ageInMinutes < 1 // Consider location recent if less than 5 minutes old
+        val isRecent = ageInMinutes < 1
         Log.d(TAG, "Location age: ${ageInMinutes} minutes, isRecent: $isRecent")
         return isRecent
     }

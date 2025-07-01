@@ -78,12 +78,10 @@ class WinnipegTransitAPI private constructor() {
     private val rateLimiter = RequestRateLimiter.getInstance()
     private val gson = Gson()
     
-    // Simplified logging - only log basic info, not full body/headers
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC // Only URL, method, and response code
+        level = HttpLoggingInterceptor.Level.BASIC
     }
     
-    // Custom interceptor for better error handling
     private val errorHandlingInterceptor = Interceptor { chain ->
         try {
             chain.proceed(chain.request())
@@ -103,10 +101,10 @@ class WinnipegTransitAPI private constructor() {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(errorHandlingInterceptor)
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(15, TimeUnit.SECONDS) // Reduced from 30s
+        .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS) 
         .writeTimeout(15, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true) // Enable automatic retry
+        .retryOnConnectionFailure(true)
         .build()
     
     private val retrofit = Retrofit.Builder()
@@ -147,7 +145,6 @@ class WinnipegTransitAPI private constructor() {
                     }
                     stops.add(processedStop)
                 } catch (e: Exception) {
-                    // Skip malformed stop data
                     continue
                 }
             }
@@ -175,7 +172,6 @@ class WinnipegTransitAPI private constructor() {
         rateLimiter.waitIfNeeded()
         
         try {
-            // Manually construct URL like iOS version (stops:QUERY.json)
             val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
             val usage = if (forShort) "short" else "long"
             val fullUrl = "${PeekTransitConstants.BASE_URL}stops:${encodedQuery}.json?usage=${usage}&api-key=${PeekTransitConstants.TRANSIT_API_KEY}"
@@ -201,7 +197,6 @@ class WinnipegTransitAPI private constructor() {
                     }
                     stops.add(processedStop)
                 } catch (e: Exception) {
-                    // Skip malformed stop data
                     continue
                 }
             }
@@ -286,7 +281,7 @@ class WinnipegTransitAPI private constructor() {
                             val scheduledDate = dateFormatter.parse(scheduledTime) ?: continue
                             
                             val timeDifferenceMs = estimatedDate.time - currentDate.time
-                            val timeDifference = (timeDifferenceMs / 60000).toInt() // minutes
+                            val timeDifference = (timeDifferenceMs / 60000).toInt()
                             val delay = ((estimatedDate.time - scheduledDate.time) / 60000).toInt()
                             
                             if (timeDifference < -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
@@ -343,7 +338,6 @@ class WinnipegTransitAPI private constructor() {
                                 }
                             }
                             
-                            // Clean up variant key
                             variantKey = variantKey.split("-").firstOrNull() ?: variantKey
                             if (variantKey.contains("BLUE")) {
                                 variantKey = "B"
@@ -360,7 +354,6 @@ class WinnipegTransitAPI private constructor() {
                 }
             }
         } catch (e: Exception) {
-            // Return empty list if parsing fails
             return emptyList()
         }
         
@@ -376,9 +369,7 @@ class WinnipegTransitAPI private constructor() {
             val statusB = if (componentsB.size > 2) componentsB[2] else PeekTransitConstants.OK_STATUS_TEXT
             
             when {
-                // Both are "Due" - equal priority
                 timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB == PeekTransitConstants.DUE_STATUS_TEXT -> 0
-                // "Due" always comes first
                 timeA == PeekTransitConstants.DUE_STATUS_TEXT -> -1
                 timeB == PeekTransitConstants.DUE_STATUS_TEXT -> 1
                 else -> {
@@ -386,22 +377,19 @@ class WinnipegTransitAPI private constructor() {
                     val isMinutesB = timeB.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
                     
                     when {
-                        // Both are minute-based times
                         isMinutesA && isMinutesB -> {
                             val minutesA = timeA.split(" ")[0].toIntOrNull() ?: 999
                             val minutesB = timeB.split(" ")[0].toIntOrNull() ?: 999
                             
-                            // If times are equal, sort by status priority
                             if (minutesA == minutesB) {
                                 compareByStatus(statusA, statusB)
                             } else {
                                 minutesA.compareTo(minutesB)
                             }
                         }
-                        // Minutes-based times come before clock times
+
                         isMinutesA -> -1
                         isMinutesB -> 1
-                        // Both are clock times - parse and compare with cross-day handling
                         else -> {
                             val timeCompare = compareClockTimes(timeA, timeB, currentDate)
                             if (timeCompare == 0) {
@@ -417,7 +405,6 @@ class WinnipegTransitAPI private constructor() {
     }
     
     private fun compareByStatus(statusA: String, statusB: String): Int {
-        // Priority: OK > Early > Late > Others
         return when {
             statusA == statusB -> 0
             statusA == PeekTransitConstants.OK_STATUS_TEXT -> -1
@@ -436,7 +423,6 @@ class WinnipegTransitAPI private constructor() {
             calendar.time = currentDate
             val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
             
-            // Parse times (e.g., "3:45 pm", "11:30 am")
             val timeFormatA = parseClockTime(timeA)
             val timeFormatB = parseClockTime(timeB)
             
@@ -448,13 +434,12 @@ class WinnipegTransitAPI private constructor() {
             val isAMA = timeA.lowercase().contains("am")
             val isAMB = timeB.lowercase().contains("am")
             
-            // Handle cross-day scenarios (similar to iOS logic)
-            if (currentHour >= 12) { // After noon
+            if (currentHour >= 12) {
                 if (isAMA) {
-                    totalMinutesA += 24 * 60 // Next day AM
+                    totalMinutesA += 24 * 60
                 }
                 if (isAMB) {
-                    totalMinutesB += 24 * 60 // Next day AM
+                    totalMinutesB += 24 * 60
                 }
             }
             
@@ -496,11 +481,7 @@ class WinnipegTransitAPI private constructor() {
             val jsonResponse = response.body() ?: throw TransitError.InvalidData
             val stopObject = jsonResponse.getAsJsonObject("stop") ?: throw TransitError.ParseError("No stop object found")
             
-            // Parse the stop from JSON
             val stop = gson.fromJson(stopObject, Stop::class.java)
-            
-            // Enrich with variants if needed
-            // val enrichedStop = enrichStopWithVariants(stop)
 
             stop
         } catch (e: Exception) {
@@ -513,10 +494,8 @@ class WinnipegTransitAPI private constructor() {
     
     private suspend fun enrichStopWithVariants(stop: Stop): Stop {
         return try {
-            // Get variants using the corrected method that uses routes endpoint
             val variants = getVariantsForStop(stop.number)
             
-            // Filter out unwanted variants (matching iOS logic)
             val filteredVariants = variants.filter { variant ->
                 val key = variant.key
                 !(key.startsWith("S") || key.startsWith("W") || key.startsWith("I"))
@@ -524,7 +503,6 @@ class WinnipegTransitAPI private constructor() {
             
             stop.copy(variants = filteredVariants)
         } catch (e: Exception) {
-            // Return original stop if enrichment fails
             stop
         }
     }
@@ -533,7 +511,6 @@ class WinnipegTransitAPI private constructor() {
         rateLimiter.waitIfNeeded()
         
         try {
-            // Use routes endpoint to get proper variant data with colors (matching iOS implementation)
             val response = apiService.getRoutesForStop(
                 stopNumber = stopNumber,
                 usage = "long",
@@ -556,7 +533,6 @@ class WinnipegTransitAPI private constructor() {
                     val badgeStyle = routeObj.getAsJsonObject("badge-style")
 
 
-                    // Extract route colors for variants
                     val routeBackgroundColor = badgeStyle.get("background-color")?.asString
                     val routeBorderColor = badgeStyle.get("border-color")?.asString
                     val routeTextColor = badgeStyle.get("color")?.asString
@@ -569,7 +545,6 @@ class WinnipegTransitAPI private constructor() {
                             try {
                                 val variantObj = variantElement.asJsonObject
                                 
-                                // Create variant with route colors applied
                                 val variant = Variant(
                                     key = variantObj.get("key")?.asString ?: "Unknown",
                                     name = variantObj.get("name")?.asString ?: "Unknown",

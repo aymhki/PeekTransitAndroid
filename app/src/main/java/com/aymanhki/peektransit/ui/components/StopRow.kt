@@ -50,7 +50,6 @@ fun StopRow(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Map preview with custom pin
             MapPreview(
                 latitude = stop.centre.geographic.latitude,
                 longitude = stop.centre.geographic.longitude,
@@ -62,12 +61,10 @@ fun StopRow(
             
             Spacer(modifier = Modifier.width(12.dp))
             
-            // Stop information
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Stop name and number
                 Text(
                     text = "${stop.name}",
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -77,7 +74,6 @@ fun StopRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                // Direction and distance
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -98,23 +94,20 @@ fun StopRow(
                     }
                 }
                 
-                // Route variants (if available) - Show ALL variants separated by current/future like iOS
                 if (stop.variants.isNotEmpty()) {
 
-                    // Filter variants by effective date (matching iOS behavior exactly)
                     val currentDate = java.util.Date()
                     val currentVariants = stop.variants.filter { variant ->
                         val effectiveFrom = variant.getEffectiveFromDate()
                         val effectiveTo = variant.getEffectiveToDate()
                         (effectiveFrom == null || currentDate >= effectiveFrom) &&
                                 (effectiveTo == null || currentDate <= effectiveTo)
-                    }.distinctBy { it.key.split("-")[0] } // Filter by main key only
+                    }.distinctBy { it.key.split("-")[0] }
                     
-                    // Get future variants (matching iOS behavior)
                     val futureVariants = stop.variants.filter { variant ->
                         val effectiveFrom = variant.getEffectiveFromDate()
                         (effectiveFrom != null && effectiveFrom > currentDate)
-                    }.distinctBy { it.key.split("-")[0] } // Filter by main key only
+                    }.distinctBy { it.key.split("-")[0] }
 
                     var theyAreBothTheSame = true
 
@@ -130,7 +123,6 @@ fun StopRow(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Current variants section (no header text)
                         if (currentVariants.isNotEmpty()) {
                             val chunkedCurrentVariants = currentVariants.chunked(4)
                             chunkedCurrentVariants.forEach { rowVariants ->
@@ -144,12 +136,10 @@ fun StopRow(
                             }
                         }
                         
-                        // Future variants section with grouping by effective date
                         if (futureVariants.isNotEmpty() && !theyAreBothTheSame) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                // Group variants by effective date
                                 val groupedFutureVariants = futureVariants.groupBy { variant ->
                                     val effectiveFrom = variant.getEffectiveFromDate()
                                     val calendar = java.util.Calendar.getInstance()
@@ -165,7 +155,6 @@ fun StopRow(
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        // Format effective date
                                         val dateFormat = java.text.SimpleDateFormat("MMM d, hh:mm a", java.util.Locale.getDefault())
                                         Text(
                                             text = "Effective From ${dateFormat.format(effectiveDate)}:",
@@ -196,7 +185,6 @@ fun StopRow(
                 }
             }
             
-            // Show filled bookmark icon ONLY if stop is saved, no icon if not saved
             val context = LocalContext.current
             val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
             val isStopSaved = savedStopsManager.isStopSaved(stop)
@@ -235,11 +223,11 @@ fun VariantChip(variant: String) {
 
 private fun getDirectionColor(direction: String): Color {
     return when (direction.lowercase()) {
-        "northbound", "north" -> Color(0xFF4CAF50) // Green
-        "southbound", "south" -> Color(0xFFFF9800) // Orange
-        "eastbound", "east" -> Color(0xFF2196F3) // Blue
-        "westbound", "west" -> Color(0xFFE91E63) // Pink
-        else -> Color(0xFF9E9E9E) // Gray
+        "northbound", "north" -> Color(0xFF4CAF50)
+        "southbound", "south" -> Color(0xFFFF9800)
+        "eastbound", "east" -> Color(0xFF2196F3)
+        "westbound", "west" -> Color(0xFFE91E63)
+        else -> Color(0xFF9E9E9E)
     }
 }
 

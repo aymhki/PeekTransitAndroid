@@ -104,11 +104,9 @@ class SavedStopsManager private constructor(context: Context) {
         
         val existingIndex = currentStops.indexOfFirst { it.id == stopId }
         if (existingIndex != -1) {
-            // Remove if exists
             currentStops.removeAt(existingIndex)
             Log.d("SavedStopsManager", "Removed stop ${stop.number} from saved stops")
         } else {
-            // Add if doesn't exist
             currentStops.add(SavedStop(stopData = stop))
             Log.d("SavedStopsManager", "Added stop ${stop.number} to saved stops")
         }
@@ -120,7 +118,6 @@ class SavedStopsManager private constructor(context: Context) {
     fun removeStop(indexSet: Set<Int>) {
         val currentStops = _savedStops.value.toMutableList()
         
-        // Sort indices in descending order to avoid index shifting issues
         val sortedIndices = indexSet.sortedDescending()
         
         for (index in sortedIndices) {
@@ -138,10 +135,8 @@ class SavedStopsManager private constructor(context: Context) {
         val currentStops = _savedStops.value.toMutableList()
         val stopId = stop.number.toString()
         
-        // Remove if already exists (to update data)
         currentStops.removeAll { it.id == stopId }
         
-        // Add to beginning of list
         currentStops.add(0, SavedStop(stopData = stop))
         
         _savedStops.value = currentStops

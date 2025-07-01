@@ -25,10 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlin.math.abs
 
-/**
- * Custom Modal Bottom Sheet that replicates Material 3 ModalBottomSheet
- * without requiring experimental APIs
- */
+
 @Composable
 fun CustomModalBottomSheet(
     onDismissRequest: () -> Unit,
@@ -40,7 +37,6 @@ fun CustomModalBottomSheet(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     
-    // Smooth animation for drag offset
     val animatedDragOffset by animateFloatAsState(
         targetValue = dragOffset,
         animationSpec = spring(
@@ -50,7 +46,6 @@ fun CustomModalBottomSheet(
         label = "drag_offset"
     )
     
-    // Show the sheet with animation
     LaunchedEffect(Unit) {
         isVisible = true
     }
@@ -65,7 +60,6 @@ fun CustomModalBottomSheet(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Backdrop/Scrim with dynamic opacity based on drag
             val backdropAlpha = (0.5f - (animatedDragOffset / 1000f)).coerceIn(0.1f, 0.5f)
             Box(
                 modifier = Modifier
@@ -80,7 +74,6 @@ fun CustomModalBottomSheet(
                     }
             )
             
-            // Bottom Sheet Content
             AnimatedVisibility(
                 visible = isVisible,
                 enter = slideInVertically(
@@ -105,7 +98,7 @@ fun CustomModalBottomSheet(
                                      dragOffset = newOffset.coerceAtLeast(0f)
                                  },
                                  onDragEnd = {
-                                     if (dragOffset > 120f) { // Lower threshold for better UX
+                                     if (dragOffset > 120f) {
                                          isVisible = false
                                          onDismissRequest()
                                      } else {
@@ -124,7 +117,6 @@ fun CustomModalBottomSheet(
                             .fillMaxWidth()
                             .navigationBarsPadding()
                     ) {
-                        // Drag Handle
                         dragHandle?.let { handle ->
                             Box(
                                 modifier = Modifier
@@ -136,7 +128,6 @@ fun CustomModalBottomSheet(
                             }
                         }
                         
-                        // Content
                         content()
                     }
                 }
@@ -145,9 +136,7 @@ fun CustomModalBottomSheet(
     }
 }
 
-/**
- * Custom Drag Handle that matches Material 3 design
- */
+
 @Composable
 fun CustomDragHandle() {
     Surface(

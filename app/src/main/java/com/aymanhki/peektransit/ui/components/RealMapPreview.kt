@@ -38,7 +38,6 @@ fun RealMapPreview(
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()
     
-    // Force dark theme for Classic theme, otherwise follow system theme for Modern
     val isDarkTheme = when (currentTheme) {
         StopViewTheme.CLASSIC -> true
         StopViewTheme.MODERN -> systemDarkTheme
@@ -46,14 +45,13 @@ fun RealMapPreview(
     val position = LatLng(latitude, longitude)
     var isMapsInitialized by remember { mutableStateOf(false) }
     
-    // Initialize Google Maps SDK
     LaunchedEffect(Unit) {
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
                 isMapsInitialized = true
             }
         } catch (e: Exception) {
-            isMapsInitialized = true // Allow to proceed even if initialization fails
+            isMapsInitialized = true
         }
     }
     
@@ -61,16 +59,13 @@ fun RealMapPreview(
         this.position = CameraPosition.fromLatLngZoom(position, 17f)
     }
     
-    // Dark mode map style
     val mapStyle = if (isDarkTheme) {
         MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark)
     } else {
         null
     }
     
-    Box(
-       // modifier = modifier.clip(RoundedCornerShape(8.dp))
-    ) {
+    Box() {
         if (isMapsInitialized) {
             GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -91,7 +86,6 @@ fun RealMapPreview(
                 zoomGesturesEnabled = false
             )
         ) {
-            // Add marker for the bus stop
             Marker(
                 state = MarkerState(position = position),
                 title = "Bus Stop",

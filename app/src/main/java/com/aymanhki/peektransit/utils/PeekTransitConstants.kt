@@ -91,10 +91,6 @@ object PeekTransitConstants {
     
     const val LAST_SEEN_FONT_SIZE = 10f
     const val LAST_SEEN_FONT_SIZE_DEFAULT = 8f
-    
-    // Theme Colors
-    const val CLASSIC_THEME_COLOR = "#EB8634"
-    const val CLASSIC_THEME_BACKGROUND_COLOR = "#000000"
 
     val CLASSIC_THEM_TEXT_COLOR = Color(0xFFEB8634)
 

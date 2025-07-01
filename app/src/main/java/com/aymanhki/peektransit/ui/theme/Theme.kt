@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AccentBlue,        // Accent Blue
+    primary = AccentBlue,
     secondary = AccentBlue,
     tertiary = AccentBlue,
     background = Color(0xFF171717),
@@ -31,16 +31,16 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = Color.White,
     onSurface = Color.White,
     onSurfaceVariant = Color.White,
-    error = Color(0xFFD2183B),      // Error Red
+    error = Color(0xFFD2183B),
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AccentBlue,        // Accent Blue
-    secondary = AccentBlue,      // Same Accent Blue
-    tertiary = AccentBlue,       // Same Accent Blue
+    primary = AccentBlue,
+    secondary = AccentBlue,
+    tertiary = AccentBlue,
     background = Color.White,
     surface = Color.White,
-    surfaceVariant = Color(0xFFF0F0F0), // Very light gray for slight contrast
+    surfaceVariant = Color(0xFFF0F0F0),
     primaryContainer = AccentBlue,
     secondaryContainer = AccentBlue,
     tertiaryContainer = AccentBlue,
@@ -53,15 +53,13 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color.Black,
     onSurface = Color.Black,
     onSurfaceVariant = Color.Black,
-    error = Color(0xFFD2183B),      // Error Red
+    error = Color(0xFFD2183B),
 )
 
 @Composable
 fun PeekTransitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
-    // Force dark theme (for classic theme)
     forceDarkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {

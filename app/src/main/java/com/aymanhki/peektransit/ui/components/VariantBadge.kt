@@ -33,7 +33,6 @@ fun VariantBadge(
         variantNumber
     }
     
-    // Parse colors from hex strings or use defaults
     val backgroundColor = parseColorString(variant.backgroundColor) ?: MaterialTheme.colorScheme.primary
     val textColor = parseColorString(variant.textColor) ?: MaterialTheme.colorScheme.onPrimary
     val borderColor = parseColorString(variant.borderColor) ?: backgroundColor
@@ -65,7 +64,6 @@ private fun parseColorString(colorString: String?): Color? {
         val cleanColor = colorString.trim()
         when {
             cleanColor.startsWith("#") && cleanColor.length == 7 -> {
-                // Parse hex color #RRGGBB
                 val colorInt = cleanColor.substring(1).toLong(16)
                 Color(
                     red = ((colorInt shr 16) and 0xFF) / 255f,
@@ -75,7 +73,6 @@ private fun parseColorString(colorString: String?): Color? {
                 )
             }
             cleanColor.startsWith("#") && cleanColor.length == 9 -> {
-                // Parse hex color #AARRGGBB
                 val colorInt = cleanColor.substring(1).toLong(16)
                 Color(
                     alpha = ((colorInt shr 24) and 0xFF) / 255f,
