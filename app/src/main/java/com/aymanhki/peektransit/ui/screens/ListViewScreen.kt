@@ -18,12 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.aymanhki.peektransit.MainActivity
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.location.LocationManager
+import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
@@ -39,7 +37,7 @@ fun ListViewScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val locationManager = remember { MainActivity.getLocationManager(context) }
+    val locationManager = remember { LocationManagerProvider.getInstance(context) }
 
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(

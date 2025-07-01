@@ -40,7 +40,7 @@ import com.aymanhki.peektransit.ui.screens.CreditsScreen
 import com.aymanhki.peektransit.ui.screens.TermsAndPrivacyScreen
 import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.location.LocationManager
+import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.utils.permissions.LocalPermissionManager
 import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
@@ -57,24 +57,13 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 
 class MainActivity : ComponentActivity() {
     
-    companion object {
-        @Volatile
-        private var locationManagerInstance: LocationManager? = null
-        
-        fun getLocationManager(context: Context): LocationManager {
-            return locationManagerInstance ?: synchronized(this) {
-                locationManagerInstance ?: LocationManager(context.applicationContext).also { locationManagerInstance = it }
-            }
-        }
-    }
-    
     private lateinit var permissionManager: PermissionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PeekTransitConstants.TRANSIT_API_KEY = getTransitApiKey(applicationContext)
 
-        getLocationManager(this)
+        LocationManagerProvider.getInstance(this)
         
         permissionManager = PermissionManager(this)
         

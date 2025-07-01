@@ -3,7 +3,6 @@ package com.aymanhki.peektransit.managers
 import android.content.Context
 import android.content.SharedPreferences
 import com.aymanhki.peektransit.utils.DefaultTab
-import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.SettingsKeys
 import com.aymanhki.peektransit.utils.StopViewTheme
 

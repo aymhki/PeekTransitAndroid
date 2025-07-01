@@ -6,7 +6,6 @@ import com.aymanhki.peektransit.data.models.Variant
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import java.text.SimpleDateFormat
 import java.util.*
 
 class VariantsCacheManager private constructor(context: Context) {
@@ -73,17 +72,6 @@ class VariantsCacheManager private constructor(context: Context) {
         preferences.edit()
             .remove(cacheKey)
             .remove(lastUpdateKey)
-            .apply()
-    }
-    
-    fun getLastUpdateTime(): Date? {
-        val timestamp = preferences.getLong(lastUpdateKey, -1)
-        return if (timestamp != -1L) Date(timestamp) else null
-    }
-    
-    fun updateLastUpdateTime() {
-        preferences.edit()
-            .putLong(lastUpdateKey, System.currentTimeMillis())
             .apply()
     }
 }

@@ -3,7 +3,6 @@ package com.aymanhki.peektransit.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -11,8 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -22,8 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
-import kotlin.math.pow
+
 
 
 @Composable
@@ -96,7 +92,6 @@ fun CustomPullToRefreshBox(
         modifier = modifier
             .nestedScroll(nestedScrollConnection)
     ) {
-        val contentOffset = with(density) { pullDistance.value.toDp() }
         Box(
             modifier = Modifier
                 .fillMaxSize()

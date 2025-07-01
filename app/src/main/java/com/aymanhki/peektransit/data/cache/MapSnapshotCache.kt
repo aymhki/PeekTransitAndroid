@@ -119,45 +119,4 @@ object MapSnapshotCache {
             println(e.message)
         }
     }
-
-    fun clearCache() {
-        memoryCache.clear()
-        
-        try {
-            cacheDir?.listFiles()?.forEach { it.delete() }
-        } catch (e: Exception) {
-            println(e.message)
-        }
-    }
-
-    fun getMemoryCacheSize(): Int = memoryCache.size
-
-    fun getDiskCacheSizeMB(): Double {
-        return try {
-            val dir = cacheDir ?: return 0.0
-            val files = dir.listFiles() ?: return 0.0
-            val totalBytes = files.sumOf { it.length() }
-            totalBytes / (1024.0 * 1024.0)
-        } catch (e: Exception) {
-            0.0
-        }
-    }
-
-    suspend fun isSnapshotCached(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean): Boolean {
-        if (!isInitialized) return false
-        
-        val key = generateKey(latitude, longitude, direction, isDarkMode)
-        
-        if (memoryCache.containsKey(key)) return true
-        
-        return withContext(Dispatchers.IO) {
-            try {
-                val fileName = generateFileName(key)
-                val file = File(cacheDir, fileName)
-                file.exists()
-            } catch (e: Exception) {
-                false
-            }
-        }
-    }
 }

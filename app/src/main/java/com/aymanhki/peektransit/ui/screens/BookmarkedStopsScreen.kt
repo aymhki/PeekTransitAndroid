@@ -17,12 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.managers.SavedStopsManager
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import kotlinx.coroutines.launch
+
 @Composable
 fun BookmarkedStopsScreen(
     onNavigateToLiveStop: (Int) -> Unit = {}

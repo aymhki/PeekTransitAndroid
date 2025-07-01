@@ -6,10 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.aymanhki.peektransit.MainActivity
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.TransitError
 import com.aymanhki.peektransit.data.repository.StopsDataStore
+import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -20,7 +20,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isInitialized = MutableLiveData(false)
     val isInitialized: LiveData<Boolean> = _isInitialized
     
-    private val locationManager = MainActivity.getLocationManager(application)
+    private val locationManager = LocationManagerProvider.getInstance(application)
     private var isLocationMonitoringActive = false
     
     private val _currentLocation = MutableLiveData<Location?>()
@@ -92,10 +92,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun clearSearchError() {
         stopsDataStore.clearSearchError()
-    }
-    
-    fun clearSearchResults() {
-        stopsDataStore.clearSearchResults()
     }
     
     override fun onCleared() {

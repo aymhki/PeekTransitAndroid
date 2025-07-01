@@ -25,13 +25,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.MainActivity
-import com.aymanhki.peektransit.utils.location.LocationManager
+import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.maps.model.CameraPosition
@@ -40,7 +38,6 @@ import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapsInitializer
-import com.google.android.gms.maps.OnMapsSdkInitializedCallback
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -54,7 +51,7 @@ fun MapViewScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val locationManager = remember { MainActivity.getLocationManager(context) }
+    val locationManager = remember { LocationManagerProvider.getInstance(context) }
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()

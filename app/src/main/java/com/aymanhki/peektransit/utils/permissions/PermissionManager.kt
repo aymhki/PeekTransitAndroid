@@ -6,9 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
@@ -30,38 +28,13 @@ class PermissionState(
             onLaunchPermissionRequest()
         }
     }
-    
 
-    fun requestPermissions() {
-        onLaunchPermissionRequest()
-    }
-
-    fun openSettings() {
-        onOpenSettings()
-    }
 
     private fun hasRequestedPermissions(): Boolean {
         return permissions.any { 
             it.status == PermissionStatus.DENIED || 
             it.status == PermissionStatus.PERMANENTLY_DENIED 
         }
-    }
-
-    fun isPermissionGranted(permission: String): Boolean {
-        return permissions.find { it.permission == permission }?.status == PermissionStatus.GRANTED
-    }
-
-    val grantedPermissions: List<String>
-        get() = permissions.filter { it.status == PermissionStatus.GRANTED }.map { it.permission }
-
-    val deniedPermissions: List<String>
-        get() = permissions.filter { it.status == PermissionStatus.DENIED }.map { it.permission }
-
-    val permanentlyDeniedPermissions: List<String>
-        get() = permissions.filter { it.status == PermissionStatus.PERMANENTLY_DENIED }.map { it.permission }
-        
-    override fun toString(): String {
-        return "PermissionState(allGranted=$allPermissionsGranted, shouldShowRationale=$shouldShowRationale, permissions=${permissions.size})"
     }
 }
 
@@ -280,21 +253,6 @@ class PermissionManager(private val activity: ComponentActivity) : DefaultLifecy
                  android.util.Log.e("PermissionManager", "Failed to open settings", e2)
              }
          }
-     }
-
-     fun logPermissionState() {
-         android.util.Log.d("PermissionManager", "=== Permission State Debug ===")
-         android.util.Log.d("PermissionManager", "Has any location permission: ${hasAnyLocationPermission()}")
-         android.util.Log.d("PermissionManager", "Can request permissions: ${canRequestPermissions()}")
-         android.util.Log.d("PermissionManager", "Is ask every time mode: ${isAskEveryTimeMode()}")
-         
-         LOCATION_PERMISSIONS.forEach { permission ->
-             val isGranted = ContextCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED
-             val shouldShowRationale = activity.shouldShowRequestPermissionRationale(permission)
-             val wasRequested = wasPermissionRequested(permission)
-             android.util.Log.d("PermissionManager", "$permission: granted=$isGranted, rationale=$shouldShowRationale, requested=$wasRequested")
-         }
-         android.util.Log.d("PermissionManager", "============================")
      }
 }
 

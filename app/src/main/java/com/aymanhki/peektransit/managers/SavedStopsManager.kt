@@ -6,7 +6,6 @@ import android.util.Log
 import com.aymanhki.peektransit.data.cache.VariantsCacheManager
 import com.aymanhki.peektransit.data.models.SavedStop
 import com.aymanhki.peektransit.data.models.Stop
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,51 +112,5 @@ class SavedStopsManager private constructor(context: Context) {
         
         _savedStops.value = currentStops
         saveToDisk()
-    }
-    
-    fun removeStop(indexSet: Set<Int>) {
-        val currentStops = _savedStops.value.toMutableList()
-        
-        val sortedIndices = indexSet.sortedDescending()
-        
-        for (index in sortedIndices) {
-            if (index in currentStops.indices) {
-                val removedStop = currentStops.removeAt(index)
-                Log.d("SavedStopsManager", "Removed stop ${removedStop.stopData.number} at index $index")
-            }
-        }
-        
-        _savedStops.value = currentStops
-        saveToDisk()
-    }
-    
-    fun addStop(stop: Stop) {
-        val currentStops = _savedStops.value.toMutableList()
-        val stopId = stop.number.toString()
-        
-        currentStops.removeAll { it.id == stopId }
-        
-        currentStops.add(0, SavedStop(stopData = stop))
-        
-        _savedStops.value = currentStops
-        saveToDisk()
-        Log.d("SavedStopsManager", "Added/updated stop ${stop.number}")
-    }
-    
-    fun removeStop(stop: Stop) {
-        val stopId = stop.number.toString()
-        val currentStops = _savedStops.value.toMutableList()
-        
-        currentStops.removeAll { it.id == stopId }
-        
-        _savedStops.value = currentStops
-        saveToDisk()
-        Log.d("SavedStopsManager", "Removed stop ${stop.number}")
-    }
-    
-    fun clearAllSavedStops() {
-        _savedStops.value = emptyList()
-        preferences.edit().remove(userDefaultsKey).commit()
-        Log.d("SavedStopsManager", "Cleared all saved stops")
     }
 }

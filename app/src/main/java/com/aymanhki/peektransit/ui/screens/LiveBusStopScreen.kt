@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import com.aymanhki.peektransit.ui.components.RealMapPreview
@@ -24,9 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -38,14 +35,13 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.TimeFormat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.aymanhki.peektransit.managers.SettingsManager
-import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 import com.aymanhki.peektransit.utils.StopViewTheme
 import com.aymanhki.peektransit.utils.FontUtils
+
 @Composable
 fun LiveBusStopScreen(
     stopNumber: Int,
@@ -76,7 +72,6 @@ fun LiveBusStopScreen(
     var isLoading by remember { mutableStateOf(false) }
     var isLoadingStop by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var lastUpdated by remember { mutableStateOf<Long?>(null) }
     var isBookmarked by remember { mutableStateOf(false) }
     var isRefreshCooldown by remember { mutableStateOf(false) }
     var isNetworkAvailable by remember { mutableStateOf(true) }
@@ -91,14 +86,6 @@ fun LiveBusStopScreen(
     
     fun loadLiveUpdatesPreference(): Boolean {
         return sharedPreferences.getBoolean("live_updates_stop_$stopNumber", true)
-    }
-    
-    fun shouldEnableLiveUpdates(): Boolean {
-        return if (error != null || scheduleData.isEmpty()) {
-            false
-        } else {
-            loadLiveUpdatesPreference()
-        }
     }
     
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -158,8 +145,7 @@ fun LiveBusStopScreen(
                 val schedule = api.getStopSchedule(stopNumber)
                 val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MIXED)
                 scheduleData = cleanedSchedule
-                lastUpdated = System.currentTimeMillis()
-                
+
                 error = null
             } catch (e: Exception) {
                 if (isManual || error == null) {
@@ -216,6 +202,8 @@ fun LiveBusStopScreen(
             
             if (stop != null) {
                 fetchScheduleData()
+            } else {
+                fetchStopData()
             }
         }
     }
@@ -467,7 +455,13 @@ fun LiveBusStopScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                Button(onClick = { fetchScheduleData(isManual = true) }) {
+                                Button(onClick = { 
+                                    if (stop == null) {
+                                        fetchStopData()
+                                    } else {
+                                        fetchScheduleData(isManual = true)
+                                    }
+                                }) {
                                     Text("Retry")
                                 }
                             }
@@ -536,7 +530,11 @@ fun LiveBusStopScreen(
         FloatingActionButton(
             onClick = { 
                 if (!isRefreshCooldown) {
-                    fetchScheduleData(isManual = true)
+                    if (stop == null) {
+                        fetchStopData()
+                    } else {
+                        fetchScheduleData(isManual = true)
+                    }
                 }
             },
             modifier = Modifier
@@ -669,41 +667,4 @@ fun BusArrivalCard(
     }
 }
 
-@Composable
-fun VariantChip(variant: String) {
-    Surface(
-        modifier = Modifier.padding(2.dp),
-        shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Text(
-            text = variant,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium
-            ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    }
-}
 
-private fun getDirectionColor(direction: String): Color {
-    return when (direction.lowercase()) {
-        "northbound", "north" -> Color(0xFF4CAF50)
-        "southbound", "south" -> Color(0xFFFF9800)
-        "eastbound", "east" -> Color(0xFF2196F3)
-        "westbound", "west" -> Color(0xFFE91E63)
-        else -> Color(0xFF9E9E9E)
-    }
-}
-
-private fun getMarkerColor(direction: String): Float {
-    return when (direction.lowercase()) {
-        "northbound", "north" -> BitmapDescriptorFactory.HUE_GREEN
-        "southbound", "south" -> BitmapDescriptorFactory.HUE_ORANGE
-        "eastbound", "east" -> BitmapDescriptorFactory.HUE_BLUE
-        "westbound", "west" -> BitmapDescriptorFactory.HUE_MAGENTA
-        else -> BitmapDescriptorFactory.HUE_RED
-    }
-}

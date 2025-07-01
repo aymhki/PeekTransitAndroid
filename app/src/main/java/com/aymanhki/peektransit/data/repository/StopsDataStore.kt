@@ -6,12 +6,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.TransitError
-import com.aymanhki.peektransit.data.models.Variant
 import com.aymanhki.peektransit.data.cache.VariantsCacheManager
 import com.aymanhki.peektransit.data.network.WinnipegTransitAPI
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import kotlinx.coroutines.*
-import java.util.*
 
 class StopsDataStore private constructor() {
     private val api = WinnipegTransitAPI.getInstance()
@@ -72,11 +70,11 @@ class StopsDataStore private constructor() {
     suspend fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         if (isCurrentlyLoading) return
         
-        if (!forceRefresh && isCacheValid(userLocation)) {
-            _stops.postValue(cachedStops)
-            _error.postValue(null)
-            return
-        }
+//        if (!forceRefresh && isCacheValid(userLocation)) {
+//            _stops.postValue(cachedStops)
+//            _error.postValue(null)
+//            return
+//        }
         
         loadStopsJob?.cancel()
         isCurrentlyLoading = true

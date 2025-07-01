@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -27,10 +26,6 @@ import kotlin.math.roundToInt
 fun StopRow(
     stop: Stop,
     distance: Double? = null,
-    isBookmarked: Boolean = false,
-    showBookmarkIcon: Boolean = true,
-    onClick: (Stop) -> Unit = {},
-    onBookmarkClick: (Stop) -> Unit = {},
     onNavigateToLiveStop: (Int) -> Unit = {}
 ) {
     Card(
@@ -202,34 +197,6 @@ fun StopRow(
     }
 }
 
-@Composable
-fun VariantChip(variant: String) {
-    Surface(
-        modifier = Modifier.padding(2.dp),
-        shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Text(
-            text = variant,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium
-            ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    }
-}
-
-private fun getDirectionColor(direction: String): Color {
-    return when (direction.lowercase()) {
-        "northbound", "north" -> Color(0xFF4CAF50)
-        "southbound", "south" -> Color(0xFFFF9800)
-        "eastbound", "east" -> Color(0xFF2196F3)
-        "westbound", "west" -> Color(0xFFE91E63)
-        else -> Color(0xFF9E9E9E)
-    }
-}
 
 private fun formatDistance(distanceInMeters: Double): String {
     return when {

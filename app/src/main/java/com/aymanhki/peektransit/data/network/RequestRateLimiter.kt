@@ -2,7 +2,6 @@ package com.aymanhki.peektransit.data.network
 
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import kotlinx.coroutines.delay
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class RequestRateLimiter {
@@ -38,18 +37,6 @@ class RequestRateLimiter {
         
         callCount.incrementAndGet()
         lastRequestTime = System.currentTimeMillis()
-    }
-    
-    fun getCallStats(): Pair<Int, Long> {
-        val currentTime = System.currentTimeMillis()
-        val timeElapsed = currentTime - minuteStartTime
-        val timeRemaining = maxOf(0, 60_000 - timeElapsed)
-        return Pair(callCount.get(), timeRemaining)
-    }
-    
-    fun resetCounter() {
-        callCount.set(0)
-        minuteStartTime = System.currentTimeMillis()
     }
     
     companion object {
