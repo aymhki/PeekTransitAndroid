@@ -169,53 +169,57 @@ fun LiveBusStopScreen(
                 val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MIXED)
                 scheduleData = cleanedSchedule
                 lastUpdated = System.currentTimeMillis()
+                
+                // Clear any previous error on successful fetch
+                error = null
             } catch (e: Exception) {
-                error = e.message ?: "Failed to load schedule"
+                // Only update error for manual refreshes or if there's no existing error
+                if (isManual || error == null) {
+                    error = when {
+                        e.message?.contains("Network error") == true -> e.message
+                        e.message?.contains("timeout") == true -> "Request timed out. Please try again."
+                        e.message?.contains("Unable to resolve host") == true -> "Unable to connect to server. Check your internet connection."
+                        else -> e.message ?: "Failed to load schedule"
+                    }
+                }
+                
+                // Log the error for debugging
+                println("LiveBusStopScreen: Error fetching schedule (manual=$isManual): ${e.message}")
             } finally {
                 isLoading = false
             }
         }
     }
     
-    // Network monitoring
+    // Simplified network monitoring - less aggressive, more reliable
     LaunchedEffect(Unit) {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                isNetworkAvailable = true
-            }
+        // Check network state periodically instead of using callbacks (less prone to false positives)
+        fun checkNetworkState() {
+            val activeNetwork = connectivityManager.activeNetwork
+            val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+            val hasInternet = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+            val isValidated = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
             
-            override fun onLost(network: Network) {
-                isNetworkAvailable = false
-                error = "No internet connection"
-            }
+            val wasNetworkAvailable = isNetworkAvailable
+            isNetworkAvailable = hasInternet && isValidated
             
-            override fun onUnavailable() {
-                isNetworkAvailable = false
+            // Only update error if network state actually changed and went from available to unavailable
+            if (wasNetworkAvailable && !isNetworkAvailable && error == null) {
                 error = "No internet connection"
             }
         }
         
-        val networkRequest = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-            .build()
+        // Initial check
+        checkNetworkState()
         
-        // Check initial network state
-        val activeNetwork = connectivityManager.activeNetwork
-        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-        isNetworkAvailable = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-                             networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
-        
-        try {
-            // Keep the callback alive
-            kotlinx.coroutines.awaitCancellation()
-        } finally {
-            // Cleanup when LaunchedEffect is cancelled
-            connectivityManager.unregisterNetworkCallback(networkCallback)
+        // Periodic checks (every 10 seconds) - less aggressive than callbacks
+        while (true) {
+            delay(10000) // Check every 10 seconds
+            if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+                checkNetworkState()
+            }
         }
     }
     
@@ -224,13 +228,13 @@ fun LiveBusStopScreen(
         fetchStopData()
     }
     
-    // Clear network error when connection is restored
+    // Clear network error when connection is restored and retry data fetch
     LaunchedEffect(isNetworkAvailable) {
         if (isNetworkAvailable && error == "No internet connection") {
             error = null
             // Automatically retry fetching data when network comes back
             delay(cooldownDuration)
-
+            
             if (stop != null) {
                 fetchScheduleData()
             }
@@ -254,13 +258,20 @@ fun LiveBusStopScreen(
         }
     }
     
-    // Live updates loop - only when app is active and network is available
-    LaunchedEffect(isLiveUpdatesEnabled, stop, lifecycleState, isNetworkAvailable) {
-        if (isLiveUpdatesEnabled && stop != null && lifecycleState.isAtLeast(Lifecycle.State.RESUMED) && isNetworkAvailable) {
-            while (isLiveUpdatesEnabled && stop != null && lifecycleState.isAtLeast(Lifecycle.State.RESUMED) && isNetworkAvailable) {
+    // Live updates loop - simplified and more reliable
+    LaunchedEffect(isLiveUpdatesEnabled, stop, lifecycleState) {
+        if (isLiveUpdatesEnabled && stop != null) {
+            while (isLiveUpdatesEnabled && stop != null) {
                 delay(60000) // 60 seconds
-                if (isLiveUpdatesEnabled && stop != null && lifecycleState.isAtLeast(Lifecycle.State.RESUMED) && isNetworkAvailable) {
-                    fetchScheduleData(isManual = false)
+                
+                // Only fetch if app is in foreground
+                if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    try {
+                        fetchScheduleData(isManual = false)
+                    } catch (e: Exception) {
+                        // Log error but don't break the loop
+                        println("LiveBusStopScreen: Auto-refresh failed: ${e.message}")
+                    }
                 }
             }
         }
@@ -570,7 +581,7 @@ fun LiveBusStopScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
             containerColor = if (isRefreshCooldown || isLoading) 
-                MaterialTheme.colorScheme.surfaceVariant 
+                MaterialTheme.colorScheme.primary
             else 
                 MaterialTheme.colorScheme.primary
         ) {
@@ -578,7 +589,7 @@ fun LiveBusStopScreen(
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
                 Icon(

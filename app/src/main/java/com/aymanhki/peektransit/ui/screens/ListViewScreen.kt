@@ -180,198 +180,209 @@ fun ListViewScreen(
             }
 
             else -> {
-                // Pull-to-refresh wraps everything
-                CustomPullToRefreshBox(
-                    modifier = Modifier.padding(paddingValues),
-                    isRefreshing = isLoading || isSearching,
-                    onRefresh = {
-                        if (searchQuery.isNotEmpty()) {
-                            // Refresh search results
-                            scope.launch {
-                                locationManager.getCurrentLocation()?.let { location ->
-                                    viewModel.searchForStops(searchQuery, location)
+                // Box to overlay error at bottom
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Pull-to-refresh wraps the main content
+                    CustomPullToRefreshBox(
+                        modifier = Modifier.padding(paddingValues),
+                        isRefreshing = isLoading || isSearching,
+                        onRefresh = {
+                            if (searchQuery.isNotEmpty()) {
+                                // Refresh search results
+                                scope.launch {
+                                    locationManager.getCurrentLocation()?.let { location ->
+                                        viewModel.searchForStops(searchQuery, location)
+                                    }
+                                }
+                            } else {
+                                // Refresh nearby stops
+                                loadStopsWithLocationCheck(forceRefresh = true)
+                            }
+                        }
+                    ) {
+                        // Always show LazyColumn with search bar as first item
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            // Search bar as first item - always visible
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    shape = RoundedCornerShape(28.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        placeholder = {
+                                            Text(
+                                                "Search stops, routes...",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Search,
+                                                contentDescription = "Search",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (searchQuery.isNotEmpty()) {
+                                                IconButton(onClick = { searchQuery = "" }) {
+                                                    Icon(
+                                                        Icons.Default.Clear,
+                                                        contentDescription = "Clear search",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(28.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedBorderColor = Color.Transparent,
+                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                        )
+                                    )
                                 }
                             }
-                        } else {
-                            // Refresh nearby stops
-                            loadStopsWithLocationCheck(forceRefresh = true)
-                        }
-                    }
-                ) {
-                    // Always show LazyColumn with search bar as first item
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        // Search bar as first item - always visible
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                shape = RoundedCornerShape(28.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = searchQuery,
-                                    onValueChange = { searchQuery = it },
-                                    placeholder = {
-                                        Text(
-                                            "Search stops, routes...",
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Search,
-                                            contentDescription = "Search",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        if (searchQuery.isNotEmpty()) {
-                                            IconButton(onClick = { searchQuery = "" }) {
-                                                Icon(
-                                                    Icons.Default.Clear,
-                                                    contentDescription = "Clear search",
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        
+                            when {
+                                isLoading || isSearching -> {
+                                    // Loading state - centered in remaining space
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .fillParentMaxHeight(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.padding(16.dp)
+                                            ) {
+                                                CircularProgressIndicator()
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                Text(
+                                                    text = if (isSearching) "Searching..." else "Loading nearby stops...",
+                                                    style = MaterialTheme.typography.bodyMedium
                                                 )
                                             }
                                         }
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(28.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                        unfocusedBorderColor = Color.Transparent,
-                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                    )
-                                )
+                                    }
+                                }
+
+                                else -> {
+                                    // Combine stops like iOS (local stops + search results)
+                                    val combinedStops = mutableListOf<Stop>().apply {
+                                        addAll(stops)
+                                        val existingStopNumbers = stops.map { it.number }.toSet()
+                                        for (stop in searchResults) {
+                                            if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
+                                                add(stop)
+                                            }
+                                        }
+                                    }
+
+                                    // Filter combined stops based on search query (like iOS)
+                                    val filteredStops = if (searchQuery.isEmpty()) {
+                                        combinedStops
+                                    } else {
+                                        combinedStops.filter { stop ->
+                                            stop.name.contains(searchQuery, ignoreCase = true) ||
+                                            stop.number.toString().contains(searchQuery) ||
+                                            stop.variants.any { variant ->
+                                                variant.key.contains(searchQuery, ignoreCase = true) ||
+                                                variant.name.contains(searchQuery, ignoreCase = true)
+                                            }
+                                        }
+                                    }
+
+                                    val currentError = if (searchQuery.isNotEmpty()) searchError else error
+
+                                    if (filteredStops.isEmpty() && currentError == null) {
+                                        // Empty state - centered in remaining space
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .fillParentMaxHeight(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(16.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    Text(
+                                                        text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        textAlign = TextAlign.Center
+                                                    )
+
+                                                    if (searchQuery.isEmpty()) {
+                                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                                        Button(
+                                                            onClick = {
+                                                                loadStopsWithLocationCheck(forceRefresh = true)
+                                                            }
+                                                        ) {
+                                                            Text("Retry")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // Show stops list
+                                        items(filteredStops, key = { stop ->
+                                            "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
+                                        }) { stop ->
+                                            StopRow(
+                                                stop = stop,
+                                                distance = stop.getDistance(),
+                                                onNavigateToLiveStop = onNavigateToLiveStop
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
-                    
-                        when {
-                            isLoading || isSearching -> {
-                                // Loading state
-                                item {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center
+                    }
+
+                    // Error display at bottom of screen
+                    val currentError = if (searchQuery.isNotEmpty()) searchError else error
+                    currentError?.let { transitError ->
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Snackbar(
+                                action = {
+                                    TextButton(
+                                        onClick = {
+                                            if (searchQuery.isNotEmpty()) {
+                                                viewModel.clearSearchError()
+                                            } else {
+                                                viewModel.clearError()
+                                            }
+                                        }
                                     ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.padding(16.dp)
-                                        ) {
-                                            CircularProgressIndicator()
-                                            Spacer(modifier = Modifier.height(16.dp))
-                                            Text(
-                                                text = if (isSearching) "Searching..." else "Loading nearby stops...",
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
-                                        }
+                                        Text("Dismiss")
                                     }
                                 }
-                            }
-
-                            else -> {
-                                // Combine stops like iOS (local stops + search results)
-                                val combinedStops = mutableListOf<Stop>().apply {
-                                    addAll(stops)
-                                    val existingStopNumbers = stops.map { it.number }.toSet()
-                                    for (stop in searchResults) {
-                                        if (stop.number != -1 && !existingStopNumbers.contains(stop.number)) {
-                                            add(stop)
-                                        }
-                                    }
-                                }
-
-                                // Filter combined stops based on search query (like iOS)
-                                val filteredStops = if (searchQuery.isEmpty()) {
-                                    combinedStops
-                                } else {
-                                    combinedStops.filter { stop ->
-                                        stop.name.contains(searchQuery, ignoreCase = true) ||
-                                        stop.number.toString().contains(searchQuery) ||
-                                        stop.variants.any { variant ->
-                                            variant.key.contains(searchQuery, ignoreCase = true) ||
-                                            variant.name.contains(searchQuery, ignoreCase = true)
-                                        }
-                                    }
-                                }
-
-                                val currentError = if (searchQuery.isNotEmpty()) searchError else error
-
-                                if (filteredStops.isEmpty() && currentError == null) {
-                                    // Empty state
-                                    item {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                textAlign = TextAlign.Center
-                                            )
-
-                                            if (searchQuery.isEmpty()) {
-                                                Spacer(modifier = Modifier.height(16.dp))
-
-                                                Button(
-                                                    onClick = {
-                                                        loadStopsWithLocationCheck(forceRefresh = true)
-                                                    }
-                                                ) {
-                                                    Text("Retry")
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // Show stops list
-                                    items(filteredStops, key = { stop ->
-                                        "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
-                                    }) { stop ->
-                                        StopRow(
-                                            stop = stop,
-                                            distance = stop.getDistance(),
-                                            onNavigateToLiveStop = onNavigateToLiveStop
-                                        )
-                                    }
-                                }
-
-                                // Error display
-                                currentError?.let { transitError ->
-                                    item {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Snackbar(
-                                                action = {
-                                                    TextButton(
-                                                        onClick = {
-                                                            if (searchQuery.isNotEmpty()) {
-                                                                viewModel.clearSearchError()
-                                                            } else {
-                                                                viewModel.clearError()
-                                                            }
-                                                        }
-                                                    ) {
-                                                        Text("Dismiss")
-                                                    }
-                                                }
-                                            ) {
-                                                Text(transitError.message)
-                                            }
-                                        }
-                                    }
-                                }
+                            ) {
+                                Text(transitError.message)
                             }
                         }
                     }

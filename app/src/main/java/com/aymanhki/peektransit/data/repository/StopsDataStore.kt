@@ -115,13 +115,14 @@ class StopsDataStore private constructor() {
                     enrichmentJob?.cancel() // Cancel any previous enrichment
                     enrichmentJob = scope.launch {
                         try {
-                            println("StopsDataStore: Starting background enrichment for ${nearbyStops.size} stops")
                             enrichStops(nearbyStops)
                             updateCache(userLocation)
-                            println("StopsDataStore: Background enrichment completed")
                         } catch (e: Exception) {
                             if (e !is CancellationException) {
+                                // Log errors but don't spam console
                                 println("StopsDataStore: Error in background enrichment: ${e.message}")
+
+
                             }
                         }
                     }
@@ -159,14 +160,10 @@ class StopsDataStore private constructor() {
                     val currentStops = _stops.value?.toMutableList() ?: mutableListOf()
                     val index = currentStops.indexOfFirst { it.number == enrichedStop.number }
                     if (index != -1) {
-                        println("StopsDataStore: Updating stop ${enrichedStop.number} with ${enrichedStop.variants.size} variants")
                         currentStops[index] = enrichedStop
                         // Create a completely new list to ensure reference change and post it
                         val newStopsList = currentStops.toList()
                         _stops.postValue(newStopsList)
-                        println("StopsDataStore: Updated stops list with enriched data")
-                    } else {
-                        println("StopsDataStore: Could not find stop ${enrichedStop.number} in current list")
                     }
                     
                     // Also update search results if applicable
@@ -184,6 +181,7 @@ class StopsDataStore private constructor() {
             if (e !is CancellationException) {
                 // Log error but don't fail the whole operation
                 println("Error enriching stops: ${e.message}")
+
             }
         }
     }
@@ -225,7 +223,10 @@ class StopsDataStore private constructor() {
                 
             } catch (e: Exception) {
                 if (e !is CancellationException) {
+
                     println("Error fetching variants for stop ${stop.number}: ${e.message}")
+
+
                     // Still call callback with original stop to update UI
                     onStopEnriched(stop)
                 }
@@ -259,16 +260,22 @@ class StopsDataStore private constructor() {
                     val variantIdentifier = variant.key.split("-").firstOrNull() ?: ""
 
                     if (!bulkVariantIdentifiers.contains(variantIdentifier)) {
-                        println("\n**********\n ${variant.key} from stop $stopNumber was not found in the bulk variants request \n**********\n")
+
+                        println("Cache validation failed: ${variant.key} from stop $stopNumber not found in bulk variants")
+
                         cache.clearAllCaches()
                         return
                     }
                 }
             }
 
+
             println("Variant cache validation passed")
+
         } catch (e: Exception) {
+
             println("Error during cache validation: ${e.message}")
+
         }
     }
 
@@ -287,24 +294,12 @@ class StopsDataStore private constructor() {
                 _isSearching.postValue(true)
                 _searchError.postValue(null)
                 
-                println("StopsDataStore: Starting search for query: '$query'")
-                
                 // Add debounce delay (matching iOS)
                 delay(1000)
                 
                 // Only do API search (matching iOS behavior - local filtering happens in UI)
-                println("StopsDataStore: Starting API search...")
                 val searchedStops = api.searchStops(query, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
-                println("StopsDataStore: API search returned ${searchedStops.size} stops")
-                
-                // Log each returned stop for debugging
-                searchedStops.forEachIndexed { index, stop ->
-                    println("StopsDataStore: Search result $index: ${stop.number} - ${stop.name}")
-                }
-                
-                println("StopsDataStore: Posting search results to LiveData...")
                 _searchResults.postValue(searchedStops)
-                println("StopsDataStore: Search results posted successfully")
                 
                 // Start enrichment for search results that need it
                 launch {
@@ -312,7 +307,9 @@ class StopsDataStore private constructor() {
                         enrichStops(searchedStops.filter { it.variants.isEmpty() })
                     } catch (e: Exception) {
                         // Log but don't fail
+
                         println("Error enriching search results: ${e.message}")
+
                     }
                 }
                 

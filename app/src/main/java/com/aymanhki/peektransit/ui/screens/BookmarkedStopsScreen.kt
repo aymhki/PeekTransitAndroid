@@ -56,161 +56,179 @@ fun BookmarkedStopsScreen(
             )
         }
     ) { paddingValues ->
-        // Always show search bar and content in LazyColumn
-        var isRefreshing by remember { mutableStateOf(false) }
-        
-        CustomPullToRefreshBox(
-            modifier = Modifier.padding(paddingValues),
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                scope.launch {
-                    isRefreshing = true
-                    try {
-                        savedStopsManager.loadSavedStops()
-                        // Wait a bit to ensure the state has updated
-                        kotlinx.coroutines.delay(100)
-                    } finally {
-                        isRefreshing = false
+        // Box for consistent structure (even though no error overlay currently)
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Always show search bar and content in LazyColumn
+            var isRefreshing by remember { mutableStateOf(false) }
+            
+            CustomPullToRefreshBox(
+                modifier = Modifier.padding(paddingValues),
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        isRefreshing = true
+                        try {
+                            savedStopsManager.loadSavedStops()
+                            // Wait a bit to ensure the state has updated
+                            kotlinx.coroutines.delay(100)
+                        } finally {
+                            isRefreshing = false
+                        }
                     }
                 }
-            }
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                // Search bar as first item - always visible
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = {
-                                Text(
-                                    "Search saved stops...",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    // Search bar as first item - always visible
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            shape = RoundedCornerShape(28.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
+                                    Text(
+                                        "Search saved stops...",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(
+                                                Icons.Default.Clear,
+                                                contentDescription = "Clear search",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(28.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                                 )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Search,
-                                    contentDescription = "Search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
+                            )
+                        }
+                    }
+                    
+                    when {
+                        isLoading -> {
+                            // Loading state - centered in remaining space
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillParentMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text("Loading saved stops...")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        savedStops.isEmpty() -> {
+                            // Empty state - no bookmarked stops - centered in remaining space
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillParentMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
                                         Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = "Clear search",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            imageVector = Icons.Default.BookmarkBorder,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        Text(
+                                            text = "No Saved Stops",
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Text(
+                                            text = "Save your favorite bus stops from the Map or Stops tab to see them here.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            textAlign = TextAlign.Center
                                         )
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            shape = RoundedCornerShape(28.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    }
-                }
-                
-                when {
-                    isLoading -> {
-                        // Loading state
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("Loading saved stops...")
                             }
                         }
-                    }
-                    
-                    savedStops.isEmpty() -> {
-                        // Empty state - no bookmarked stops
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BookmarkBorder,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
-                                Text(
-                                    text = "No Saved Stops",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Text(
-                                    text = "Save your favorite bus stops from the Map or Stops tab to see them here.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
+                        
+                        filteredStops.isEmpty() && searchQuery.isNotEmpty() -> {
+                            // Empty search results - centered in remaining space
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillParentMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = "No saved stops found for \"$searchQuery\"",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                    
-                    filteredStops.isEmpty() && searchQuery.isNotEmpty() -> {
-                        // Empty search results
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "No saved stops found for \"$searchQuery\"",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    textAlign = TextAlign.Center
+                        
+                        else -> {
+                            // Show filtered saved stops
+                            items(filteredStops, key = { stop -> 
+                                "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
+                            }) { stop ->
+                                StopRow(
+                                    stop = stop,
+                                    distance = null, // Don't show distance for saved stops
+                                    onNavigateToLiveStop = onNavigateToLiveStop
                                 )
                             }
-                        }
-                    }
-                    
-                    else -> {
-                        // Show filtered saved stops
-                        items(filteredStops, key = { stop -> 
-                            "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
-                        }) { stop ->
-                            StopRow(
-                                stop = stop,
-                                distance = null, // Don't show distance for saved stops
-                                onNavigateToLiveStop = onNavigateToLiveStop
-                            )
                         }
                     }
                 }

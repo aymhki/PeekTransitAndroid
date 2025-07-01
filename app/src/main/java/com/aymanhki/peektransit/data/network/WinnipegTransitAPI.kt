@@ -78,15 +78,35 @@ class WinnipegTransitAPI private constructor() {
     private val rateLimiter = RequestRateLimiter.getInstance()
     private val gson = Gson()
     
+    // Simplified logging - only log basic info, not full body/headers
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.BASIC // Only URL, method, and response code
+    }
+    
+    // Custom interceptor for better error handling
+    private val errorHandlingInterceptor = Interceptor { chain ->
+        try {
+            chain.proceed(chain.request())
+        } catch (e: Exception) {
+            when {
+                e.message?.contains("Unable to resolve host") == true -> {
+                    throw IOException("Network error: Unable to connect to Winnipeg Transit API. Please check your internet connection.")
+                }
+                e.message?.contains("timeout") == true -> {
+                    throw IOException("Network timeout: The request took too long to complete.")
+                }
+                else -> throw e
+            }
+        }
     }
     
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(errorHandlingInterceptor)
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS) // Reduced from 30s
+        .readTimeout(20, TimeUnit.SECONDS) 
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true) // Enable automatic retry
         .build()
     
     private val retrofit = Retrofit.Builder()
@@ -155,40 +175,20 @@ class WinnipegTransitAPI private constructor() {
         rateLimiter.waitIfNeeded()
         
         try {
-            println("WinnipegTransitAPI: Making search API call for query: '$query', forShort: $forShort")
-            
             // Manually construct URL like iOS version (stops:QUERY.json)
             val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
             val usage = if (forShort) "short" else "long"
             val fullUrl = "${PeekTransitConstants.BASE_URL}stops:${encodedQuery}.json?usage=${usage}&api-key=${PeekTransitConstants.TRANSIT_API_KEY}"
             
-            println("WinnipegTransitAPI: Constructed URL: $fullUrl")
-            
             val response = apiService.searchStops(fullUrl)
-            
-            println("WinnipegTransitAPI: Search API response - isSuccessful: ${response.isSuccessful}, code: ${response.code()}")
             
             if (!response.isSuccessful) {
                 val errorMsg = "HTTP ${response.code()}: ${response.message()}"
-                println("WinnipegTransitAPI: Search API failed with: $errorMsg")
                 throw TransitError.NetworkError(IOException(errorMsg))
             }
             
-            val jsonResponse = response.body()
-            if (jsonResponse == null) {
-                println("WinnipegTransitAPI: Search API returned null body")
-                throw TransitError.InvalidData
-            }
-            
-            println("WinnipegTransitAPI: Search API response body: $jsonResponse")
-            
-            val stopsArray = jsonResponse.getAsJsonArray("stops")
-            if (stopsArray == null) {
-                println("WinnipegTransitAPI: No 'stops' array found in response")
-                throw TransitError.ParseError("No stops array found")
-            }
-            
-            println("WinnipegTransitAPI: Found ${stopsArray.size()} stops in response")
+            val jsonResponse = response.body() ?: throw TransitError.InvalidData
+            val stopsArray = jsonResponse.getAsJsonArray("stops") ?: throw TransitError.ParseError("No stops array found")
             
             val stops = mutableListOf<Stop>()
             for (element in stopsArray) {
@@ -200,20 +200,14 @@ class WinnipegTransitAPI private constructor() {
                         stop
                     }
                     stops.add(processedStop)
-                    println("WinnipegTransitAPI: Successfully parsed stop: ${processedStop.number} - ${processedStop.name}")
                 } catch (e: Exception) {
-                    println("WinnipegTransitAPI: Failed to parse stop element: ${e.message}")
+                    // Skip malformed stop data
                     continue
                 }
             }
             
-            val finalStops = stops.take(PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH)
-            println("WinnipegTransitAPI: Returning ${finalStops.size} stops after limiting to ${PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH}")
-            
-            finalStops
+            stops.take(PeekTransitConstants.MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH)
         } catch (e: Exception) {
-            println("WinnipegTransitAPI: Search failed with exception: ${e.javaClass.simpleName}: ${e.message}")
-            e.printStackTrace()
             when (e) {
                 is TransitError -> throw e
                 else -> throw TransitError.NetworkError(e)
