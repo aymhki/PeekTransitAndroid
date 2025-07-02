@@ -269,7 +269,7 @@ class StopsDataStore private constructor() {
                 _isSearching.postValue(true)
                 _searchError.postValue(null)
                 
-                delay(1000)
+                delay(PeekTransitConstants.SEARCH_DEBOUNCE_DELAY_MS)
                 
                 val searchedStops = api.searchStops(query, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
                 _searchResults.postValue(searchedStops)

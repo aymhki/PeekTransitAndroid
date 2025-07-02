@@ -26,6 +26,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentLocation = MutableLiveData<Location?>()
     val currentLocation: LiveData<Location?> = _currentLocation
     
+    private val _searchQuery = MutableLiveData("")
+    val searchQuery: LiveData<String> = _searchQuery
+    
+    private val _lastSearchedQuery = MutableLiveData("")
+    val lastSearchedQuery: LiveData<String> = _lastSearchedQuery
+    
     val stops: LiveData<List<Stop>> = stopsDataStore.stops
     val isLoading: LiveData<Boolean> = stopsDataStore.isLoading
     val error: LiveData<TransitError?> = stopsDataStore.error
@@ -73,9 +79,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentLocation.postValue(location)
     }
     
+    fun updateSearchQuery(query: String) {
+        _searchQuery.postValue(query)
+    }
+    
+    fun clearSearchQuery() {
+        _searchQuery.postValue("")
+        _lastSearchedQuery.postValue("")
+    }
+    
     fun searchForStops(query: String, userLocation: Location? = null) {
         viewModelScope.launch {
             stopsDataStore.searchForStops(query, userLocation)
+            _lastSearchedQuery.postValue(query)
         }
     }
     

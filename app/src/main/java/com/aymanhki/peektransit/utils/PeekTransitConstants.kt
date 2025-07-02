@@ -35,6 +35,9 @@ object PeekTransitConstants {
     const val PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS = 15 // minutes
     const val MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE = 1
     
+    // Search Configuration
+    const val SEARCH_DEBOUNCE_DELAY_MS = 1500L
+    
     // Text Constants
     const val SCHEDULE_STRING_SEPARATOR = " ---- "
     const val COMPOSITE_KEY_LINKER_FOR_DICTIONARIES = "-"

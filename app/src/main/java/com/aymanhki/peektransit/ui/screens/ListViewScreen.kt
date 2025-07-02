@@ -27,6 +27,7 @@ import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsSta
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -60,7 +61,19 @@ fun ListViewScreen(
     val error by viewModel.error.observeAsState()
     val searchError by viewModel.searchError.observeAsState()
 
-    var searchQuery by remember { mutableStateOf("") }
+    val viewModelSearchQuery by viewModel.searchQuery.observeAsState("")
+    val lastSearchedQuery by viewModel.lastSearchedQuery.observeAsState("")
+    
+    var localSearchQuery by remember { mutableStateOf("") }
+    var isDebouncing by remember { mutableStateOf(false) }
+    var isUserInput by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(viewModelSearchQuery) {
+        if (localSearchQuery != viewModelSearchQuery) {
+            isUserInput = false
+            localSearchQuery = viewModelSearchQuery
+        }
+    }
 
     var previousLocation by remember { mutableStateOf<android.location.Location?>(null) }
     var isInitialLoad by remember { mutableStateOf(true) }
@@ -108,12 +121,34 @@ fun ListViewScreen(
         }
     }
 
-    LaunchedEffect(searchQuery) {
-        scope.launch {
-            locationManager.getCurrentLocation()?.let { location ->
-                viewModel.searchForStops(searchQuery, location)
-            }
+    LaunchedEffect(localSearchQuery, isUserInput) {
+        if (!isUserInput) {
+            viewModel.updateSearchQuery(localSearchQuery)
+            return@LaunchedEffect
         }
+        
+        if (localSearchQuery.isNotEmpty()) {
+            isDebouncing = true
+        } else {
+            isDebouncing = false
+            viewModel.updateSearchQuery("")
+            if (lastSearchedQuery.isNotEmpty()) {
+                viewModel.searchForStops("", null)
+            }
+            isUserInput = false
+            return@LaunchedEffect
+        }
+        
+        delay(PeekTransitConstants.SEARCH_DEBOUNCE_DELAY_MS)
+        isDebouncing = false
+        viewModel.updateSearchQuery(localSearchQuery)
+        
+        if (localSearchQuery != lastSearchedQuery) {
+            val location = locationManager.getCurrentLocation()
+            viewModel.searchForStops(localSearchQuery, location)
+        }
+        
+        isUserInput = false
     }
 
     Scaffold(
@@ -170,13 +205,12 @@ fun ListViewScreen(
                 Box(modifier = Modifier.fillMaxSize()) {
                     CustomPullToRefreshBox(
                         modifier = Modifier.padding(paddingValues),
-                        isRefreshing = isLoading || isSearching,
+                        isRefreshing = isLoading || isSearching || isDebouncing,
                         onRefresh = {
-                            if (searchQuery.isNotEmpty()) {
+                            if (localSearchQuery.isNotEmpty()) {
                                 scope.launch {
-                                    locationManager.getCurrentLocation()?.let { location ->
-                                        viewModel.searchForStops(searchQuery, location)
-                                    }
+                                    val location = locationManager.getCurrentLocation()
+                                    viewModel.searchForStops(localSearchQuery, location)
                                 }
                             } else {
                                 loadStopsWithLocationCheck(forceRefresh = true)
@@ -196,8 +230,11 @@ fun ListViewScreen(
                                     shape = RoundedCornerShape(28.dp)
                                 ) {
                                     OutlinedTextField(
-                                        value = searchQuery,
-                                        onValueChange = { searchQuery = it },
+                                        value = localSearchQuery,
+                                        onValueChange = { 
+                                            isUserInput = true
+                                            localSearchQuery = it 
+                                        },
                                         placeholder = {
                                             Text(
                                                 "Search stops, routes...",
@@ -212,8 +249,12 @@ fun ListViewScreen(
                                             )
                                         },
                                         trailingIcon = {
-                                            if (searchQuery.isNotEmpty()) {
-                                                IconButton(onClick = { searchQuery = "" }) {
+                                            if (localSearchQuery.isNotEmpty()) {
+                                                IconButton(onClick = { 
+                                                    isUserInput = true
+                                                    localSearchQuery = ""
+                                                    viewModel.clearSearchQuery()
+                                                }) {
                                                     Icon(
                                                         Icons.Default.Clear,
                                                         contentDescription = "Clear search",
@@ -235,29 +276,29 @@ fun ListViewScreen(
                                 }
                             }
                         
-                            when {
-                                isLoading || isSearching -> {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .fillParentMaxHeight(),
-                                            contentAlignment = Alignment.Center
+                                                    when {
+                            isLoading || isSearching || isDebouncing -> {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillParentMaxHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.padding(16.dp)
                                         ) {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                modifier = Modifier.padding(16.dp)
-                                            ) {
-                                                CircularProgressIndicator()
-                                                Spacer(modifier = Modifier.height(16.dp))
-                                                Text(
-                                                    text = if (isSearching) "Searching..." else "Loading nearby stops...",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
+                                            CircularProgressIndicator()
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Text(
+                                                text = if (isSearching || isDebouncing) "Searching..." else "Loading nearby stops...",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
                                         }
                                     }
                                 }
+                            }
 
                                 else -> {
                                     val combinedStops = mutableListOf<Stop>().apply {
@@ -270,20 +311,20 @@ fun ListViewScreen(
                                         }
                                     }
 
-                                    val filteredStops = if (searchQuery.isEmpty()) {
+                                    val filteredStops = if (localSearchQuery.isEmpty()) {
                                         combinedStops
                                     } else {
                                         combinedStops.filter { stop ->
-                                            stop.name.contains(searchQuery, ignoreCase = true) ||
-                                            stop.number.toString().contains(searchQuery) ||
+                                            stop.name.contains(localSearchQuery, ignoreCase = true) ||
+                                            stop.number.toString().contains(localSearchQuery) ||
                                             stop.variants.any { variant ->
-                                                variant.key.contains(searchQuery, ignoreCase = true) ||
-                                                variant.name.contains(searchQuery, ignoreCase = true)
+                                                variant.key.contains(localSearchQuery, ignoreCase = true) ||
+                                                variant.name.contains(localSearchQuery, ignoreCase = true)
                                             }
                                         }
                                     }
 
-                                    val currentError = if (searchQuery.isNotEmpty()) searchError else error
+                                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else error
 
                                     if (filteredStops.isEmpty() && currentError == null) {
                                         item {
@@ -299,12 +340,12 @@ fun ListViewScreen(
                                                     verticalArrangement = Arrangement.Center
                                                 ) {
                                                     Text(
-                                                        text = if (searchQuery.isNotEmpty()) "No stops found for \"$searchQuery\"" else "No nearby stops found",
+                                                        text = if (localSearchQuery.isNotEmpty()) "No stops found for \"$localSearchQuery\"" else "No nearby stops found",
                                                         style = MaterialTheme.typography.bodyLarge,
                                                         textAlign = TextAlign.Center
                                                     )
 
-                                                    if (searchQuery.isEmpty()) {
+                                                    if (localSearchQuery.isEmpty()) {
                                                         Spacer(modifier = Modifier.height(16.dp))
 
                                                         Button(
@@ -334,7 +375,7 @@ fun ListViewScreen(
                         }
                     }
 
-                    val currentError = if (searchQuery.isNotEmpty()) searchError else error
+                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else error
                     currentError?.let { transitError ->
                         Box(
                             modifier = Modifier
@@ -346,7 +387,7 @@ fun ListViewScreen(
                                 action = {
                                     TextButton(
                                         onClick = {
-                                            if (searchQuery.isNotEmpty()) {
+                                            if (localSearchQuery.isNotEmpty()) {
                                                 viewModel.clearSearchError()
                                             } else {
                                                 viewModel.clearError()

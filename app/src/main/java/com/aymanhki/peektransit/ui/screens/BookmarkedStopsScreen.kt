@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +33,7 @@ fun BookmarkedStopsScreen(
     val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
     val savedStops by savedStopsManager.savedStops.collectAsState()
     val isLoading by savedStopsManager.isLoading.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     
     val filteredStops = if (searchQuery.isEmpty()) {
         savedStops.map { it.stopData }

@@ -47,6 +47,7 @@ import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
 
+
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
     object Stops : BottomNavItem("stops", "Stops", Icons.AutoMirrored.Filled.List)
