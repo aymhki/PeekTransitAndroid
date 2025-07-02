@@ -1,4 +1,3 @@
-
 package com.aymanhki.peektransit.ui.screens
 
 import android.Manifest
@@ -97,10 +96,12 @@ fun MapViewScreen(
                 when (result) {
                     MapsInitializer.Renderer.LATEST -> {
                         isMapsInitialized = true
+                        showMap = true // Show map immediately after initialization
                         locationStatus = "Maps initialized"
                     }
                     MapsInitializer.Renderer.LEGACY -> {
                         isMapsInitialized = true
+                        showMap = true // Show map immediately after initialization
                         locationStatus = "Maps initialized (legacy)"
                     }
                 }
@@ -108,17 +109,13 @@ fun MapViewScreen(
         } catch (e: Exception) {
             locationStatus = "Maps initialization failed: ${e.message}"
             isMapsInitialized = true
+            showMap = true // Show map even if initialization failed
         }
     }
     
     fun fetchLocationAndUpdateMap(forceRefresh: Boolean = false) {
         scope.launch {
-            if (isInitialLoad) {
-                isLocationLoading = true
-                showMap = false
-            } else if (!forceRefresh) {
-                isLocationLoading = true
-            }
+            isLocationLoading = true
             locationStatus = "Fetching location..."
             
             try {
@@ -144,25 +141,22 @@ fun MapViewScreen(
                         true
                     }
                     
-                    if (isInitialLoad) {
-                        showMap = true
-                        if (isMapsInitialized) {
-                            try {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newCameraPosition(
-                                        CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                    ),
-                                    1500
+                    if (isInitialLoad && isMapsInitialized) {
+                        try {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newCameraPosition(
+                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                                ),
+                                1500
+                            )
+                            hasCameraInitializedToUserLocation = true
+                        } catch (e: Exception) {
+                            cameraPositionState.move(
+                                CameraUpdateFactory.newCameraPosition(
+                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                                 )
-                                hasCameraInitializedToUserLocation = true
-                            } catch (e: Exception) {
-                                cameraPositionState.move(
-                                    CameraUpdateFactory.newCameraPosition(
-                                        CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                    )
-                                )
-                                hasCameraInitializedToUserLocation = true
-                            }
+                            )
+                            hasCameraInitializedToUserLocation = true
                         }
                     } else if (forceRefresh && isMapsInitialized) {
                         try {
@@ -183,9 +177,7 @@ fun MapViewScreen(
                     locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
                     
                     if (shouldUpdateStops || forceRefresh) {
-                        if (isInitialLoad || forceRefresh) {
-                            kotlinx.coroutines.delay(500)
-                        }
+                        // Removed unnecessary 500ms delay for better performance
                         if (isInitialLoad) {
                             viewModel.initializeWithLocation(location)
                         } else {
@@ -197,15 +189,9 @@ fun MapViewScreen(
                     previousUserLocation = previousLocation
                 } else {
                     locationStatus = "Could not get location"
-                    if (isInitialLoad) {
-                        showMap = true
-                    }
                 }
             } catch (e: Exception) {
                 locationStatus = "Location error: ${e.message}"
-                if (isInitialLoad) {
-                    showMap = true
-                }
             } finally {
                 isLocationLoading = false
             }
@@ -218,7 +204,6 @@ fun MapViewScreen(
     
     LaunchedEffect(isViewModelInitialized) {
         if (isViewModelInitialized) {
-            showMap = true
             isInitialLoad = false
             isLocationLoading = false
         }
@@ -288,8 +273,8 @@ fun MapViewScreen(
         }
     }
     
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isViewModelInitialized, isCurrentDestination) {
-        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && !isViewModelInitialized && isCurrentDestination) {
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isCurrentDestination) {
+        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && isCurrentDestination) {
             println("MapViewScreen: Triggering fetchLocationAndUpdateMap (app opened on map tab)")
             fetchLocationAndUpdateMap()
         } else if (!locationPermissionsState.allPermissionsGranted) {
@@ -309,7 +294,8 @@ fun MapViewScreen(
     
     Box(modifier = Modifier.fillMaxSize()) {
         if (locationPermissionsState.allPermissionsGranted) {
-            if (!showMap && isInitialLoad && !isViewModelInitialized) {
+            if (!showMap) {
+                // Simplified loading screen - only show while maps aren't initialized
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,

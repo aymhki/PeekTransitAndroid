@@ -11,6 +11,8 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.google.android.gms.location.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
@@ -22,7 +24,7 @@ class LocationManager(private val context: Context) {
     
     companion object {
         private const val TAG = "LocationManager"
-        private const val LOCATION_TIMEOUT = 15000L
+        private const val LOCATION_TIMEOUT = 8000L
     }
     
     suspend fun getCurrentLocation(forceRefresh: Boolean = false): Location? {
@@ -51,39 +53,46 @@ class LocationManager(private val context: Context) {
             Log.d(TAG, "Method 1: Skipped - Force refresh requested")
         }
         
-        Log.d(TAG, "Method 2: Requesting fresh location from FusedLocationProvider")
-        val freshLocation = requestFreshLocationWithTimeout()
-        if (freshLocation != null) {
-            Log.d(TAG, "Method 2: Success - Got fresh location: ${freshLocation.latitude}, ${freshLocation.longitude}")
-            return freshLocation
-        } else {
-            Log.d(TAG, "Method 2: Failed - Could not get fresh location from FusedLocationProvider")
-        }
-        
-        Log.d(TAG, "Method 3: Attempting to get location from GPS provider")
-        val gpsLocation = getLocationFromProvider(AndroidLocationManager.GPS_PROVIDER)
-        if (gpsLocation != null) {
-            Log.d(TAG, "Method 3: Success - Got GPS location: ${gpsLocation.latitude}, ${gpsLocation.longitude}")
-            return gpsLocation
-        } else {
-            Log.d(TAG, "Method 3: Failed - Could not get GPS location")
-        }
-        
-        Log.d(TAG, "Method 4: Attempting to get location from Network provider")
-        val networkLocation = getLocationFromProvider(AndroidLocationManager.NETWORK_PROVIDER)
-        if (networkLocation != null) {
-            Log.d(TAG, "Method 4: Success - Got Network location: ${networkLocation.latitude}, ${networkLocation.longitude}")
-            return networkLocation
-        } else {
-            Log.d(TAG, "Method 4: Failed - Could not get Network location")
-        }
-        
-        Log.d(TAG, "Method 5: All location methods failed, using mock Winnipeg location for testing")
-        return Location("mock").apply {
-            latitude = 49.8951
-            longitude = -97.1384
-            accuracy = 1000f
-            time = System.currentTimeMillis()
+        Log.d(TAG, "Parallel Methods: Trying fresh location, GPS, and Network providers simultaneously")
+        return withTimeoutOrNull(LOCATION_TIMEOUT) {
+            val freshLocationDeferred = async { requestFreshLocation() }
+            val gpsLocationDeferred = async { getLocationFromProvider(AndroidLocationManager.GPS_PROVIDER) }
+            val networkLocationDeferred = async { getLocationFromProvider(AndroidLocationManager.NETWORK_PROVIDER) }
+            
+            select<Location?> {
+                freshLocationDeferred.onAwait { location ->
+                    if (location != null) {
+                        Log.d(TAG, "Parallel Success: Got fresh location: ${location.latitude}, ${location.longitude}")
+                        gpsLocationDeferred.cancel()
+                        networkLocationDeferred.cancel()
+                        location
+                    } else null
+                }
+                gpsLocationDeferred.onAwait { location ->
+                    if (location != null) {
+                        Log.d(TAG, "Parallel Success: Got GPS location: ${location.latitude}, ${location.longitude}")
+                        freshLocationDeferred.cancel()
+                        networkLocationDeferred.cancel()
+                        location
+                    } else null
+                }
+                networkLocationDeferred.onAwait { location ->
+                    if (location != null) {
+                        Log.d(TAG, "Parallel Success: Got Network location: ${location.latitude}, ${location.longitude}")
+                        freshLocationDeferred.cancel()
+                        gpsLocationDeferred.cancel()
+                        location
+                    } else null
+                }
+            }
+        } ?: run {
+            Log.d(TAG, "All parallel methods failed or timed out, using mock Winnipeg location for testing")
+            Location("mock").apply {
+                latitude = 49.8951
+                longitude = -97.1384
+                accuracy = 1000f
+                time = System.currentTimeMillis()
+            }
         }
     }
     

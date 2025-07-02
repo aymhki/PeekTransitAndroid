@@ -10,7 +10,7 @@ object PeekTransitConstants {
     const val BASE_URL = "https://api.winnipegtransit.com/v4/"
     
     // Stop Configuration
-    const val STOPS_DISTANCE_RADIUS = 500.0 // meters
+    const val STOPS_DISTANCE_RADIUS = 1000.0 // meters
     const val MAX_STOPS_ALLOWED_TO_FETCH = 25
     const val MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH = 15
     const val DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS = STOPS_DISTANCE_RADIUS/3 // meters
@@ -92,7 +92,7 @@ object PeekTransitConstants {
     const val LAST_SEEN_FONT_SIZE = 10f
     const val LAST_SEEN_FONT_SIZE_DEFAULT = 8f
 
-    val CLASSIC_THEM_TEXT_COLOR = Color(0xFFEB8634)
+    val CLASSIC_THEM_TEXT_COLOR = Color(0xFFFC7C24)
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
     const val LONG_SCHEDULE_ENTRY_WITH_LATE_FOR_TESTING = "899" + SCHEDULE_STRING_SEPARATOR + "Kildonan Place" + SCHEDULE_STRING_SEPARATOR + LATE_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 AM"
