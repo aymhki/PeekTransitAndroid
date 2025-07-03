@@ -81,8 +81,9 @@ fun ListViewScreen(
     fun loadStopsWithLocationCheck(forceRefresh: Boolean = false) {
         println("ListViewScreen: loadStopsWithLocationCheck called with forceRefresh=$forceRefresh")
         scope.launch {
-            locationManager.getCurrentLocation(forceRefresh)?.let { location ->
-                println("ListViewScreen: Got location ${location.latitude}, ${location.longitude}")
+            val location = locationManager.getCurrentLocation(forceRefresh)
+            if (location != null) {
+                println("ListViewScreen: Got real location ${location.latitude}, ${location.longitude}")
                 val shouldUpdate = if (previousLocation != null) {
                     val distance = previousLocation!!.distanceTo(location)
                     println("ListViewScreen: Distance from previous location: $distance")
@@ -106,8 +107,8 @@ fun ListViewScreen(
                 }
                 previousLocation = location
                 isInitialLoad = false
-            } ?: run {
-                println("ListViewScreen: Failed to get location")
+            } else {
+                println("ListViewScreen: Failed to get real location - not loading stops")
             }
         }
     }

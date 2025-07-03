@@ -83,7 +83,7 @@ fun MapViewScreen(
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             LatLng(49.8951, -97.1384),
-            PeekTransitConstants.DEFAULT_MAP_ZOOM
+            0f
         )
     }
     
@@ -96,12 +96,12 @@ fun MapViewScreen(
                 when (result) {
                     MapsInitializer.Renderer.LATEST -> {
                         isMapsInitialized = true
-                        showMap = true // Show map immediately after initialization
+                        showMap = true
                         locationStatus = "Maps initialized"
                     }
                     MapsInitializer.Renderer.LEGACY -> {
                         isMapsInitialized = true
-                        showMap = true // Show map immediately after initialization
+                        showMap = true
                         locationStatus = "Maps initialized (legacy)"
                     }
                 }
@@ -109,7 +109,7 @@ fun MapViewScreen(
         } catch (e: Exception) {
             locationStatus = "Maps initialization failed: ${e.message}"
             isMapsInitialized = true
-            showMap = true // Show map even if initialization failed
+            showMap = true
         }
     }
     
@@ -177,7 +177,6 @@ fun MapViewScreen(
                     locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
                     
                     if (shouldUpdateStops || forceRefresh) {
-                        // Removed unnecessary 500ms delay for better performance
                         if (isInitialLoad) {
                             viewModel.initializeWithLocation(location)
                         } else {
@@ -188,7 +187,7 @@ fun MapViewScreen(
                     isInitialLoad = false
                     previousUserLocation = previousLocation
                 } else {
-                    locationStatus = "Could not get location"
+                    locationStatus = "Unable to get location. Please check location permissions and settings."
                 }
             } catch (e: Exception) {
                 locationStatus = "Location error: ${e.message}"
@@ -273,8 +272,8 @@ fun MapViewScreen(
         }
     }
     
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isCurrentDestination) {
-        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && isCurrentDestination) {
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isCurrentDestination, isViewModelInitialized) {
+        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && isCurrentDestination && !isViewModelInitialized) {
             println("MapViewScreen: Triggering fetchLocationAndUpdateMap (app opened on map tab)")
             fetchLocationAndUpdateMap()
         } else if (!locationPermissionsState.allPermissionsGranted) {
@@ -295,7 +294,6 @@ fun MapViewScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         if (locationPermissionsState.allPermissionsGranted) {
             if (!showMap) {
-                // Simplified loading screen - only show while maps aren't initialized
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -309,7 +307,11 @@ fun MapViewScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Loading Map...",
+                        text = if (locationStatus.contains("Initializing") || locationStatus.contains("Maps")) {
+                            "Loading Map..."
+                        } else {
+                            "Getting Your Location..."
+                        },
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )

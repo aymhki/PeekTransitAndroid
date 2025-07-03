@@ -86,13 +86,8 @@ class LocationManager(private val context: Context) {
                 }
             }
         } ?: run {
-            Log.d(TAG, "All parallel methods failed or timed out, using mock Winnipeg location for testing")
-            Location("mock").apply {
-                latitude = 49.8951
-                longitude = -97.1384
-                accuracy = 1000f
-                time = System.currentTimeMillis()
-            }
+            Log.d(TAG, "All parallel methods failed or timed out, returning null")
+            null
         }
     }
     

@@ -75,6 +75,7 @@ fun LiveBusStopScreen(
     var isBookmarked by remember { mutableStateOf(false) }
     var isRefreshCooldown by remember { mutableStateOf(false) }
     var isNetworkAvailable by remember { mutableStateOf(true) }
+    var hasAttemptedScheduleFetch by remember { mutableStateOf(false) }
     
     val cooldownDuration = 1000L
     
@@ -139,7 +140,7 @@ fun LiveBusStopScreen(
                 isLoading = true
             }
             
-
+            hasAttemptedScheduleFetch = true
             error = null
             try {
                 val schedule = api.getStopSchedule(stopNumber)
@@ -409,6 +410,21 @@ fun LiveBusStopScreen(
                     }
 
                     isLoading -> {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator()
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text("Loading arrivals...")
+                                }
+                            }
+                        }
+                    }
+
+                    !hasAttemptedScheduleFetch -> {
                         item {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
