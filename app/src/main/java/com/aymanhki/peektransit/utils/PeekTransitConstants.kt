@@ -1,6 +1,7 @@
 package com.aymanhki.peektransit.utils
 
 import androidx.compose.ui.graphics.Color
+import com.aymanhki.peektransit.ui.theme.AccentBlue
 
 
 object PeekTransitConstants {
@@ -96,6 +97,7 @@ object PeekTransitConstants {
     const val LAST_SEEN_FONT_SIZE_DEFAULT = 8f
 
     val CLASSIC_THEM_TEXT_COLOR = Color(0xFFFC7C24)
+    val ACCENT_COLOR_IN_ALL_THEMES = AccentBlue
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
     const val LONG_SCHEDULE_ENTRY_WITH_LATE_FOR_TESTING = "899" + SCHEDULE_STRING_SEPARATOR + "Kildonan Place" + SCHEDULE_STRING_SEPARATOR + LATE_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 AM"

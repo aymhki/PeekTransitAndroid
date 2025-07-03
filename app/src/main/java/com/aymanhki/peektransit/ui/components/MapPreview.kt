@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
+import com.aymanhki.peektransit.utils.PeekTransitConstants.ACCENT_COLOR_IN_ALL_THEMES
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.MapsInitializer
@@ -241,13 +242,7 @@ fun MapPreview(
 }
 
 private fun getDirectionColor(direction: String): Color {
-    return when (direction.lowercase()) {
-        "northbound", "north" -> Color(0xFF4CAF50)
-        "southbound", "south" -> Color(0xFFFF9800)
-        "eastbound", "east" -> Color(0xFF2196F3)
-        "westbound", "west" -> Color(0xFFE91E63)
-        else -> Color(0xFF9E9E9E)
-    }
+    return ACCENT_COLOR_IN_ALL_THEMES
 }
 
 private fun getCustomMarkerIconForPreview(context: Context, direction: String): BitmapDescriptor {
