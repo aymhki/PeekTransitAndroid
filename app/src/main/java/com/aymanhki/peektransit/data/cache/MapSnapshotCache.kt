@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 object MapSnapshotCache {
     private val memoryCache = ConcurrentHashMap<String, Bitmap>()
-    private const val MAX_MEMORY_CACHE_SIZE = 300
-    private const val MAX_DISK_CACHE_SIZE_MB = 100
+    private const val MAX_MEMORY_CACHE_SIZE = 500
+    private const val MAX_DISK_CACHE_SIZE_MB = 300
     private const val CACHE_DIR_NAME = "map_snapshots"
     
     private var cacheDir: File? = null

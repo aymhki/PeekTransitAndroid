@@ -252,13 +252,13 @@ fun MapViewScreen(
                     distance
                 )
                 
-                if (distance[0] > 50.0f) {
+                if (distance[0] > PeekTransitConstants.MAP_CAMERA_UPDATE_THRESHOLD_METERS) {
                     try {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newCameraPosition(
                                 CameraPosition.fromLatLngZoom(newLatLng, cameraPositionState.position.zoom)
                             ),
-                            1000
+                            PeekTransitConstants.MAP_CAMERA_ANIMATION_DURATION_MS
                         )
                     } catch (e: Exception) {
                         cameraPositionState.move(

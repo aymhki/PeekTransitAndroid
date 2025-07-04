@@ -65,6 +65,25 @@ object PeekTransitConstants {
     const val CACHE_DURATION_SECONDS = 30
     const val REFRESH_WIDGET_TIMELINE_AFTER_SECONDS = 1
     
+    // Location Tracking Configuration
+    // Used by MainViewModel.startLocationMonitoring() for continuous location updates
+    const val LOCATION_UPDATE_INTERVAL_MS = 1000L // How often to request location updates (1 second)
+    
+    // Used by LocationManager.startLocationUpdates() for distance-based location filtering
+    const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 5.0f // Minimum distance to trigger location update (5 meters)
+    
+    // Used by LocationManager.requestFreshLocation() for one-time location requests
+    const val LOCATION_REQUEST_UPDATE_INTERVAL_MS = 1000L // Update interval for fresh location requests
+    const val LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS = 1000L // Minimum interval between location updates
+    const val LOCATION_REQUEST_TIMEOUT_MS = 100000L // Timeout for location requests (100 seconds)
+    
+    // Used by LocationManager.startLocationUpdates() for fine-tuning location updates
+    const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L // Fastest possible location updates (500ms)
+    
+    // Used by MapViewScreen.LaunchedEffect(liveLocation) for camera movement
+    const val MAP_CAMERA_UPDATE_THRESHOLD_METERS = 10.0f // Distance required to move map camera (10 meters)
+    const val MAP_CAMERA_ANIMATION_DURATION_MS = 500 // Camera movement animation duration (500ms)
+
     // Map Configuration
     const val DEFAULT_MAP_ZOOM = 16.5f
     const val STOP_MARKER_SIZE_DP = 32

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.TransitError
 import com.aymanhki.peektransit.data.repository.StopsDataStore
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import kotlinx.coroutines.launch
 
@@ -59,10 +60,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (!isLocationMonitoringActive && locationManager.hasLocationPermission()) {
             isLocationMonitoringActive = true
             locationManager.startLocationUpdates(
-                updateInterval = 5000L,
+                updateInterval = PeekTransitConstants.LOCATION_UPDATE_INTERVAL_MS,
+                minDistanceThreshold = PeekTransitConstants.LOCATION_UPDATE_MIN_DISTANCE_METERS,
                 callback = { newLocation ->
                     _currentLocation.postValue(newLocation)
-                    loadStops(newLocation, forceRefresh = false)
+                    val currentLocation = _currentLocation.value
+                    val shouldRefreshStops = if (currentLocation != null) {
+                        val distance = currentLocation.distanceTo(newLocation)
+                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
+                    } else {
+                        true
+                    }
+                    
+                    if (shouldRefreshStops) {
+                        loadStops(newLocation, forceRefresh = false)
+                    }
                 }
             )
         }

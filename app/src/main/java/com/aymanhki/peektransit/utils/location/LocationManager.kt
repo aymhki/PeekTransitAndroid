@@ -21,12 +21,12 @@ class LocationManager(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     private val androidLocationManager: AndroidLocationManager = context.getSystemService(Context.LOCATION_SERVICE) as AndroidLocationManager
     private var locationCallback: LocationCallback? = null
-    
+
     companion object {
         private const val TAG = "LocationManager"
-        private const val LOCATION_TIMEOUT = 8000L
     }
-    
+
+
     suspend fun getCurrentLocation(forceRefresh: Boolean = false): Location? {
         Log.d(TAG, "Starting location fetch process... (forceRefresh: $forceRefresh)")
         
@@ -54,37 +54,66 @@ class LocationManager(private val context: Context) {
         }
         
         Log.d(TAG, "Parallel Methods: Trying fresh location, GPS, and Network providers simultaneously")
-        return withTimeoutOrNull(LOCATION_TIMEOUT) {
+        return withTimeoutOrNull(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS) {
             val freshLocationDeferred = async { requestFreshLocation() }
             val gpsLocationDeferred = async { getLocationFromProvider(AndroidLocationManager.GPS_PROVIDER) }
             val networkLocationDeferred = async { getLocationFromProvider(AndroidLocationManager.NETWORK_PROVIDER) }
             
-            select<Location?> {
-                freshLocationDeferred.onAwait { location ->
-                    if (location != null) {
-                        Log.d(TAG, "Parallel Success: Got fresh location: ${location.latitude}, ${location.longitude}")
-                        gpsLocationDeferred.cancel()
-                        networkLocationDeferred.cancel()
-                        location
-                    } else null
+            var completedCount = 0
+            val totalTasks = 3
+            
+            while (completedCount < totalTasks) {
+                val result = select<Location?> {
+                    if (freshLocationDeferred.isActive) {
+                        freshLocationDeferred.onAwait { location ->
+                            if (location != null) {
+                                Log.d(TAG, "Parallel Success: Got fresh location: ${location.latitude}, ${location.longitude}")
+                                gpsLocationDeferred.cancel()
+                                networkLocationDeferred.cancel()
+                                location
+                            } else {
+                                Log.d(TAG, "Fresh location completed with null")
+                                null
+                            }
+                        }
+                    }
+                    if (gpsLocationDeferred.isActive) {
+                        gpsLocationDeferred.onAwait { location ->
+                            if (location != null) {
+                                Log.d(TAG, "Parallel Success: Got GPS location: ${location.latitude}, ${location.longitude}")
+                                freshLocationDeferred.cancel()
+                                networkLocationDeferred.cancel()
+                                location
+                            } else {
+                                Log.d(TAG, "GPS location completed with null")
+                                null
+                            }
+                        }
+                    }
+                    if (networkLocationDeferred.isActive) {
+                        networkLocationDeferred.onAwait { location ->
+                            if (location != null) {
+                                Log.d(TAG, "Parallel Success: Got Network location: ${location.latitude}, ${location.longitude}")
+                                freshLocationDeferred.cancel()
+                                gpsLocationDeferred.cancel()
+                                location
+                            } else {
+                                Log.d(TAG, "Network location completed with null")
+                                null
+                            }
+                        }
+                    }
                 }
-                gpsLocationDeferred.onAwait { location ->
-                    if (location != null) {
-                        Log.d(TAG, "Parallel Success: Got GPS location: ${location.latitude}, ${location.longitude}")
-                        freshLocationDeferred.cancel()
-                        networkLocationDeferred.cancel()
-                        location
-                    } else null
+                
+                if (result != null) {
+                    return@withTimeoutOrNull result
                 }
-                networkLocationDeferred.onAwait { location ->
-                    if (location != null) {
-                        Log.d(TAG, "Parallel Success: Got Network location: ${location.latitude}, ${location.longitude}")
-                        freshLocationDeferred.cancel()
-                        gpsLocationDeferred.cancel()
-                        location
-                    } else null
-                }
+                
+                completedCount++
             }
+            
+            Log.d(TAG, "All location methods completed without valid result")
+            null
         } ?: run {
             Log.d(TAG, "All parallel methods failed or timed out, returning null")
             null
@@ -106,7 +135,7 @@ class LocationManager(private val context: Context) {
     }
     
     private suspend fun requestFreshLocationWithTimeout(): Location? {
-        return withTimeoutOrNull(LOCATION_TIMEOUT) {
+        return withTimeoutOrNull(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS) {
             requestFreshLocation()
         }
     }
@@ -117,10 +146,10 @@ class LocationManager(private val context: Context) {
             return@suspendCancellableCoroutine
         }
         
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-            .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(2000)
-            .setMaxUpdateDelayMillis(10000)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, PeekTransitConstants.LOCATION_REQUEST_UPDATE_INTERVAL_MS)
+            .setWaitForAccurateLocation(true)
+            .setMinUpdateIntervalMillis(PeekTransitConstants.LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS)
+            .setMaxUpdateDelayMillis(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS)
             .build()
         
         val callback = object : LocationCallback() {
@@ -223,15 +252,15 @@ class LocationManager(private val context: Context) {
     }
     
     fun startLocationUpdates(
-        updateInterval: Long = 5000,
-        minDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS.toFloat(),
+        updateInterval: Long = PeekTransitConstants.LOCATION_UPDATE_INTERVAL_MS,
+        minDistanceThreshold: Float = PeekTransitConstants.LOCATION_UPDATE_MIN_DISTANCE_METERS,
         callback: (Location) -> Unit
     ) {
         if (!hasLocationPermission()) return
         
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, updateInterval)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, updateInterval)
             .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(updateInterval / 2)
+            .setMinUpdateIntervalMillis(PeekTransitConstants.LOCATION_UPDATE_MIN_INTERVAL_MS)
             .setMaxUpdateDelayMillis(updateInterval * 2)
             .setMinUpdateDistanceMeters(minDistanceThreshold)
             .build()

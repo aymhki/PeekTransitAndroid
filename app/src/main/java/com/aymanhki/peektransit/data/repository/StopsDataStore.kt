@@ -70,11 +70,11 @@ class StopsDataStore private constructor() {
     suspend fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         if (isCurrentlyLoading) return
         
-//        if (!forceRefresh && isCacheValid(userLocation)) {
-//            _stops.postValue(cachedStops)
-//            _error.postValue(null)
-//            return
-//        }
+        if (!forceRefresh && isCacheValid(userLocation)) {
+            _stops.postValue(cachedStops)
+            _error.postValue(null)
+            return
+        }
         
         loadStopsJob?.cancel()
         isCurrentlyLoading = true
