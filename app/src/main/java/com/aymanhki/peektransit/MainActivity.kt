@@ -46,6 +46,7 @@ import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
+//import com.aymanhki.peektransit.widgets.PeekTransitWidgetReceiver
 
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
@@ -69,6 +70,8 @@ class MainActivity : ComponentActivity() {
         permissionManager = PermissionManager(this)
         
         MapSnapshotCache.initialize(applicationContext)
+        
+        val stopNumber = -1 //intent?.getIntExtra(PeekTransitWidgetReceiver.STOP_NUMBER_KEY, -1) ?: -1
 
         enableEdgeToEdge()
         setContent {
@@ -87,7 +90,7 @@ class MainActivity : ComponentActivity() {
             
             PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
                 CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
-                    MainScreen()
+                    MainScreen(initialStopNumber = if (stopNumber > 0) stopNumber else null)
                 }
             }
         }
@@ -96,7 +99,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun MainScreen() {
+fun MainScreen(initialStopNumber: Int? = null) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val navController = rememberNavController()
@@ -104,6 +107,18 @@ fun MainScreen() {
     val currentDestination = navBackStackEntry?.destination
     
     val mainViewModel: MainViewModel = viewModel()
+    
+    // Initialize global location fetching and monitoring
+    LaunchedEffect(Unit) {
+        mainViewModel.initializeGlobal()
+    }
+    
+    // Handle deep link navigation
+    LaunchedEffect(initialStopNumber) {
+        initialStopNumber?.let { stopNumber ->
+            navController.navigate("live_stop/$stopNumber")
+        }
+    }
 
     val items = listOf(
         BottomNavItem.Map,
@@ -178,7 +193,7 @@ fun MainScreen() {
                 )
             }
             composable(BottomNavItem.Widgets.route) {
-                WidgetsScreen()
+                WidgetsScreen(stopsDataStore = mainViewModel.stopsDataStore)
             }
             composable(BottomNavItem.More.route) {
                 MoreScreen(

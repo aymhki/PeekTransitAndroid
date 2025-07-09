@@ -1,51 +1,124 @@
 package com.aymanhki.peektransit.data.models
 
+import com.aymanhki.peektransit.data.adapters.WidgetModelTypeAdapter
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonSyntaxException
+import java.util.UUID
+
 data class WidgetModel(
-    val id: String,
-    val name: String,
-    val widgetData: Map<String, Any>
+    val id: String = UUID.randomUUID().toString(),
+    val widgetData: Map<String, Any> = emptyMap()
 ) {
-    fun getStops(): List<Stop> {
-        return (widgetData["stops"] as? List<*>)?.filterIsInstance<Stop>() ?: emptyList()
+    fun toJson(): String {
+        return createGson().toJson(this)
     }
     
-    fun getSelectedStops(): List<Stop> {
-        return (widgetData["selectedStops"] as? List<*>)?.filterIsInstance<Stop>() ?: emptyList()
-    }
-    
-    fun getVariants(): List<Variant> {
-        return (widgetData["variants"] as? List<*>)?.filterIsInstance<Variant>() ?: emptyList()
-    }
-    
-    fun getSelectedVariants(): List<Variant> {
-        return (widgetData["selectedVariants"] as? List<*>)?.filterIsInstance<Variant>() ?: emptyList()
-    }
-    
-    fun getWidgetSize(): String {
-        return widgetData["size"] as? String ?: "medium"
-    }
-    
-    fun getShowLastUpdated(): Boolean {
-        return widgetData["showLastUpdated"] as? Boolean ?: true
-    }
-    
-    fun getTimeFormat(): String {
-        return widgetData["timeFormat"] as? String ?: "mixed"
-    }
-    
-    fun getShowMultipleArrivals(): Boolean {
-        return widgetData["showMultipleArrivals"] as? Boolean ?: false
-    }
-    
-    fun getUseNearestStop(): Boolean {
-        return widgetData["useNearestStop"] as? Boolean ?: false
-    }
-    
-    fun getUsePreferredStops(): Boolean {
-        return widgetData["usePreferredStops"] as? Boolean ?: false
-    }
-    
-    fun getAutoSelectSoonestBus(): Boolean {
-        return widgetData["autoSelectSoonestBus"] as? Boolean ?: false
+    companion object {
+        private fun createGson(): Gson {
+            return GsonBuilder()
+                .registerTypeAdapter(WidgetModel::class.java, WidgetModelTypeAdapter())
+                .create()
+        }
+        
+        fun fromJson(json: String): WidgetModel? {
+            return try {
+                createGson().fromJson(json, WidgetModel::class.java)
+            } catch (e: JsonSyntaxException) {
+                null
+            }
+        }
+        
+        fun parseWidgetData(widgetData: Map<String, Any>): WidgetConfiguration {
+            val gson = createGson()
+            
+            val size = widgetData["size"] as? String ?: "small"
+            val name = widgetData["name"] as? String ?: "Unnamed Widget"
+            val showLastUpdatedStatus = widgetData["showLastUpdatedStatus"] as? Boolean ?: false
+            val timeFormat = widgetData["timeFormat"] as? String ?: "default"
+            val multipleEntriesPerVariant = widgetData["multipleEntriesPerVariant"] as? Boolean ?: false
+            val isClosestStop = widgetData["isClosestStop"] as? Boolean ?: false
+            val noSelectedVariants = widgetData["noSelectedVariants"] as? Boolean ?: false
+            
+            val selectedStops = widgetData["stops"] as? List<Stop> ?: emptyList()
+            val preferredStops = widgetData["preferredStops"] as? List<Stop> ?: emptyList()
+            val selectedVariants = widgetData["selectedVariants"] as? Map<String, List<Variant>> ?: emptyMap()
+            
+            return WidgetConfiguration(
+                size = size,
+                name = name,
+                showLastUpdatedStatus = showLastUpdatedStatus,
+                timeFormat = timeFormat,
+                multipleEntriesPerVariant = multipleEntriesPerVariant,
+                isClosestStop = isClosestStop,
+                noSelectedVariants = noSelectedVariants,
+                stops = selectedStops,
+                preferredStops = preferredStops,
+                selectedVariants = selectedVariants
+            )
+        }
+        
     }
 }
+
+data class WidgetConfiguration(
+    val size: String,
+    val name: String,
+    val showLastUpdatedStatus: Boolean,
+    val timeFormat: String,
+    val multipleEntriesPerVariant: Boolean,
+    val isClosestStop: Boolean,
+    val noSelectedVariants: Boolean,
+    val stops: List<Stop>,
+    val preferredStops: List<Stop>,
+    val selectedVariants: Map<String, List<Variant>>
+) {
+    fun toWidgetData(): Map<String, Any> {
+        val data = mutableMapOf<String, Any>()
+        data["size"] = size
+        data["name"] = name
+        data["showLastUpdatedStatus"] = showLastUpdatedStatus
+        data["timeFormat"] = timeFormat
+        data["multipleEntriesPerVariant"] = multipleEntriesPerVariant
+        data["isClosestStop"] = isClosestStop
+        data["noSelectedVariants"] = noSelectedVariants
+        data["createdAt"] = System.currentTimeMillis()
+        
+        // Attach selected variants to stops like iOS implementation
+        if (stops.isNotEmpty()) {
+            val stopsWithVariants = stops.map { stop ->
+                val stopKey = stop.number.toString()
+                val stopVariants = selectedVariants[stopKey] ?: emptyList()
+                
+                // Create a new stop with attached variants (like iOS implementation)
+                stop.copy(
+                    variants = stopVariants,
+                    selectedVariants = stopVariants
+                )
+            }
+            data["stops"] = stopsWithVariants
+        }
+        
+        if (preferredStops.isNotEmpty()) {
+            val stopsWithVariants = preferredStops.map { stop ->
+                val stopKey = stop.number.toString()
+                val stopVariants = selectedVariants[stopKey] ?: emptyList()
+                
+                // Create a new stop with attached variants (like iOS implementation)
+                stop.copy(
+                    variants = stopVariants,
+                    selectedVariants = stopVariants
+                )
+            }
+            data["preferredStops"] = stopsWithVariants
+        }
+        
+        // Also store selectedVariants for backward compatibility
+        if (selectedVariants.isNotEmpty()) {
+            data["selectedVariants"] = selectedVariants
+        }
+        
+        return data
+    }
+}
+

@@ -56,9 +56,12 @@ fun ListViewScreen(
             println("ListViewScreen: Stop ${stop.number} has ${stop.variants.size} variants")
         }
     }
+    val isLoadingStops by viewModel.isLoadingStops.observeAsState(false)
+    val isLoadingLocation by viewModel.isLoadingLocation.observeAsState(false)
     val isLoading by viewModel.isLoading.observeAsState(false)
     val isSearching by viewModel.isSearching.observeAsState(false)
     val error by viewModel.error.observeAsState()
+    val locationError by viewModel.locationError.observeAsState()
     val searchError by viewModel.searchError.observeAsState()
 
     val viewModelSearchQuery by viewModel.searchQuery.observeAsState("")
@@ -75,52 +78,7 @@ fun ListViewScreen(
         }
     }
 
-    var previousLocation by remember { mutableStateOf<android.location.Location?>(null) }
-    var isInitialLoad by remember { mutableStateOf(true) }
-
-    fun loadStopsWithLocationCheck(forceRefresh: Boolean = false) {
-        println("ListViewScreen: loadStopsWithLocationCheck called with forceRefresh=$forceRefresh")
-        scope.launch {
-            val location = locationManager.getCurrentLocation(forceRefresh)
-            if (location != null) {
-                println("ListViewScreen: Got real location ${location.latitude}, ${location.longitude}")
-                val shouldUpdate = if (previousLocation != null) {
-                    val distance = previousLocation!!.distanceTo(location)
-                    println("ListViewScreen: Distance from previous location: $distance")
-                    distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
-                } else {
-                    println("ListViewScreen: No previous location, should update = true")
-                    true
-                }
-
-                println("ListViewScreen: shouldUpdate=$shouldUpdate, forceRefresh=$forceRefresh, isInitialLoad=$isInitialLoad")
-                if (shouldUpdate || forceRefresh) {
-                    if (isInitialLoad && !forceRefresh) {
-                        println("ListViewScreen: Calling viewModel.initializeWithLocation")
-                        viewModel.initializeWithLocation(location)
-                    } else {
-                        println("ListViewScreen: Calling viewModel.loadStops")
-                        viewModel.loadStops(location, forceRefresh = forceRefresh)
-                    }
-                } else {
-                    println("ListViewScreen: Skipping update due to shouldUpdate=false and forceRefresh=false")
-                }
-                previousLocation = location
-                isInitialLoad = false
-            } else {
-                println("ListViewScreen: Failed to get real location - not loading stops")
-            }
-        }
-    }
-
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
-
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isViewModelInitialized, isCurrentDestination) {
-        if (locationPermissionsState.allPermissionsGranted && !isViewModelInitialized && isCurrentDestination) {
-            println("ListViewScreen: Triggering loadStopsWithLocationCheck (current destination)")
-            loadStopsWithLocationCheck()
-        }
-    }
 
     LaunchedEffect(localSearchQuery, isUserInput) {
         if (!isUserInput) {
@@ -206,7 +164,7 @@ fun ListViewScreen(
                 Box(modifier = Modifier.fillMaxSize()) {
                     CustomPullToRefreshBox(
                         modifier = Modifier.padding(paddingValues),
-                        isRefreshing = isLoading || isSearching || isDebouncing,
+                        isRefreshing = isLoadingStops || isLoadingLocation || isLoading || isSearching || isDebouncing,
                         onRefresh = {
                             if (localSearchQuery.isNotEmpty()) {
                                 scope.launch {
@@ -214,7 +172,7 @@ fun ListViewScreen(
                                     viewModel.searchForStops(localSearchQuery, location)
                                 }
                             } else {
-                                loadStopsWithLocationCheck(forceRefresh = true)
+                                viewModel.retry()
                             }
                         }
                     ) {
@@ -276,30 +234,34 @@ fun ListViewScreen(
                                     )
                                 }
                             }
-                        
-                                                    when {
-                            isLoading || isSearching || isDebouncing -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .fillParentMaxHeight(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.padding(16.dp)
+                            when {
+                                isLoadingStops || isLoadingLocation || isLoading || isSearching || isDebouncing -> {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .fillParentMaxHeight(),
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator()
-                                            Spacer(modifier = Modifier.height(16.dp))
-                                            Text(
-                                                text = if (isSearching || isDebouncing) "Searching..." else "Loading nearby stops...",
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.padding(16.dp)
+                                            ) {
+                                                CircularProgressIndicator()
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                Text(
+                                                    text = when {
+                                                        isSearching || isDebouncing -> "Searching..."
+                                                        isLoadingLocation -> "Getting your location..."
+                                                        isLoadingStops || isLoading -> "Loading nearby stops..."
+                                                        else -> "Loading..."
+                                                    },
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
 
                                 else -> {
                                     val combinedStops = mutableListOf<Stop>().apply {
@@ -325,33 +287,145 @@ fun ListViewScreen(
                                         }
                                     }
 
-                                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else error
+                                    // For search: show local results immediately
+                                    val localFilteredStops = if (localSearchQuery.isEmpty()) {
+                                        stops
+                                    } else {
+                                        stops.filter { stop ->
+                                            stop.name.contains(localSearchQuery, ignoreCase = true) ||
+                                            stop.number.toString().contains(localSearchQuery) ||
+                                            stop.variants.any { variant ->
+                                                variant.key.contains(localSearchQuery, ignoreCase = true) ||
+                                                variant.name.contains(localSearchQuery, ignoreCase = true)
+                                            }
+                                        }
+                                    }
 
-                                    if (filteredStops.isEmpty() && currentError == null) {
-                                        item {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .fillParentMaxHeight(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.padding(16.dp),
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.Center
+                                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else (error ?: locationError)
+                                    val hasLocalResults = localFilteredStops.isNotEmpty()
+                                    val isSearchActive = localSearchQuery.isNotEmpty()
+
+                                    when {
+                                        // Show local results immediately when searching, even if API is still loading
+                                        isSearchActive && hasLocalResults -> {
+                                            items(filteredStops, key = { stop ->
+                                                "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
+                                            }) { stop ->
+                                                StopRow(
+                                                    stop = stop,
+                                                    distance = stop.getDistance(),
+                                                    onNavigateToLiveStop = onNavigateToLiveStop
+                                                )
+                                            }
+                                            
+                                            // Show subtle loading indicator at bottom if API search is still running
+                                            if (isSearching) {
+                                                item {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(16.dp),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                        ) {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.size(16.dp),
+                                                                strokeWidth = 2.dp
+                                                            )
+                                                            Text(
+                                                                "Finding more stops...",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Show no results only when search is complete and no results found
+                                        isSearchActive && !hasLocalResults && !isSearching && currentError == null -> {
+                                            item {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .fillParentMaxHeight(),
+                                                    contentAlignment = Alignment.Center
                                                 ) {
                                                     Text(
-                                                        text = if (localSearchQuery.isNotEmpty()) "No stops found for \"$localSearchQuery\"" else "No nearby stops found",
+                                                        text = "No stops found for \"$localSearchQuery\"",
                                                         style = MaterialTheme.typography.bodyLarge,
                                                         textAlign = TextAlign.Center
                                                     )
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Show full loading when searching but no local results yet
+                                        isSearchActive && !hasLocalResults && isSearching -> {
+                                            item {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .fillParentMaxHeight(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        modifier = Modifier.padding(16.dp)
+                                                    ) {
+                                                        CircularProgressIndicator()
+                                                        Spacer(modifier = Modifier.height(16.dp))
+                                                        Text(
+                                                            text = "Searching...",
+                                                            style = MaterialTheme.typography.bodyMedium
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Regular display for non-search scenarios
+                                        !isSearchActive && filteredStops.isNotEmpty() -> {
+                                            items(filteredStops, key = { stop ->
+                                                "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
+                                            }) { stop ->
+                                                StopRow(
+                                                    stop = stop,
+                                                    distance = stop.getDistance(),
+                                                    onNavigateToLiveStop = onNavigateToLiveStop
+                                                )
+                                            }
+                                        }
+                                        
+                                        // No results for non-search scenarios
+                                        !isSearchActive && filteredStops.isEmpty() && currentError == null -> {
+                                            item {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .fillParentMaxHeight(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(16.dp),
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.Center
+                                                    ) {
+                                                        Text(
+                                                            text = "No nearby stops found",
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            textAlign = TextAlign.Center
+                                                        )
 
-                                                    if (localSearchQuery.isEmpty()) {
                                                         Spacer(modifier = Modifier.height(16.dp))
 
                                                         Button(
                                                             onClick = {
-                                                                loadStopsWithLocationCheck(forceRefresh = true)
+                                                                viewModel.retry()
                                                             }
                                                         ) {
                                                             Text("Retry")
@@ -360,23 +434,13 @@ fun ListViewScreen(
                                                 }
                                             }
                                         }
-                                    } else {
-                                        items(filteredStops, key = { stop ->
-                                            "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
-                                        }) { stop ->
-                                            StopRow(
-                                                stop = stop,
-                                                distance = stop.getDistance(),
-                                                onNavigateToLiveStop = onNavigateToLiveStop
-                                            )
-                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else error
+                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else (error ?: locationError)
                     currentError?.let { transitError ->
                         Box(
                             modifier = Modifier
@@ -392,6 +456,7 @@ fun ListViewScreen(
                                                 viewModel.clearSearchError()
                                             } else {
                                                 viewModel.clearError()
+                                                viewModel.clearLocationError()
                                             }
                                         }
                                     ) {

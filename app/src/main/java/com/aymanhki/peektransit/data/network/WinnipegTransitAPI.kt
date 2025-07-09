@@ -54,7 +54,8 @@ interface WinnipegTransitApiService {
     @GET("variants.json")
     suspend fun getVariantsForStop(
         @Query("stop") stopNumber: Int,
-        @Query("api-key") apiKey: String
+        @Query("api-key") apiKey: String,
+        @Query("usage") usage: String = "short"
     ): Response<JsonObject>
     
     @GET("stops/{stopNumber}/schedule.json")
@@ -513,7 +514,7 @@ class WinnipegTransitAPI private constructor() {
         try {
             val response = apiService.getRoutesForStop(
                 stopNumber = stopNumber,
-                usage = "long",
+                usage = "short",
                 apiKey = PeekTransitConstants.TRANSIT_API_KEY
             )
             
@@ -597,7 +598,7 @@ class WinnipegTransitAPI private constructor() {
                 startTime = startTime,
                 endTime = endTime,
                 stops = stopsString,
-                usage = "long",
+                usage = "short",
                 apiKey = PeekTransitConstants.TRANSIT_API_KEY
             )
 
@@ -629,6 +630,177 @@ class WinnipegTransitAPI private constructor() {
         }
     }
 
+    suspend fun cleanScheduleMixedTimeFormat(
+        scheduleData: List<String>
+    ): List<String> = withContext(Dispatchers.IO) {
+        val cleanedSchedule = mutableListOf<String>()
+        
+        try {
+            val currentDate = Date()
+            val calendar = Calendar.getInstance()
+            calendar.time = currentDate
+            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+            val currentMinute = calendar.get(Calendar.MINUTE)
+            val currentTotalMinutes = currentHour * 60 + currentMinute
+            
+            for (schedule in scheduleData) {
+                val components = schedule.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
+                if (components.size >= 4) {
+                    val variantKey = components[0]
+                    val variantName = components[1]
+                    val status = components[2]
+                    val time = components[3]
+                    
+                    var finalTime = time
+                    
+                    when {
+                        time == PeekTransitConstants.DUE_STATUS_TEXT -> {
+                            finalTime = time
+                        }
+                        time.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT) -> {
+                            val minutes = time.split(" ")[0].toIntOrNull() ?: 0
+                            if (minutes <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS) {
+                                finalTime = time
+                            } else {
+                                calendar.time = currentDate
+                                calendar.add(Calendar.MINUTE, minutes)
+                                val hour = calendar.get(Calendar.HOUR_OF_DAY)
+                                val minute = calendar.get(Calendar.MINUTE)
+                                var displayHour = hour
+                                val am = hour < 12
+                                
+                                when {
+                                    hour == 0 -> displayHour = 12
+                                    hour > 12 -> displayHour -= 12
+                                }
+                                
+                                val minuteStr = if (minute < 10) "0$minute" else minute.toString()
+                                finalTime = "$displayHour:$minuteStr ${if (am) PeekTransitConstants.GLOBAL_AM_TEXT else PeekTransitConstants.GLOBAL_PM_TEXT}"
+                            }
+                        }
+                        time.endsWith(PeekTransitConstants.MINUTES_PASSED_TEXT) -> {
+                            finalTime = PeekTransitConstants.DUE_STATUS_TEXT
+                        }
+                    }
+                    
+                    cleanedSchedule.add("$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$status${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$finalTime")
+                } else {
+                    cleanedSchedule.add(schedule)
+                }
+            }
+        } catch (e: Exception) {
+            return@withContext scheduleData
+        }
+        
+        return@withContext cleanedSchedule
+    }
+    
+    suspend fun getVariantsForStops(
+        stops: List<Stop>,
+        onStopEnriched: ((Stop) -> Unit)? = null
+    ): List<Stop> = withContext(Dispatchers.IO) {
+        val enrichedStops = mutableListOf<Stop>()
+        
+        for (stop in stops) {
+            try {
+                val enrichedStop = enrichStopWithVariants(stop)
+                enrichedStops.add(enrichedStop)
+                onStopEnriched?.invoke(enrichedStop)
+            } catch (e: Exception) {
+                enrichedStops.add(stop)
+                onStopEnriched?.invoke(stop)
+            }
+        }
+        
+        enrichedStops
+    }
+    
+    fun getCurrentWinnipegDateTime(): Date {
+        val winnipegTimeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
+        val calendar = Calendar.getInstance(winnipegTimeZone)
+        return Date(calendar.timeInMillis)
+    }
+    
+    fun formatDateForAPI(date: Date): String {
+        val dateFormat = SimpleDateFormat(PeekTransitConstants.DATE_FORMAT_API, Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
+        return dateFormat.format(date)
+    }
+    
+    fun formatTimeForAPI(date: Date): String {
+        val timeFormat = SimpleDateFormat(PeekTransitConstants.TIME_FORMAT_API, Locale.getDefault())
+        timeFormat.timeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
+        return timeFormat.format(date)
+    }
+    
+    suspend fun getOnlyVariantsForStop(stop: Stop): List<Variant> = withContext(Dispatchers.IO) {
+        if (stop.number == -1) {
+            return@withContext emptyList()
+        }
+        
+        try {
+            val response = apiService.getVariantsForStop(
+                stopNumber = stop.number,
+                apiKey = PeekTransitConstants.TRANSIT_API_KEY
+            )
+            
+            if (response.isSuccessful) {
+                val jsonObject = response.body()
+                val variantsArray = jsonObject?.getAsJsonArray("variants")
+                
+                if (variantsArray != null) {
+                    val stopVariants = mutableListOf<Variant>()
+                    val currentDate = Date()
+                    
+                    for (element in variantsArray) {
+                        val variantObject = element.asJsonObject
+                        // Parse variant using existing gson approach like other functions
+                        val variant = Variant(
+                            key = variantObject.get("key")?.asString ?: "Unknown",
+                            name = variantObject.get("name")?.asString ?: "Unknown",
+                            effectiveFrom = variantObject.get("effective-from")?.asString ?: "",
+                            effectiveTo = variantObject.get("effective-to")?.asString ?: "",
+                            backgroundColor = variantObject.get("background-color")?.asString,
+                            borderColor = variantObject.get("border-color")?.asString,
+                            textColor = variantObject.get("color")?.asString
+                        )
+                        stopVariants.add(variant)
+                    }
+                    
+                    // Filter variants like iOS implementation
+                    val filteredVariants = stopVariants.filter { variant ->
+                        // Filter out variants starting with S, W, or I (like iOS)
+                        val keyPrefix = variant.key.take(1)
+                        val validPrefix = keyPrefix !in listOf("S", "W", "I")
+                        
+                        // Filter by effective dates (like iOS)
+                        val validEffectiveDate = run {
+                            val effectiveFrom = variant.getEffectiveFromDate()
+                            val effectiveTo = variant.getEffectiveToDate()
+                            
+                            (effectiveFrom == null || currentDate >= effectiveFrom) &&
+                            (effectiveTo == null || currentDate <= effectiveTo)
+                        }
+                        
+                        validPrefix && validEffectiveDate
+                    }
+                    
+                    // Return unique variants (like iOS uses Set<Variant>)
+                    return@withContext filteredVariants.distinctBy { "${it.key}-${it.name}" }
+                } else {
+                    return@withContext emptyList()
+                }
+            } else {
+                throw TransitError.NetworkError(IOException("API call failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            when (e) {
+                is TransitError -> throw e
+                else -> throw TransitError.NetworkError(IOException("Failed to fetch variants: ${e.message}"))
+            }
+        }
+    }
+    
     companion object {
         @Volatile
         private var INSTANCE: WinnipegTransitAPI? = null

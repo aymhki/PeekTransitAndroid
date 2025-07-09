@@ -14,15 +14,25 @@ import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val stopsDataStore = StopsDataStore.getInstance().apply {
+    val stopsDataStore = StopsDataStore.getInstance().apply {
         initialize(application.applicationContext)
     }
     
     private val _isInitialized = MutableLiveData(false)
     val isInitialized: LiveData<Boolean> = _isInitialized
     
+    private val _isLoadingLocation = MutableLiveData(false)
+    val isLoadingLocation: LiveData<Boolean> = _isLoadingLocation
+    
+    private val _isLoadingStops = MutableLiveData(false)
+    val isLoadingStops: LiveData<Boolean> = _isLoadingStops
+    
+    private val _locationError = MutableLiveData<TransitError?>(null)
+    val locationError: LiveData<TransitError?> = _locationError
+    
     private val locationManager = LocationManagerProvider.getInstance(application)
     private var isLocationMonitoringActive = false
+    private var previousLocation: Location? = null
     
     private val _currentLocation = MutableLiveData<Location?>()
     val currentLocation: LiveData<Location?> = _currentLocation
@@ -42,9 +52,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            stopsDataStore.loadStops(userLocation, loadingFromWidgetSetup, forceRefresh)
-            if (_isInitialized.value != true) {
-                _isInitialized.postValue(true)
+            _isLoadingStops.postValue(true)
+            try {
+                stopsDataStore.loadStops(userLocation, loadingFromWidgetSetup, forceRefresh)
+                if (_isInitialized.value != true) {
+                    _isInitialized.postValue(true)
+                }
+            } finally {
+                _isLoadingStops.postValue(false)
             }
         }
     }
@@ -56,6 +71,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun initializeGlobal() {
+        if (_isInitialized.value == false && locationManager.hasLocationPermission()) {
+            fetchLocationAndLoadStops()
+        }
+    }
+    
+    private fun fetchLocationAndLoadStops(forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            _isLoadingLocation.postValue(true)
+            try {
+                val location = locationManager.getCurrentLocation(forceRefresh)
+                if (location != null) {
+                    _currentLocation.postValue(location)
+                    
+                    val shouldUpdate = if (previousLocation != null) {
+                        val distance = previousLocation!!.distanceTo(location)
+                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
+                    } else {
+                        true
+                    }
+                    
+                    if (shouldUpdate || forceRefresh) {
+                        if (_isInitialized.value != true) {
+                            initializeWithLocation(location)
+                        } else {
+                            loadStops(location, forceRefresh = forceRefresh)
+                        }
+                    }
+                    previousLocation = location
+                } else {
+                    _locationError.postValue(TransitError.NetworkError(Exception("Unable to get location. Please check location permissions and settings.")))
+                }
+            } catch (e: Exception) {
+                _locationError.postValue(TransitError.NetworkError(e))
+            } finally {
+                _isLoadingLocation.postValue(false)
+            }
+        }
+    }
+    
+    fun retry() {
+        clearError()
+        clearLocationError()
+        fetchLocationAndLoadStops(forceRefresh = true)
+    }
+    
+    fun clearLocationError() {
+        _locationError.postValue(null)
+    }
+    
     private fun startLocationMonitoring() {
         if (!isLocationMonitoringActive && locationManager.hasLocationPermission()) {
             isLocationMonitoringActive = true
@@ -64,9 +129,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 minDistanceThreshold = PeekTransitConstants.LOCATION_UPDATE_MIN_DISTANCE_METERS,
                 callback = { newLocation ->
                     _currentLocation.postValue(newLocation)
-                    val currentLocation = _currentLocation.value
-                    val shouldRefreshStops = if (currentLocation != null) {
-                        val distance = currentLocation.distanceTo(newLocation)
+                    val shouldRefreshStops = if (previousLocation != null) {
+                        val distance = previousLocation!!.distanceTo(newLocation)
                         distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
                     } else {
                         true
@@ -74,6 +138,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     
                     if (shouldRefreshStops) {
                         loadStops(newLocation, forceRefresh = false)
+                        previousLocation = newLocation
                     }
                 }
             )

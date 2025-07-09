@@ -68,14 +68,14 @@ fun MapViewScreen(
     )
     
     val stops by viewModel.stops.observeAsState(emptyList())
+    val isLoadingStops by viewModel.isLoadingStops.observeAsState(false)
+    val isLoadingLocation by viewModel.isLoadingLocation.observeAsState(false)
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
+    val locationError by viewModel.locationError.observeAsState()
     
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
-    var previousUserLocation by remember { mutableStateOf<LatLng?>(null) }
     var locationStatus by remember { mutableStateOf("Initializing...") }
-    var isLocationLoading by remember { mutableStateOf(true) }
-    var isInitialLoad by remember { mutableStateOf(true) }
     var showMap by remember { mutableStateOf(false) }
     var isMapsInitialized by remember { mutableStateOf(false) }
     var hasCameraInitializedToUserLocation by remember { mutableStateOf(false) }
@@ -113,100 +113,11 @@ fun MapViewScreen(
         }
     }
     
-    fun fetchLocationAndUpdateMap(forceRefresh: Boolean = false) {
-        scope.launch {
-            isLocationLoading = true
-            locationStatus = "Fetching location..."
-            
-            try {
-                val location = locationManager.getCurrentLocation(forceRefresh)
-                if (location != null) {
-                    val latLng = LatLng(location.latitude, location.longitude)
-                    val previousLocation = userLocation
-                    userLocation = latLng
-                    
-                    if (viewModel.currentLocation.value == null) {
-                        viewModel.updateCurrentLocation(location)
-                    }
-                    
-                    val shouldUpdateStops = if (previousLocation != null) {
-                        val distance = FloatArray(1)
-                        android.location.Location.distanceBetween(
-                            previousLocation.latitude, previousLocation.longitude,
-                            latLng.latitude, latLng.longitude,
-                            distance
-                        )
-                        distance[0] > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
-                    } else {
-                        true
-                    }
-                    
-                    if (isInitialLoad && isMapsInitialized) {
-                        try {
-                            cameraPositionState.animate(
-                                CameraUpdateFactory.newCameraPosition(
-                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                ),
-                                1500
-                            )
-                            hasCameraInitializedToUserLocation = true
-                        } catch (e: Exception) {
-                            cameraPositionState.move(
-                                CameraUpdateFactory.newCameraPosition(
-                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                )
-                            )
-                            hasCameraInitializedToUserLocation = true
-                        }
-                    } else if (forceRefresh && isMapsInitialized) {
-                        try {
-                            cameraPositionState.animate(
-                                CameraUpdateFactory.newCameraPosition(
-                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                )
-                            )
-                        } catch (e: Exception) {
-                            cameraPositionState.move(
-                                CameraUpdateFactory.newCameraPosition(
-                                    CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                                )
-                            )
-                        }
-                    }
-                    
-                    locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
-                    
-                    if (shouldUpdateStops || forceRefresh) {
-                        if (isInitialLoad) {
-                            viewModel.initializeWithLocation(location)
-                        } else {
-                            viewModel.loadStops(location, forceRefresh = forceRefresh)
-                        }
-                    }
-                    
-                    isInitialLoad = false
-                    previousUserLocation = previousLocation
-                } else {
-                    locationStatus = "Unable to get location. Please check location permissions and settings."
-                }
-            } catch (e: Exception) {
-                locationStatus = "Location error: ${e.message}"
-            } finally {
-                isLocationLoading = false
-            }
-        }
-    }
     
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
     
     val liveLocation by viewModel.currentLocation.observeAsState()
     
-    LaunchedEffect(isViewModelInitialized) {
-        if (isViewModelInitialized) {
-            isInitialLoad = false
-            isLocationLoading = false
-        }
-    }
 
     LaunchedEffect(showMap, isViewModelInitialized, isMapsInitialized, hasCameraInitializedToUserLocation) {
         if (showMap && isViewModelInitialized && isMapsInitialized && !hasCameraInitializedToUserLocation) {
@@ -243,6 +154,7 @@ fun MapViewScreen(
             val previousLocation = userLocation
             
             userLocation = newLatLng
+            locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
             
             if (previousLocation != null && isMapsInitialized && showMap) {
                 val distance = FloatArray(1)
@@ -272,11 +184,15 @@ fun MapViewScreen(
         }
     }
     
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, isCurrentDestination, isViewModelInitialized) {
-        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && isCurrentDestination && !isViewModelInitialized) {
-            println("MapViewScreen: Triggering fetchLocationAndUpdateMap (app opened on map tab)")
-            fetchLocationAndUpdateMap()
-        } else if (!locationPermissionsState.allPermissionsGranted) {
+    LaunchedEffect(isLoadingLocation, isLoadingStops) {
+        when {
+            isLoadingLocation -> locationStatus = "Getting your location..."
+            isLoadingStops -> locationStatus = "Loading nearby stops..."
+        }
+    }
+    
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized) {
+        if (!locationPermissionsState.allPermissionsGranted) {
             locationStatus = "Location permission required"
         } else if (!isMapsInitialized) {
             locationStatus = "Initializing maps..."
@@ -386,7 +302,7 @@ fun MapViewScreen(
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isLocationLoading) {
+                        if (isLoadingLocation || isLoadingStops) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp
@@ -402,12 +318,12 @@ fun MapViewScreen(
             }
             
             FloatingActionButton(
-                onClick = { fetchLocationAndUpdateMap(forceRefresh = true) },
+                onClick = { viewModel.retry() },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                if (isLocationLoading) {
+                if (isLoadingLocation || isLoadingStops) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp,
@@ -462,7 +378,7 @@ fun MapViewScreen(
             }
         }
         
-        if (isLoading) {
+        if (isLoadingStops || isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -473,11 +389,15 @@ fun MapViewScreen(
             }
         }
         
-        error?.let { transitError ->
+        val currentError = error ?: locationError
+        currentError?.let { transitError ->
             Snackbar(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 action = {
-                    TextButton(onClick = { viewModel.clearError() }) {
+                    TextButton(onClick = { 
+                        viewModel.clearError()
+                        viewModel.clearLocationError()
+                    }) {
                         Text("Dismiss")
                     }
                 }

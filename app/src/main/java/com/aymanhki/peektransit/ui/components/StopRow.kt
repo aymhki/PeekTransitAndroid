@@ -138,7 +138,7 @@ fun StopRow(
                                 val groupedFutureVariants = futureVariants.groupBy { variant ->
                                     val effectiveFrom = variant.getEffectiveFromDate()
                                     val calendar = java.util.Calendar.getInstance()
-                                    calendar.time = effectiveFrom
+                                    calendar.time = effectiveFrom ?: java.util.Date()
                                     calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
                                     calendar.set(java.util.Calendar.MINUTE, 0)
                                     calendar.set(java.util.Calendar.SECOND, 0)
