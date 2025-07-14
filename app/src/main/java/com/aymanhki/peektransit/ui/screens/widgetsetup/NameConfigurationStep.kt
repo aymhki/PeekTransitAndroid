@@ -145,7 +145,6 @@ private fun generateDefaultWidgetName(
     noSelectedVariants: Boolean,
     selectedPerferredStopsInClosestStops: Boolean
 ): String {
-    // Format time format display
     val timeFormatDisplay = if (multipleEntriesPerVariant) {
         "Mixed Time Format"
     } else {
@@ -157,21 +156,18 @@ private fun generateDefaultWidgetName(
         }
     }
     
-    // Format entries per variant display
     val entriesPerVariantDisplay = if (multipleEntriesPerVariant) {
         "Multiple entries per variant"
     } else {
         "Single entry per variant"
     }
     
-    // Format last updated status display
     val lastUpdatedStatusDisplay = if (showLastUpdatedStatus) {
         "Show Last Updated Status"
     } else {
         "Don't Show Last Updated Status"
     }
     
-    // Generate the main part of the name
     val mainName = when {
         isClosestStop -> {
             val preferredStopsText = if (selectedPerferredStopsInClosestStops) {
