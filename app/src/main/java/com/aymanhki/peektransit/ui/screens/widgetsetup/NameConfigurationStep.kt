@@ -24,14 +24,26 @@ fun NameConfigurationStep(
     selectedStops: List<Stop>,
     selectedVariants: Map<String, List<Variant>>,
     isClosestStop: Boolean,
-    preferredStops: List<Stop>
+    preferredStops: List<Stop>,
+    widgetSize: String,
+    timeFormat: String,
+    multipleEntriesPerVariant: Boolean,
+    showLastUpdatedStatus: Boolean,
+    noSelectedVariants: Boolean,
+    selectedPerferredStopsInClosestStops: Boolean
 ) {
-    val defaultName = remember(selectedStops, selectedVariants, isClosestStop, preferredStops) {
+    val defaultName = remember(selectedStops, selectedVariants, isClosestStop, preferredStops, widgetSize, timeFormat, multipleEntriesPerVariant, showLastUpdatedStatus, noSelectedVariants, selectedPerferredStopsInClosestStops) {
         generateDefaultWidgetName(
             selectedStops = selectedStops,
             selectedVariants = selectedVariants,
             isClosestStop = isClosestStop,
-            preferredStops = preferredStops
+            preferredStops = preferredStops,
+            widgetSize = widgetSize,
+            timeFormat = timeFormat,
+            multipleEntriesPerVariant = multipleEntriesPerVariant,
+            showLastUpdatedStatus = showLastUpdatedStatus,
+            noSelectedVariants = noSelectedVariants,
+            selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops
         )
     }
     
@@ -97,9 +109,14 @@ fun NameConfigurationStep(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
+                    .padding(horizontal = 16.dp)
+                    .align(Alignment.CenterHorizontally)
             ) {
-                Text("Set the widget name to be the default name")
+                Text(
+                    text = "Set the widget name back to be the default name",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -120,30 +137,64 @@ private fun generateDefaultWidgetName(
     selectedStops: List<Stop>,
     selectedVariants: Map<String, List<Variant>>,
     isClosestStop: Boolean,
-    preferredStops: List<Stop>
+    preferredStops: List<Stop>,
+    widgetSize: String,
+    timeFormat: String,
+    multipleEntriesPerVariant: Boolean,
+    showLastUpdatedStatus: Boolean,
+    noSelectedVariants: Boolean,
+    selectedPerferredStopsInClosestStops: Boolean
 ): String {
-    return when {
-        isClosestStop && preferredStops.isEmpty() -> {
-            "Closest Stop"
-        }
-        isClosestStop && preferredStops.isNotEmpty() -> {
-            val stopNames = preferredStops.take(2).map { it.number }
-            "Closest (${stopNames.joinToString(", ")})"
-        }
-        selectedStops.size == 1 -> {
-            val stop = selectedStops.first()
-            val variants = selectedVariants[stop.number.toString()] ?: emptyList()
-            
-            if (variants.isEmpty()) {
-                "${stop.number} - ${stop.name.take(20)}"
-            } else {
-                val routeNumbers = variants.map { it.getRouteKey() }.take(2)
-                "${stop.number} (${routeNumbers.joinToString(", ")})"
-            }
-        }
-        else -> {
-            val stopNumbers = selectedStops.take(3).map { it.number }
-            "Stops: ${stopNumbers.joinToString(", ")}"
+    // Format time format display
+    val timeFormatDisplay = if (multipleEntriesPerVariant) {
+        "Mixed Time Format"
+    } else {
+        when (timeFormat) {
+            "minutes" -> "Minutes"
+            "clock" -> "Clock"
+            "mixed" -> "Mixed Time Format"
+            else -> "Default"
         }
     }
+    
+    // Format entries per variant display
+    val entriesPerVariantDisplay = if (multipleEntriesPerVariant) {
+        "Multiple entries per variant"
+    } else {
+        "Single entry per variant"
+    }
+    
+    // Format last updated status display
+    val lastUpdatedStatusDisplay = if (showLastUpdatedStatus) {
+        "Show Last Updated Status"
+    } else {
+        "Don't Show Last Updated Status"
+    }
+    
+    // Generate the main part of the name
+    val mainName = when {
+        isClosestStop -> {
+            val preferredStopsText = if (selectedPerferredStopsInClosestStops) {
+                " (With preferred stops)"
+            } else {
+                ""
+            }
+            "Closest Stops$preferredStopsText"
+        }
+        else -> {
+            val stopNumbers = selectedStops.mapNotNull { stop ->
+                if (stop.number != -1) "#${stop.number}" else null
+            }.joinToString(", ")
+            
+            val variantKeys = if (!noSelectedVariants) {
+                selectedVariants.values.flatten().map { it.getRouteKey() }.joinToString(", ")
+            } else {
+                "Up Coming Buses"
+            }
+            
+            "$stopNumbers - $variantKeys"
+        }
+    }
+    
+    return "$mainName - $widgetSize - $timeFormatDisplay - $entriesPerVariantDisplay - $lastUpdatedStatusDisplay"
 }

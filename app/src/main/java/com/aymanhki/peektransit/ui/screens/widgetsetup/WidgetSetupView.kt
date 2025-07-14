@@ -299,7 +299,13 @@ fun WidgetSetupView(
                     selectedStops = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops,
                     selectedVariants = selectedVariants,
                     isClosestStop = isClosestStop,
-                    preferredStops = preferredStops
+                    preferredStops = preferredStops,
+                    widgetSize = widgetSize,
+                    timeFormat = timeFormat,
+                    multipleEntriesPerVariant = multipleEntriesPerVariant,
+                    showLastUpdatedStatus = showLastUpdatedStatus,
+                    noSelectedVariants = noSelectedVariants,
+                    selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops
                 )
             }
         }

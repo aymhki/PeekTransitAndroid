@@ -457,7 +457,13 @@ fun MapViewScreen(
                     }
                 }
             ) {
-                Text(transitError.message)
+                Text(
+                    text = if (transitError.message.contains("outside Winnipeg")) {
+                        "This app only works in Winnipeg, MB. ${transitError.message}"
+                    } else {
+                        transitError.message
+                    }
+                )
             }
         }
     }

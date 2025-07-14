@@ -67,8 +67,21 @@ class StopsDataStore private constructor() {
         return timeValid && distanceValid && cachedStops.isNotEmpty()
     }
     
+    private fun isLocationInWinnipegRegion(location: Location): Boolean {
+        val latitude = location.latitude
+        val longitude = location.longitude
+        
+        return latitude >= 48.4 && latitude <= 51.2 && longitude >= -98.5 && longitude <= -95.5
+    }
+    
     suspend fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
-        if (isCurrentlyLoading) return
+        loadStopsJob?.cancel()
+        
+        if (!isLocationInWinnipegRegion(userLocation)) {
+            _error.postValue(TransitError.ParseError("Location is outside Winnipeg transit service area"))
+            _isLoading.postValue(false)
+            return
+        }
         
         if (!forceRefresh && isCacheValid(userLocation)) {
             _stops.postValue(cachedStops)
@@ -76,7 +89,6 @@ class StopsDataStore private constructor() {
             return
         }
         
-        loadStopsJob?.cancel()
         isCurrentlyLoading = true
         
         loadStopsJob = scope.launch {
@@ -85,7 +97,9 @@ class StopsDataStore private constructor() {
                 _isLoading.postValue(true)
                 _error.postValue(null)
                 
+                println("StopsDataStore: Loading stops for location: ${userLocation.latitude}, ${userLocation.longitude}")
                 val nearbyStops = api.getNearbyStops(userLocation, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
+                println("StopsDataStore: Successfully loaded ${nearbyStops.size} stops")
                 
                 _stops.postValue(nearbyStops)
                 
@@ -122,7 +136,18 @@ class StopsDataStore private constructor() {
                 val transitError = when (e) {
                     is TransitError -> e
                     is CancellationException -> return@launch
-                    else -> TransitError.NetworkError(e)
+                    else -> {
+                        println("StopsDataStore: API error for location ${userLocation.latitude}, ${userLocation.longitude}: ${e.message}")
+                        when {
+                            e.message?.contains("ConnectException") == true -> {
+                                TransitError.NetworkError(Exception("Unable to connect to Winnipeg Transit API. Please check your internet connection and try again."))
+                            }
+                            e.message?.contains("timeout") == true -> {
+                                TransitError.NetworkError(Exception("Request timed out. Please try again."))
+                            }
+                            else -> TransitError.NetworkError(e)
+                        }
+                    }
                 }
                 
                 if (_stops.value?.isEmpty() == true) {

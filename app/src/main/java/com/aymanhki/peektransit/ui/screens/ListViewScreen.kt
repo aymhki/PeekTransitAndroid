@@ -52,9 +52,6 @@ fun ListViewScreen(
 
     LaunchedEffect(stops) {
         println("ListViewScreen: Stops list updated with ${stops.size} stops")
-        stops.forEach { stop ->
-            println("ListViewScreen: Stop ${stop.number} has ${stop.variants.size} variants")
-        }
     }
     val isLoadingStops by viewModel.isLoadingStops.observeAsState(false)
     val isLoadingLocation by viewModel.isLoadingLocation.observeAsState(false)
@@ -463,7 +460,13 @@ fun ListViewScreen(
                                     }
                                 }
                             ) {
-                                Text(transitError.message)
+                                Text(
+                                    text = if (transitError.message.contains("outside Winnipeg")) {
+                                        "This app only works in Winnipeg, MB. ${transitError.message}"
+                                    } else {
+                                        transitError.message
+                                    }
+                                )
                             }
                         }
                     }

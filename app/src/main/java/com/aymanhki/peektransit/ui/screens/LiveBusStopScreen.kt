@@ -139,7 +139,8 @@ fun LiveBusStopScreen(
                 isRefreshCooldown = false
                 isLoading = true
             }
-            
+
+
             hasAttemptedScheduleFetch = true
             error = null
             try {
@@ -484,7 +485,7 @@ fun LiveBusStopScreen(
                         }
                     }
 
-                    scheduleData.isEmpty() -> {
+                    scheduleData.isEmpty() && hasAttemptedScheduleFetch -> {
                         item {
                             Column(
                                 modifier = Modifier

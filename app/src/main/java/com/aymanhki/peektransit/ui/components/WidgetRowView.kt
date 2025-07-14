@@ -3,6 +3,7 @@ package com.aymanhki.peektransit.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,7 +53,7 @@ fun WidgetRowView(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(21.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -82,7 +83,7 @@ fun WidgetRowView(
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(space = 18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(

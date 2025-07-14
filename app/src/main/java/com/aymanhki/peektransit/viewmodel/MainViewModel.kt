@@ -128,17 +128,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 updateInterval = PeekTransitConstants.LOCATION_UPDATE_INTERVAL_MS,
                 minDistanceThreshold = PeekTransitConstants.LOCATION_UPDATE_MIN_DISTANCE_METERS,
                 callback = { newLocation ->
+                    println("MainViewModel: Location update callback - ${newLocation.latitude}, ${newLocation.longitude}")
                     _currentLocation.postValue(newLocation)
+                    
                     val shouldRefreshStops = if (previousLocation != null) {
                         val distance = previousLocation!!.distanceTo(newLocation)
+                        println("MainViewModel: Distance from previous location: ${distance}m (threshold: ${PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS}m)")
                         distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
                     } else {
+                        println("MainViewModel: No previous location, will refresh stops")
                         true
                     }
                     
                     if (shouldRefreshStops) {
+                        println("MainViewModel: Refreshing stops for new location")
                         loadStops(newLocation, forceRefresh = false)
                         previousLocation = newLocation
+                    } else {
+                        println("MainViewModel: Distance threshold not met, not refreshing stops")
                     }
                 }
             )
