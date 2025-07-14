@@ -63,7 +63,6 @@ fun StopSelectionStep(
     val context = LocalContext.current
     val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
     
-    // Observe data store states
     val combinedStops by stopsDataStore.stops.observeAsState(emptyList())
     val searchResults by stopsDataStore.searchResults.observeAsState(emptyList())
     val isLoading by stopsDataStore.isLoading.observeAsState(false)
@@ -71,12 +70,10 @@ fun StopSelectionStep(
     val error by stopsDataStore.error.observeAsState()
     val bookmarkedStops by savedStopsManager.savedStops.collectAsState()
     
-    // Observe global loading states if MainViewModel is provided
     val isLoadingStops = mainViewModel?.isLoadingStops?.observeAsState(false)?.value ?: false
     val isLoadingLocation = mainViewModel?.isLoadingLocation?.observeAsState(false)?.value ?: false
     val locationError = mainViewModel?.locationError?.observeAsState()?.value
     
-    // Determine max stops allowed
     val maxPerferredStopsInClosestStops = PeekTransitConstants.getMaxPerferredstopsInClosestStops()
     val maxStops = if (selectedPerferredStopsInClosestStops) {
         maxPerferredStopsInClosestStops
@@ -88,7 +85,6 @@ fun StopSelectionStep(
         }
     }
     
-    // Combined stops list (nearby + search results)
     val allStops = remember(combinedStops, searchResults) {
         val combined = combinedStops.toMutableList()
         val existingStopNumbers = combined.map { it.number }.toSet()
@@ -101,7 +97,6 @@ fun StopSelectionStep(
         combined
     }
     
-    // Calculate filtered stops - show local results immediately, API results when available
     val currentFilteredStops = remember(allStops, bookmarkedStops, selectedTab, searchQuery) {
         val stopsToFilter = when (selectedTab) {
             0 -> allStops
@@ -121,7 +116,6 @@ fun StopSelectionStep(
         }
     }
     
-    // Handle option toggle with animation
     fun handleOptionToggle() {
         viewState = ViewState.TRANSITIONING
         onIsClosestStopChange(!isClosestStop)
@@ -133,13 +127,11 @@ fun StopSelectionStep(
         }
     }
     
-    // Handle preferred toggle with animation
     fun handlePreferredToggle() {
         viewState = ViewState.TRANSITIONING
         onSelectedPerferredStopsInClosestStopsChange(!selectedPerferredStopsInClosestStops)
     }
     
-    // Animation effect for transitions
     LaunchedEffect(viewState) {
         if (viewState == ViewState.TRANSITIONING) {
             delay(300)
@@ -147,7 +139,6 @@ fun StopSelectionStep(
         }
     }
     
-    // Alpha animation for transitioning
     val contentAlpha by animateFloatAsState(
         targetValue = if (viewState == ViewState.TRANSITIONING) 0f else 1f,
         label = "contentAlpha"
@@ -159,7 +150,6 @@ fun StopSelectionStep(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Tab selector
         item {
             TabRow(
                 selectedTabIndex = selectedTab,
@@ -188,7 +178,6 @@ fun StopSelectionStep(
             }
         }
         
-        // Title
         item {
             Text(
                 text = "Select the widget bus stops",
@@ -198,7 +187,6 @@ fun StopSelectionStep(
         }
         
         if (selectedTab == 0) {
-            // Hint text
             item {
                 Text(
                     text = "Hint: Use the search bar to search for and select stops that are not near your location.",
@@ -207,7 +195,6 @@ fun StopSelectionStep(
                 )
             }
             
-            // Auto select closest stops option
             item {
                 Card(
                     modifier = Modifier
@@ -245,7 +232,6 @@ fun StopSelectionStep(
                 }
             }
             
-            // Select preferred stops option (only visible when auto-select is enabled)
             if (isClosestStop) {
                 item {
                     AnimatedVisibility(
@@ -292,7 +278,6 @@ fun StopSelectionStep(
             }
         }
         
-        // Stop selection content (only visible when manual selection is enabled or preferred stops is selected)
         if (!isClosestStop || selectedPerferredStopsInClosestStops) {
             item {
                 AnimatedVisibility(
@@ -306,7 +291,6 @@ fun StopSelectionStep(
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Selected stops counter
                         Text(
                             text = "Selected stops: ${
                                 if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops.size else selectedStops.size
@@ -315,7 +299,6 @@ fun StopSelectionStep(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         
-                        // Search bar
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -373,10 +356,8 @@ fun StopSelectionStep(
                 }
             }
             
-            // Content items - use both StopsDataStore and global loading states
             when {
                 isLoading || isLoadingStops || isLoadingLocation -> {
-                    // Show loading for any loading state
                     item {
                         Box(
                             modifier = Modifier
@@ -438,7 +419,6 @@ fun StopSelectionStep(
                 }
                 
                 currentFilteredStops.isEmpty() && isSearching -> {
-                    // Only show searching if no local results to display
                     item {
                         Box(
                             modifier = Modifier
@@ -456,7 +436,6 @@ fun StopSelectionStep(
                 }
                 
                 currentFilteredStops.isEmpty() -> {
-                    // No results and not searching
                     item {
                         Box(
                             modifier = Modifier
@@ -478,7 +457,6 @@ fun StopSelectionStep(
                 }
                 
                 else -> {
-                    // Show the results (local + API when available)
                     items(currentFilteredStops) { stop ->
                         val currentSelectedStops = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
                         val isSelected = currentSelectedStops.any { it.number == stop.number }
@@ -510,7 +488,6 @@ fun StopSelectionStep(
                         }
                     }
                     
-                    // Show subtle loading indicator at bottom if API search is still running
                     if (isSearching) {
                         item {
                             Box(
@@ -568,7 +545,6 @@ private fun SelectableStopRow(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox
             CircularCheckbox(
                 checked = isSelected,
                 onCheckedChange = { if (enabled) onClick() },
@@ -576,7 +552,6 @@ private fun SelectableStopRow(
             )
             Spacer(modifier = Modifier.width(12.dp))
             
-            // Stop row content - inline implementation without clickable
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

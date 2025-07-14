@@ -86,9 +86,9 @@ class SavedWidgetsManager(context: Context) {
             _savedWidgets.value = widgets
             
             // TODO: Trigger widget update when widget functionality is implemented
-            // WidgetUpdateManager.updateAllWidgets(context)
+
         } catch (e: Exception) {
-            // Handle error
+
         }
     }
     
@@ -100,7 +100,7 @@ class SavedWidgetsManager(context: Context) {
                 .putLong("widget_cache_updated_time_$widgetId", lastUpdatedTime)
                 .apply()
         } catch (e: Exception) {
-            // Handle error
+
         }
     }
     

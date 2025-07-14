@@ -54,7 +54,6 @@ fun WidgetRowView(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Widget Preview
             Box(
                 modifier = Modifier
                     .width(PeekTransitConstants.getWidgetPreviewWidthForSize(widgetSize, context).dp)
@@ -62,10 +61,9 @@ fun WidgetRowView(
                     .clip(RoundedCornerShape(12.dp))
                     .align(Alignment.CenterHorizontally)
             ) {
-                // Generate preview data using WidgetPreviewHelper with the full widget config
                 val previewResult = WidgetPreviewHelper.generatePreviewSchedule(
                     widgetData = widget.widgetData,
-                    noConfig = false, // This matches iOS WidgetRowView behavior since we have full config
+                    noConfig = false,
                     timeFormat = widgetConfig.timeFormat,
                     showLastUpdatedStatus = widgetConfig.showLastUpdatedStatus,
                     multipleEntriesPerVariant = widgetConfig.multipleEntriesPerVariant,
@@ -82,13 +80,11 @@ fun WidgetRowView(
                 )
             }
             
-            // Widget Info and Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Widget Name
                 Text(
                     text = widgetName,
                     style = MaterialTheme.typography.titleMedium,
@@ -96,9 +92,7 @@ fun WidgetRowView(
                     modifier = Modifier.weight(1f)
                 )
                 
-                // Action Buttons or Selection Indicator
                 if (isSelectionMode) {
-                    // Selection checkbox
                     Box(
                         modifier = Modifier
                             .size(24.dp)
@@ -132,7 +126,6 @@ fun WidgetRowView(
                         }
                     }
                 } else {
-                    // Edit and Delete buttons
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {

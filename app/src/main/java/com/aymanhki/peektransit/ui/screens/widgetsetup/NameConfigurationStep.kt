@@ -35,14 +35,12 @@ fun NameConfigurationStep(
         )
     }
     
-    // Initialize widget name with default name if it's empty
     LaunchedEffect(defaultName) {
         if (!isEditing && widgetName.isEmpty()) {
             onWidgetNameChange(defaultName)
         }
     }
     
-    // Check if current name is different from default
     val isDifferentFromDefault = widgetName != defaultName
     
     Column(
@@ -52,7 +50,6 @@ fun NameConfigurationStep(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Icon
         Icon(
             imageVector = Icons.Default.Edit,
             contentDescription = null,
@@ -62,7 +59,6 @@ fun NameConfigurationStep(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Title
         Text(
             text = "Name Your Widget",
             style = MaterialTheme.typography.headlineSmall,
@@ -72,7 +68,6 @@ fun NameConfigurationStep(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Description
         Text(
             text = "Give your widget a name or use the default name generated for you.",
             style = MaterialTheme.typography.bodyMedium,
@@ -82,7 +77,6 @@ fun NameConfigurationStep(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Text Field
         OutlinedTextField(
             value = widgetName,
             onValueChange = onWidgetNameChange,
@@ -96,7 +90,6 @@ fun NameConfigurationStep(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Reset button (only show when name is different from default)
         if (isDifferentFromDefault) {
             Button(
                 onClick = {
@@ -112,7 +105,6 @@ fun NameConfigurationStep(
             Spacer(modifier = Modifier.height(16.dp))
         }
         
-        // Default name display
         Text(
             text = "Default name: $defaultName",
             style = MaterialTheme.typography.bodySmall,

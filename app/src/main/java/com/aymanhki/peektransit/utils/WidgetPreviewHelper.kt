@@ -39,7 +39,6 @@ object WidgetPreviewHelper {
             val isClosestStop = widgetData["isClosestStop"] as? Boolean ?: false
             
             if (!isClosestStop) {
-                // Widget with specific stops configured
                 val stops = widgetData["stops"] as? List<*> ?: return null
                 
                 for (stop in stops) {
@@ -48,7 +47,6 @@ object WidgetPreviewHelper {
                     if (stop !is Stop) continue
 
                     if (!noSelectedVariants) {
-                        // Use selected variants from stop
                         val variants = stop.variants
                         
                         for (variant in variants) {
@@ -56,14 +54,12 @@ object WidgetPreviewHelper {
                             val name = variant.name
                             
                             if (multipleEntriesPerVariant) {
-                                // First entry with minutes
                                 previewSchedules.add(generatePreviewEntry(
                                     key,
                                     name,
                                     stringToUseBasedOnTimeFormat,
                                     "X(X) ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
                                 ))
-                                // Second entry with clock time
                                 previewSchedules.add(generatePreviewEntry(
                                     key,
                                     name,
@@ -80,7 +76,6 @@ object WidgetPreviewHelper {
                             }
                         }
                     } else {
-                        // Generate placeholder variants when no variants selected
                         val widgetSize = widgetData["size"] as? String ?: "medium"
                         val maxVariants = if (multipleEntriesPerVariant) {
                             PeekTransitConstants.getMaxVariantsAllowedForMultipleEntries(widgetSize)
@@ -119,7 +114,6 @@ object WidgetPreviewHelper {
                             }
                         }
                         
-                        // Update stop with generated variants
                         val updatedStop = stop.copy().apply {
                             variants = selectedVariants
                         }
@@ -133,7 +127,6 @@ object WidgetPreviewHelper {
                     }
                 }
             } else {
-                // Closest stop widget
                 val widgetSize = widgetData["size"] as? String ?: "medium"
                 val maxStops = if (multipleEntriesPerVariant) {
                     PeekTransitConstants.getMaxStopsAllowedForMultipleEntries(widgetSize)
@@ -196,7 +189,6 @@ object WidgetPreviewHelper {
                 updatedWidgetData["stops"] = generatedStops
             }
         } else {
-            // No configuration - generate placeholder data
             val widgetSize = widgetData["size"] as? String ?: "medium"
             val maxStops = if (multipleEntriesPerVariant) {
                 PeekTransitConstants.getMaxStopsAllowedForMultipleEntries(widgetSize)
@@ -278,45 +270,6 @@ object WidgetPreviewHelper {
         val separator = PeekTransitConstants.SCHEDULE_STRING_SEPARATOR
         return "$routeKey$separator$routeName$separator$status$separator$time"
     }
-    
-    fun generatePreviewData(widgetConfiguration: WidgetConfiguration): Map<String, Any> {
-        val widgetData = widgetConfiguration.toWidgetData().toMutableMap()
-        
-        // Add preview-specific data if needed
-        if (widgetConfiguration.isClosestStop && widgetConfiguration.stops.isEmpty()) {
-            // For closest stop widgets without selected stops, add placeholder stops
-            val placeholderStops = generatePlaceholderStops(widgetConfiguration.size)
-            widgetData["stops"] = placeholderStops
-        } else {
-            widgetData["stops"] = widgetConfiguration.stops
-        }
-        
-        return widgetData
-    }
-    
-    fun generatePlaceholderStops(widgetSize: String): List<Stop> {
-        val maxStops = PeekTransitConstants.getMaxStopsAllowed(widgetSize)
-        val stops = mutableListOf<Stop>()
-        
-        repeat(maxStops) { i ->
-            stops.add(Stop(
-                key = i,
-                name = "Bus Stop ${i + 1}",
-                number = 10000 + i,
-                direction = "Direction"
-            ))
-        }
-        
-        return stops
-    }
-    
-    fun getWidgetSize(sizeString: String): String {
-        return when (sizeString.lowercase()) {
-            "small" -> "small"
-            "large" -> "large"
-            "lockscreen" -> "lockscreen"
-            else -> "medium"
-        }
-    }
+
 }
 

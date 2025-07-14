@@ -50,7 +50,6 @@ fun VariantSelectionStep(
         PeekTransitConstants.getMaxVariantsAllowed(widgetSize)
     }
     
-    // Load schedules and variants when selected stops change
     LaunchedEffect(selectedStops) {
         if (selectedStops.isNotEmpty()) {
             isLoading = true
@@ -68,7 +67,7 @@ fun VariantSelectionStep(
                             val stopVariantsSet = convertVariantArrayToUniqueSet(stopVariantsList)
                             variants[stopKey] = stopVariantsSet
                         } catch (e: Exception) {
-                            // Continue with other stops
+
                         }
                     }
                     
@@ -82,7 +81,6 @@ fun VariantSelectionStep(
         }
     }
     
-    // Handle variant selection
     fun toggleVariantSelection(stopNumber: Int, variant: Variant) {
         val stopId = stopNumber.toString()
         val currentVariants = selectedVariants[stopId]?.toMutableList() ?: mutableListOf()
@@ -114,14 +112,12 @@ fun VariantSelectionStep(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Title
         Text(
             text = "Select the widget bus variants",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         
-        // Automatic selection option
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,7 +156,6 @@ fun VariantSelectionStep(
             }
         }
         
-        // Variant selection content (only visible when manual selection is enabled)
         AnimatedVisibility(
             visible = !noSelectedVariants,
             enter = slideInVertically() + fadeIn(),
@@ -203,7 +198,6 @@ fun VariantSelectionStep(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = {
-                                        // Retry by triggering LaunchedEffect
                                         errorMessage = null
                                     }
                                 ) {
@@ -260,7 +254,6 @@ private fun StopScheduleSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Stop header
             Text(
                 text = "${stop.number} - ${stop.name}",
                 style = MaterialTheme.typography.titleMedium,
@@ -273,7 +266,6 @@ private fun StopScheduleSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Variants list
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -351,7 +343,6 @@ private fun StopScheduleSection(
                 }
             }
 
-            // Selection counter
             Text(
                 text = "Selected: ${selectedVariants.size}/$maxVariants",
                 style = MaterialTheme.typography.bodySmall,
@@ -367,12 +358,10 @@ private fun convertVariantArrayToUniqueSet(variants: List<Variant>): Set<Variant
     for (variantRouteObjects in variants) {
         var key = variantRouteObjects.key
         
-        // Extract the route number from the key (before the first dash)
         if (key.contains("-")) {
             key = key.split("-").first()
         }
         
-        // Handle special case for BLUE line
         if (key.contains("BLUE")) {
             key = "B"
         }

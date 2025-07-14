@@ -754,7 +754,6 @@ class WinnipegTransitAPI private constructor() {
                     
                     for (element in variantsArray) {
                         val variantObject = element.asJsonObject
-                        // Parse variant using existing gson approach like other functions
                         val variant = Variant(
                             key = variantObject.get("key")?.asString ?: "Unknown",
                             name = variantObject.get("name")?.asString ?: "Unknown",
@@ -767,13 +766,10 @@ class WinnipegTransitAPI private constructor() {
                         stopVariants.add(variant)
                     }
                     
-                    // Filter variants like iOS implementation
                     val filteredVariants = stopVariants.filter { variant ->
-                        // Filter out variants starting with S, W, or I (like iOS)
                         val keyPrefix = variant.key.take(1)
                         val validPrefix = keyPrefix !in listOf("S", "W", "I")
                         
-                        // Filter by effective dates (like iOS)
                         val validEffectiveDate = run {
                             val effectiveFrom = variant.getEffectiveFromDate()
                             val effectiveTo = variant.getEffectiveToDate()
@@ -785,7 +781,6 @@ class WinnipegTransitAPI private constructor() {
                         validPrefix && validEffectiveDate
                     }
                     
-                    // Return unique variants (like iOS uses Set<Variant>)
                     return@withContext filteredVariants.distinctBy { "${it.key}-${it.name}" }
                 } else {
                     return@withContext emptyList()

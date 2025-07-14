@@ -108,12 +108,10 @@ fun MainScreen(initialStopNumber: Int? = null) {
     
     val mainViewModel: MainViewModel = viewModel()
     
-    // Initialize global location fetching and monitoring
     LaunchedEffect(Unit) {
         mainViewModel.initializeGlobal()
     }
     
-    // Handle deep link navigation
     LaunchedEffect(initialStopNumber) {
         initialStopNumber?.let { stopNumber ->
             navController.navigate("live_stop/$stopNumber")

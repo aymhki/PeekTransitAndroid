@@ -202,7 +202,6 @@ fun WidgetsScreen(stopsDataStore: StopsDataStore) {
                             )
                         }
                         
-                        // Bottom padding for FAB
                         item {
                             Spacer(modifier = Modifier.height(72.dp))
                         }
@@ -212,7 +211,6 @@ fun WidgetsScreen(stopsDataStore: StopsDataStore) {
         }
     }
     
-    // Widget Setup View - Full Screen
     if (showSetupView) {
         WidgetSetupView(
             editingWidget = editingWidget,
@@ -227,7 +225,6 @@ fun WidgetsScreen(stopsDataStore: StopsDataStore) {
         )
     }
     
-    // Delete Confirmation Dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

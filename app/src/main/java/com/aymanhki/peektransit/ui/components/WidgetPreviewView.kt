@@ -48,20 +48,16 @@ fun WidgetPreviewView(
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
 
-    // Extract configuration from widget data
     val actualWidgetSize = widgetSize ?: (widgetData["size"] as? String) ?: "medium"
     val showLastUpdatedStatus = widgetData["showLastUpdatedStatus"] as? Boolean ?: true
     val timeFormat = widgetData["timeFormat"] as? String ?: "minutes"
     val multipleEntriesPerVariant = widgetData["multipleEntriesPerVariant"] as? Boolean ?: true
 
-    // Use provided theme or get from settings
     val currentTheme = theme ?: settingsManager.stopViewTheme
 
-    // Use provided schedule data or generate preview data
     val (finalScheduleData, finalWidgetData) = if (scheduleData != null) {
         scheduleData to widgetData
     } else {
-        // Generate preview data using the same helper as iOS
         val previewResult = WidgetPreviewHelper.generatePreviewSchedule(
             widgetData = widgetData,
             noConfig = false,
@@ -76,7 +72,7 @@ fun WidgetPreviewView(
 
     val backgroundColor = when (currentTheme) {
         StopViewTheme.CLASSIC -> Color.Black
-        StopViewTheme.MODERN -> Color.Transparent // Match LiveBusStopScreen arrival card background
+        StopViewTheme.MODERN -> Color.Transparent
     }
 
     Box(
@@ -93,7 +89,6 @@ fun WidgetPreviewView(
                 shape = RoundedCornerShape(12.dp)
             )
     ) {
-        // Use a preview-specific composable that mimics DynamicWidgetView behavior
         PreviewDynamicWidgetView(
             widgetData = finalWidgetData,
             scheduleData = finalScheduleData,
@@ -122,7 +117,7 @@ private fun PreviewDynamicWidgetView(
 
     val backgroundColor = when (theme) {
         StopViewTheme.CLASSIC -> Color.Black
-        StopViewTheme.MODERN -> Color.Transparent // Match LiveBusStopScreen arrival card background
+        StopViewTheme.MODERN -> Color.Transparent
     }
 
     Column(
@@ -133,7 +128,6 @@ private fun PreviewDynamicWidgetView(
     ) {
         when {
             (scheduleData.isEmpty() || widgetData.isEmpty() || scheduleData.all { it.isBlank() }) -> {
-                // No data available - show "Open app" message
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -148,7 +142,6 @@ private fun PreviewDynamicWidgetView(
             }
 
             stops.isEmpty() && !config.isClosestStop -> {
-                // No stops configured
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -170,7 +163,6 @@ private fun PreviewDynamicWidgetView(
             }
 
             stops.isEmpty() && config.isClosestStop -> {
-                // Location-based widget with no stops yet
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -192,14 +184,12 @@ private fun PreviewDynamicWidgetView(
             }
 
             else -> {
-                // This Column holds the stops and pushes the "last updated" text down
                 Column(modifier = Modifier.weight(1f)) {
                     val maxStops = PeekTransitConstants.getMaxStopsAllowed(widgetSize)
                     val stopsToShow = stops.take(maxStops)
 
                     stopsToShow.forEachIndexed { stopIndex, stop ->
                         PreviewWidgetStopView(
-                            // ✅ FIX #1: Each stop is given a weight, making it expand to fill its share of space.
                             modifier = Modifier.weight(1f),
                             stop = stop,
                             scheduleData = scheduleData,
@@ -215,7 +205,6 @@ private fun PreviewDynamicWidgetView(
                     }
                 }
 
-                // "Last Updated" view will always be at the bottom
                 if (config.showLastUpdatedStatus && lastUpdated != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     PreviewLastUpdatedView(
@@ -233,7 +222,7 @@ private fun PreviewDynamicWidgetView(
 
 @Composable
 private fun PreviewWidgetStopView(
-    modifier: Modifier = Modifier, // Accept modifier from parent
+    modifier: Modifier = Modifier,
     stop: Stop,
     scheduleData: List<String>,
     selectedVariants: List<Any>,
@@ -255,12 +244,9 @@ private fun PreviewWidgetStopView(
         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
     }
 
-    // Apply the modifier here to make this Column expand
     Column(modifier = modifier.fillMaxWidth()) {
-        // Stop Header
         if (widgetSize != "lockscreen" &&
-            (!(widgetSize == "small" && !multipleEntriesPerVariant) ||
-                    widgetSize == "small" && scheduleData.size <= 1) &&
+            ( !(widgetSize == "small" && !multipleEntriesPerVariant) ) &&
             fullyLoaded
         ) {
 
@@ -290,7 +276,6 @@ private fun PreviewWidgetStopView(
             )
         }
 
-        // Schedule Entries
         if (stop.variants.isNotEmpty()) {
             val maxSchedules = if (multipleEntriesPerVariant) {
                 PeekTransitConstants.getMaxVariantsAllowedForMultipleEntries(widgetSize)
@@ -307,7 +292,6 @@ private fun PreviewWidgetStopView(
                     val key = variant.getRouteKey()
                     val variantName = variant.name
 
-                    // Find matching schedules for this variant
                     val matchingSchedules = scheduleData.filter { scheduleString ->
                         val components =
                             scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
@@ -316,7 +300,6 @@ private fun PreviewWidgetStopView(
                                 components[1] == variantName
                     }
 
-                    // Determine how many schedules to show
                     val schedulesToShow = if (multipleEntriesPerVariant) {
                         matchingSchedules.take(2)
                     } else {
@@ -371,7 +354,6 @@ private fun PreviewBusScheduleRowView(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Route Number
         Text(
             text = routeNumber,
             color = textColor,
@@ -384,7 +366,6 @@ private fun PreviewBusScheduleRowView(
             modifier = Modifier.width(PeekTransitConstants.getRouteNumberWidth(widgetSize).dp)
         )
 
-        // Route Name
         if (routeName.isNotEmpty()) {
             val displayRouteName = if (widgetSize != "small" && widgetSize != "lockscreen") {
                 routeName
@@ -406,10 +387,8 @@ private fun PreviewBusScheduleRowView(
             )
         }
 
-        // Spacer to push content to the sides
         Spacer(modifier = Modifier.weight(1f))
 
-        // Status
         if (status == PeekTransitConstants.LATE_STATUS_TEXT ||
             status == PeekTransitConstants.EARLY_STATUS_TEXT ||
             status == PeekTransitConstants.CANCELLED_STATUS_TEXT
@@ -435,9 +414,8 @@ private fun PreviewBusScheduleRowView(
             )
         }
 
-        // Time
         if (status != PeekTransitConstants.CANCELLED_STATUS_TEXT) {
-            Spacer(modifier = Modifier.width(8.dp)) // Maintain some space between status and time
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = time,
                 color = if (time == PeekTransitConstants.DUE_STATUS_TEXT) statusColor else textColor,

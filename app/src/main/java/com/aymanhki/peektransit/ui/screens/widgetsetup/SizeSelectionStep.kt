@@ -41,7 +41,6 @@ fun SizeSelectionStep(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Title
         Text(
             text = "Select the widget configuration options",
             style = MaterialTheme.typography.titleLarge,
@@ -53,7 +52,6 @@ fun SizeSelectionStep(
             onSizeChange = onSizeChange
         )
         
-        // Widget Preview
         WidgetPreviewCard(
             widgetSize = widgetSize,
             showLastUpdatedStatus = showLastUpdatedStatus,
@@ -62,7 +60,6 @@ fun SizeSelectionStep(
         )
         
         
-        // Bus Variants Per Stop Section
         Text(
             text = "Bus Variants Per Stop",
             style = MaterialTheme.typography.headlineSmall,
@@ -70,7 +67,6 @@ fun SizeSelectionStep(
         )
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Multiple arrival times option
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -96,7 +92,6 @@ fun SizeSelectionStep(
                 }
             }
             
-            // Single arrival time option
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -123,7 +118,6 @@ fun SizeSelectionStep(
             }
         }
         
-        // Time Format Section  
         Text(
             text = "Time Format",
             style = MaterialTheme.typography.headlineSmall,
@@ -131,7 +125,6 @@ fun SizeSelectionStep(
         )
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Mixed format option (only available for multiple entries)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -172,7 +165,6 @@ fun SizeSelectionStep(
                 }
             }
             
-            // Clock time format
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -213,7 +205,6 @@ fun SizeSelectionStep(
                 }
             }
             
-            // Minutes remaining format
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,7 +246,6 @@ fun SizeSelectionStep(
             }
         }
         
-        // Last Updated Status Section
         Text(
             text = "Last Updated Status",
             style = MaterialTheme.typography.headlineSmall,
@@ -263,7 +253,6 @@ fun SizeSelectionStep(
         )
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Show last updated option
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -289,7 +278,6 @@ fun SizeSelectionStep(
                 }
             }
             
-            // Don't show last updated option
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -326,7 +314,8 @@ private fun WidgetSizeSelector(
     val sizes = listOf(
         "small" to "Small",
         "medium" to "Medium",
-        "large" to "Large"
+        "large" to "Large",
+        "lockscreen" to "Lock Screen"
     )
     
     Row(
@@ -390,7 +379,6 @@ private fun WidgetPreviewCard(
     timeFormat: String,
     multipleEntriesPerVariant: Boolean
 ) {
-    // Create a temporary widget configuration for preview (like iOS noConfig: true)
     val tempWidgetData = mapOf(
         "size" to widgetSize,
         "name" to "Preview Widget",
@@ -405,10 +393,9 @@ private fun WidgetPreviewCard(
         "stops" to emptyList<Any>()
     )
     
-    // Generate preview data using WidgetPreviewHelper (matching iOS behavior)
     val previewResult = WidgetPreviewHelper.generatePreviewSchedule(
         widgetData = tempWidgetData,
-        noConfig = true, // This matches iOS SizeSelectionStep behavior
+        noConfig = true,
         timeFormat = timeFormat,
         showLastUpdatedStatus = showLastUpdatedStatus,
         multipleEntriesPerVariant = multipleEntriesPerVariant,

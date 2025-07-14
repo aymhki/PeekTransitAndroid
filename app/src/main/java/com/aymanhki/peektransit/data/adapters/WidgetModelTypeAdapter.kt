@@ -60,7 +60,6 @@ class WidgetModelTypeAdapter : JsonDeserializer<WidgetModel>, JsonSerializer<Wid
                     list.add(parseValue(item))
                 }
                 
-                // Check if this is an array of stops or variants
                 if (list.isNotEmpty() && list[0] is Map<*, *>) {
                     val firstItem = list[0] as Map<*, *>
                     when {
@@ -91,11 +90,9 @@ class WidgetModelTypeAdapter : JsonDeserializer<WidgetModel>, JsonSerializer<Wid
                     map[key] = parseValue(value)
                 }
                 
-                // Check if this is a stop or variant object
                 when {
                     isStopObject(map) -> parseStopFromMap(map)
                     isVariantObject(map) -> parseVariantFromMap(map)
-                    // Check if this is a selectedVariants map (Map<String, List<Variant>>)
                     isSelectedVariantsMap(map) -> {
                         val result = mutableMapOf<String, List<Variant>>()
                         for ((k, v) in map) {
@@ -126,8 +123,7 @@ class WidgetModelTypeAdapter : JsonDeserializer<WidgetModel>, JsonSerializer<Wid
     }
     
     private fun isSelectedVariantsMap(map: Map<*, *>): Boolean {
-        // Check if all values are lists and at least one contains variant objects
-        return map.values.all { it is List<*> } && 
+        return map.values.all { it is List<*> } &&
                map.values.any { value ->
                    val list = value as List<*>
                    list.isNotEmpty() && list[0] is Map<*, *> && isVariantObject(list[0] as Map<*, *>)

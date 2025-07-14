@@ -287,7 +287,6 @@ fun ListViewScreen(
                                         }
                                     }
 
-                                    // For search: show local results immediately
                                     val localFilteredStops = if (localSearchQuery.isEmpty()) {
                                         stops
                                     } else {
@@ -306,7 +305,6 @@ fun ListViewScreen(
                                     val isSearchActive = localSearchQuery.isNotEmpty()
 
                                     when {
-                                        // Show local results immediately when searching, even if API is still loading
                                         isSearchActive && hasLocalResults -> {
                                             items(filteredStops, key = { stop ->
                                                 "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
@@ -318,7 +316,6 @@ fun ListViewScreen(
                                                 )
                                             }
                                             
-                                            // Show subtle loading indicator at bottom if API search is still running
                                             if (isSearching) {
                                                 item {
                                                     Box(
@@ -346,7 +343,6 @@ fun ListViewScreen(
                                             }
                                         }
                                         
-                                        // Show no results only when search is complete and no results found
                                         isSearchActive && !hasLocalResults && !isSearching && currentError == null -> {
                                             item {
                                                 Box(
@@ -364,7 +360,6 @@ fun ListViewScreen(
                                             }
                                         }
                                         
-                                        // Show full loading when searching but no local results yet
                                         isSearchActive && !hasLocalResults && isSearching -> {
                                             item {
                                                 Box(
@@ -388,7 +383,6 @@ fun ListViewScreen(
                                             }
                                         }
                                         
-                                        // Regular display for non-search scenarios
                                         !isSearchActive && filteredStops.isNotEmpty() -> {
                                             items(filteredStops, key = { stop ->
                                                 "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
@@ -401,7 +395,6 @@ fun ListViewScreen(
                                             }
                                         }
                                         
-                                        // No results for non-search scenarios
                                         !isSearchActive && filteredStops.isEmpty() && currentError == null -> {
                                             item {
                                                 Box(

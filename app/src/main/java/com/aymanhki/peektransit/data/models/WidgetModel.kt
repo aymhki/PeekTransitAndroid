@@ -84,13 +84,11 @@ data class WidgetConfiguration(
         data["noSelectedVariants"] = noSelectedVariants
         data["createdAt"] = System.currentTimeMillis()
         
-        // Attach selected variants to stops like iOS implementation
         if (stops.isNotEmpty()) {
             val stopsWithVariants = stops.map { stop ->
                 val stopKey = stop.number.toString()
                 val stopVariants = selectedVariants[stopKey] ?: emptyList()
                 
-                // Create a new stop with attached variants (like iOS implementation)
                 stop.copy(
                     variants = stopVariants,
                     selectedVariants = stopVariants
@@ -104,7 +102,6 @@ data class WidgetConfiguration(
                 val stopKey = stop.number.toString()
                 val stopVariants = selectedVariants[stopKey] ?: emptyList()
                 
-                // Create a new stop with attached variants (like iOS implementation)
                 stop.copy(
                     variants = stopVariants,
                     selectedVariants = stopVariants
@@ -113,7 +110,6 @@ data class WidgetConfiguration(
             data["preferredStops"] = stopsWithVariants
         }
         
-        // Also store selectedVariants for backward compatibility
         if (selectedVariants.isNotEmpty()) {
             data["selectedVariants"] = selectedVariants
         }

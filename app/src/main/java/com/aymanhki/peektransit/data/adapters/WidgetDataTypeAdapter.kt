@@ -31,7 +31,6 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
                     primitive.isBoolean -> primitive.asBoolean
                     primitive.isNumber -> {
                         val number = primitive.asNumber
-                        // Try to preserve integer vs double
                         if (number.toString().contains('.')) {
                             number.toDouble()
                         } else {
@@ -50,7 +49,6 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
                     list.add(deserializeValue(item, context))
                 }
                 
-                // Check if this is an array of stops or variants
                 if (list.isNotEmpty() && list[0] is Map<*, *>) {
                     val firstItem = list[0] as Map<*, *>
                     when {
@@ -81,7 +79,6 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
                     map[key] = deserializeValue(value, context)
                 }
                 
-                // Check if this is a stop or variant object
                 when {
                     isStopObject(map) -> parseStopFromMap(map)
                     isVariantObject(map) -> parseVariantFromMap(map)
@@ -106,7 +103,7 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
             val json = gson.toJson(map)
             gson.fromJson(json, Stop::class.java)
         } catch (e: Exception) {
-            Stop() // Return default Stop if parsing fails
+            Stop()
         }
     }
     
@@ -116,7 +113,7 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
             val json = gson.toJson(map)
             gson.fromJson(json, Variant::class.java)
         } catch (e: Exception) {
-            Variant() // Return default Variant if parsing fails
+            Variant()
         }
     }
     

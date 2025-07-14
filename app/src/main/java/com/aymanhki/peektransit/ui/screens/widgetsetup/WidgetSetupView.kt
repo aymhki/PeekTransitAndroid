@@ -27,12 +27,10 @@ fun WidgetSetupView(
     val context = LocalContext.current
     val savedWidgetsManager = remember { SavedWidgetsManager.getInstance(context) }
     
-    // Parse existing widget data if editing
     val existingConfig = remember(editingWidget) {
         editingWidget?.let { WidgetModel.parseWidgetData(it.widgetData) }
     }
     
-    // Widget configuration state
     var currentStep by remember { mutableStateOf(0) }
     var widgetSize by remember { mutableStateOf(existingConfig?.size ?: "medium") }
     var showLastUpdatedStatus by remember { mutableStateOf(existingConfig?.showLastUpdatedStatus ?: true) }
@@ -49,7 +47,6 @@ fun WidgetSetupView(
     var showDuplicateNameDialog by remember { mutableStateOf(false) }
     var showNoServiceDialog by remember { mutableStateOf(false) }
     
-    // Automatic time format selection based on multiple entries setting
     LaunchedEffect(multipleEntriesPerVariant) {
         timeFormat = if (multipleEntriesPerVariant) {
             "mixed"
@@ -62,33 +59,30 @@ fun WidgetSetupView(
     
     fun canProceedToNextStep(): Boolean {
         return when (currentStep) {
-            0 -> true // Size selection always valid
+            0 -> true
             1 -> {
                 when {
-                    isClosestStop && !selectedPerferredStopsInClosestStops -> true // Closest stop without preferred stops
-                    isClosestStop && selectedPerferredStopsInClosestStops -> preferredStops.isNotEmpty() // Closest stop with preferred stops requires stops
-                    else -> selectedStops.isNotEmpty() // Manual selection requires at least one stop
+                    isClosestStop && !selectedPerferredStopsInClosestStops -> true
+                    isClosestStop && selectedPerferredStopsInClosestStops -> preferredStops.isNotEmpty()
+                    else -> selectedStops.isNotEmpty()
                 }
             }
             2 -> {
-                // Variant selection - only show this step if there are stops to configure
                 val stopsToCheck = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
                 if (stopsToCheck.isEmpty()) return true
                 if (noSelectedVariants) return true
                 
-                // Check if all selected stops have at least one variant selected
                 stopsToCheck.all { stop ->
                     val stopKey = stop.number.toString()
                     selectedVariants[stopKey]?.isNotEmpty() == true
                 }
             }
-            3 -> widgetName.isNotBlank() // Name must not be empty
+            3 -> widgetName.isNotBlank()
             else -> false
         }
     }
     
     fun handleSave() {
-        // Check for duplicate name
         val isDuplicate = savedWidgetsManager.isNameUnique(
             widgetName,
             excludeId = editingWidget?.id
@@ -99,7 +93,6 @@ fun WidgetSetupView(
             return
         }
         
-        // Create widget configuration
         val configuration = WidgetConfiguration(
             size = widgetSize,
             name = widgetName,
@@ -116,11 +109,9 @@ fun WidgetSetupView(
         val widgetData = configuration.toWidgetData()
         
         if (editingWidget != null) {
-            // Update existing widget
             val updatedWidget = editingWidget.copy(widgetData = widgetData)
             savedWidgetsManager.updateWidget(editingWidget.id, updatedWidget)
         } else {
-            // Create new widget
             val newWidget = WidgetModel(
                 id = UUID.randomUUID().toString(),
                 widgetData = widgetData
@@ -152,16 +143,14 @@ fun WidgetSetupView(
                 navigationIcon = {
                     if (currentStep > 0) {
                         IconButton(onClick = { 
-                            // Smart back navigation
                             when (currentStep) {
                                 3 -> {
-                                    // From name config, go back based on whether we have stops to configure variants for
                                     val hasStops = if (isClosestStop && selectedPerferredStopsInClosestStops) {
                                         preferredStops.isNotEmpty()
                                     } else if (!isClosestStop) {
                                         selectedStops.isNotEmpty()
                                     } else {
-                                        false // Closest stop without preferred stops skips variant selection
+                                        false
                                     }
                                     currentStep = if (hasStops) 2 else 1
                                 }
@@ -198,16 +187,14 @@ fun WidgetSetupView(
                     if (currentStep > 0) {
                         OutlinedButton(
                             onClick = { 
-                                // Smart back navigation
                                 when (currentStep) {
                                     3 -> {
-                                        // From name config, go back based on whether we have stops to configure variants for
                                         val hasStops = if (isClosestStop && selectedPerferredStopsInClosestStops) {
                                             preferredStops.isNotEmpty()
                                         } else if (!isClosestStop) {
                                             selectedStops.isNotEmpty()
                                         } else {
-                                            false // Closest stop without preferred stops skips variant selection
+                                            false
                                         }
                                         currentStep = if (hasStops) 2 else 1
                                     }
@@ -299,7 +286,6 @@ fun WidgetSetupView(
                             onSelectedVariantsChange = { selectedVariants = it }
                         )
                     } else {
-                        // Skip to name configuration for closest stop with no preferred stops
                         LaunchedEffect(Unit) {
                             currentStep = 3
                         }
@@ -319,7 +305,6 @@ fun WidgetSetupView(
         }
     }
     
-    // Duplicate name dialog
     if (showDuplicateNameDialog) {
         AlertDialog(
             onDismissRequest = { showDuplicateNameDialog = false },
@@ -333,7 +318,6 @@ fun WidgetSetupView(
         )
     }
     
-    // No service dialog
     if (showNoServiceDialog) {
         AlertDialog(
             onDismissRequest = { showNoServiceDialog = false },

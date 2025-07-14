@@ -231,6 +231,7 @@ object PeekTransitConstants {
             "small" -> 180
             "medium" -> 400
             "large" -> 400
+            "lockscreen" -> 180
             else -> 110
         }
         
@@ -246,6 +247,7 @@ object PeekTransitConstants {
             "small" -> 220
             "medium" -> 220
             "large" -> 400
+            "lockscreen" -> 110
             else -> 110
         }
 
