@@ -17,7 +17,7 @@ import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import java.util.UUID
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun WidgetSetupView(
     editingWidget: WidgetModel? = null,

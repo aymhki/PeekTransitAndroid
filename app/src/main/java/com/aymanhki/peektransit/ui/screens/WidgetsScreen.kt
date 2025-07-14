@@ -23,7 +23,7 @@ import com.aymanhki.peektransit.ui.screens.widgetsetup.WidgetSetupView
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun WidgetsScreen(stopsDataStore: StopsDataStore) {
     val context = LocalContext.current
