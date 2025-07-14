@@ -22,7 +22,8 @@ import java.util.UUID
 fun WidgetSetupView(
     editingWidget: WidgetModel? = null,
     onDismiss: () -> Unit,
-    stopsDataStore: StopsDataStore
+    stopsDataStore: StopsDataStore,
+    mainViewModel: com.aymanhki.peektransit.viewmodel.MainViewModel
 ) {
     val context = LocalContext.current
     val savedWidgetsManager = remember { SavedWidgetsManager.getInstance(context) }
@@ -270,7 +271,8 @@ fun WidgetSetupView(
                     onPreferredStopsChange = { preferredStops = it },
                     selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops,
                     onSelectedPerferredStopsInClosestStopsChange = { selectedPerferredStopsInClosestStops = it },
-                    stopsDataStore = stopsDataStore
+                    stopsDataStore = stopsDataStore,
+                    mainViewModel = mainViewModel
                 )
                 
                 2 -> {

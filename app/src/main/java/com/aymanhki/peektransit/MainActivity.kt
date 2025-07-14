@@ -190,7 +190,10 @@ fun MainScreen(initialStopNumber: Int? = null) {
                 )
             }
             composable(BottomNavItem.Widgets.route) {
-                WidgetsScreen(stopsDataStore = mainViewModel.stopsDataStore)
+                WidgetsScreen(
+                    stopsDataStore = mainViewModel.stopsDataStore,
+                    mainViewModel = mainViewModel
+                )
             }
             composable(BottomNavItem.More.route) {
                 MoreScreen(

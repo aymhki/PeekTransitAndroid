@@ -25,7 +25,10 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun WidgetsScreen(stopsDataStore: StopsDataStore) {
+fun WidgetsScreen(
+    stopsDataStore: StopsDataStore,
+    mainViewModel: com.aymanhki.peektransit.viewmodel.MainViewModel
+) {
     val context = LocalContext.current
     val savedWidgetsManager = remember { SavedWidgetsManager.getInstance(context) }
     val savedWidgets by savedWidgetsManager.savedWidgets.collectAsState()
@@ -221,7 +224,8 @@ fun WidgetsScreen(stopsDataStore: StopsDataStore) {
                     savedWidgetsManager.loadSavedWidgets()
                 }
             },
-            stopsDataStore = stopsDataStore
+            stopsDataStore = stopsDataStore,
+            mainViewModel = mainViewModel
         )
     }
     

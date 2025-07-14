@@ -1,5 +1,6 @@
 package com.aymanhki.peektransit.ui.screens.widgetsetup
 
+import android.Manifest
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -26,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.data.models.Stop
@@ -36,6 +39,8 @@ import com.aymanhki.peektransit.ui.components.MapPreview
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.ui.components.VariantBadge
 import com.aymanhki.peektransit.utils.PeekTransitConstants
+import com.aymanhki.peektransit.utils.location.LocationManagerProvider
+import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -53,14 +58,23 @@ fun StopSelectionStep(
     selectedPerferredStopsInClosestStops: Boolean,
     onSelectedPerferredStopsInClosestStopsChange: (Boolean) -> Unit,
     stopsDataStore: StopsDataStore,
-    mainViewModel: com.aymanhki.peektransit.viewmodel.MainViewModel? = null
+    mainViewModel: com.aymanhki.peektransit.viewmodel.MainViewModel
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val locationManager = remember { LocationManagerProvider.getInstance(context) }
+    
+    val locationPermissionsState = rememberMultiplePermissionsState(
+        listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        )
+    )
+    
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
     var viewState by remember { mutableStateOf(ViewState.READY) }
-    val scope = rememberCoroutineScope()
     
-    val context = LocalContext.current
     val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
     
     val combinedStops by stopsDataStore.stops.observeAsState(emptyList())
@@ -70,9 +84,16 @@ fun StopSelectionStep(
     val error by stopsDataStore.error.observeAsState()
     val bookmarkedStops by savedStopsManager.savedStops.collectAsState()
     
-    val isLoadingStops = mainViewModel?.isLoadingStops?.observeAsState(false)?.value ?: false
-    val isLoadingLocation = mainViewModel?.isLoadingLocation?.observeAsState(false)?.value ?: false
-    val locationError = mainViewModel?.locationError?.observeAsState()?.value
+    val isLoadingStops by mainViewModel.isLoadingStops.observeAsState(false)
+    val isLoadingLocation by mainViewModel.isLoadingLocation.observeAsState(false)
+    val locationError by mainViewModel.locationError.observeAsState()
+    val isViewModelInitialized by mainViewModel.isInitialized.observeAsState(false)
+    
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
+        if (locationPermissionsState.allPermissionsGranted) {
+            mainViewModel.initializeGlobal()
+        }
+    }
     
     val maxPerferredStopsInClosestStops = PeekTransitConstants.getMaxPerferredstopsInClosestStops()
     val maxStops = if (selectedPerferredStopsInClosestStops) {
@@ -144,106 +165,106 @@ fun StopSelectionStep(
         label = "contentAlpha"
     )
     
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            TabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier.fillMaxWidth()
+    when {
+        !locationPermissionsState.allPermissionsGranted -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { 
-                        Text(
-                            "All Stops",
-                            color = MaterialTheme.colorScheme.onSurface
-                        ) 
-                    }
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { 
-                        Text(
-                            "Bookmarked",
-                            color = MaterialTheme.colorScheme.onSurface
-                        ) 
-                    }
-                )
-            }
-        }
-        
-        item {
-            Text(
-                text = "Select the widget bus stops",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        
-        if (selectedTab == 0) {
-            item {
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
-                    text = "Hint: Use the search bar to search for and select stops that are not near your location.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Location Permission Required",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
                 )
-            }
-            
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = viewState != ViewState.TRANSITIONING) { 
-                            handleOptionToggle() 
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "This app needs location access to show nearby bus stops for your widget.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { locationPermissionsState.launchMultiplePermissionRequest() }
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = if (isClosestStop) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
-                            contentDescription = null,
-                            tint = if (isClosestStop) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Auto select closest stops everytime",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Automatically use closest stops based on your location everytime you look at the widget",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text("Grant Permission")
                 }
             }
-            
-            if (isClosestStop) {
+        }
+        
+        else -> {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 item {
-                    AnimatedVisibility(
-                        visible = isClosestStop,
-                        enter = slideInVertically() + fadeIn(),
-                        exit = slideOutVertically() + fadeOut()
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = { selectedTab = 0 },
+                            text = { 
+                                Text(
+                                    "All Stops",
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ) 
+                            }
+                        )
+                        Tab(
+                            selected = selectedTab == 1,
+                            onClick = { selectedTab = 1 },
+                            text = { 
+                                Text(
+                                    "Bookmarked",
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ) 
+                            }
+                        )
+                    }
+                }
+                
+                item {
+                    Text(
+                        text = "Select the widget bus stops",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                if (selectedTab == 0) {
+                    item {
+                        Text(
+                            text = "Hint: Use the search bar to search for and select stops that are not near your location.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    item {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = viewState != ViewState.TRANSITIONING) { 
-                                    handlePreferredToggle() 
+                                    handleOptionToggle() 
                                 },
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -254,261 +275,322 @@ fun StopSelectionStep(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = if (selectedPerferredStopsInClosestStops) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                    imageVector = if (isClosestStop) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = null,
-                                    tint = if (selectedPerferredStopsInClosestStops) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (isClosestStop) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Select preferred stops",
+                                        text = "Auto select closest stops everytime",
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = "Allow you to select which stop(s) to display on the widget regardless of distance from your location",
+                                        text = "Automatically use closest stops based on your location everytime you look at the widget",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                        }
-                    }
-                }
-            }
-        }
-        
-        if (!isClosestStop || selectedPerferredStopsInClosestStops) {
-            item {
-                AnimatedVisibility(
-                    visible = !isClosestStop || selectedPerferredStopsInClosestStops,
-                    enter = slideInVertically() + fadeIn(),
-                    exit = slideOutVertically() + fadeOut()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .alpha(contentAlpha)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Selected stops: ${
-                                if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops.size else selectedStops.size
-                            }/$maxStops",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                            shape = RoundedCornerShape(28.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { query ->
-                                    searchQuery = query
-                                    scope.launch {
-                                        stopsDataStore.searchForStops(query)
-                                    }
-                                },
-                                placeholder = {
-                                    Text(
-                                        "Search stops, routes...",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailingIcon = {
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { 
-                                            searchQuery = ""
-                                            scope.launch {
-                                                stopsDataStore.searchForStops("")
-                                            }
-                                        }) {
-                                            Icon(
-                                                Icons.Default.Clear,
-                                                contentDescription = "Clear search",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(28.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            
-            when {
-                isLoading || isLoadingStops || isLoadingLocation -> {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = when {
-                                        isLoadingLocation -> "Getting your location..."
-                                        isLoadingStops || isLoading -> "Loading stops..."
-                                        else -> "Loading..."
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                error != null || locationError != null -> {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "Error loading stops",
-                                    style = MaterialTheme.typography.headlineSmall
-                                )
-                                Text(
-                                    text = (error ?: locationError)?.message ?: "Unknown error",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = {
-                                        stopsDataStore.clearError()
-                                        mainViewModel?.clearLocationError()
-                                        mainViewModel?.retry()
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = null
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Retry")
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                currentFilteredStops.isEmpty() && isSearching -> {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Searching...")
-                            }
-                        }
-                    }
-                }
-                
-                currentFilteredStops.isEmpty() -> {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (searchQuery.isNotEmpty()) {
-                                    "No stops found for \"$searchQuery\""
-                                } else {
-                                    "No stops found nearby"
-                                },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                
-                else -> {
-                    items(currentFilteredStops) { stop ->
-                        val currentSelectedStops = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
-                        val isSelected = currentSelectedStops.any { it.number == stop.number }
-                        val canSelect = !isSelected && currentSelectedStops.size < maxStops
-                        
-                        Column {
-                            SelectableStopRow(
-                                stop = stop,
-                                isSelected = isSelected,
-                                enabled = canSelect || isSelected,
-                                onClick = {
-                                    val currentList = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
-                                    val newList = if (isSelected) {
-                                        currentList.filter { it.number != stop.number }
-                                    } else if (currentList.size < maxStops) {
-                                        currentList + stop
-                                    } else {
-                                        currentList
-                                    }
-                                    
-                                    if (isClosestStop && selectedPerferredStopsInClosestStops) {
-                                        onPreferredStopsChange(newList)
-                                    } else {
-                                        onSelectedStopsChange(newList)
-                                    }
-                                }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                     
-                    if (isSearching) {
+                    if (isClosestStop) {
                         item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
+                            AnimatedVisibility(
+                                visible = isClosestStop,
+                                enter = slideInVertically() + fadeIn(),
+                                exit = slideOutVertically() + fadeOut()
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = viewState != ViewState.TRANSITIONING) { 
+                                            handlePreferredToggle() 
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (selectedPerferredStopsInClosestStops) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                            contentDescription = null,
+                                            tint = if (selectedPerferredStopsInClosestStops) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Select preferred stops",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = "Allow you to select which stop(s) to display on the widget regardless of distance from your location",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!isClosestStop || selectedPerferredStopsInClosestStops) {
+                    item {
+                        AnimatedVisibility(
+                            visible = !isClosestStop || selectedPerferredStopsInClosestStops,
+                            enter = slideInVertically() + fadeIn(),
+                            exit = slideOutVertically() + fadeOut()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .alpha(contentAlpha)
+                                    .fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "Selected stops: ${
+                                        if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops.size else selectedStops.size
+                                    }/$maxStops",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    shape = RoundedCornerShape(28.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { query ->
+                                            searchQuery = query
+                                            scope.launch {
+                                                stopsDataStore.searchForStops(query)
+                                            }
+                                        },
+                                        placeholder = {
+                                            Text(
+                                                "Search stops, routes...",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Search,
+                                                contentDescription = "Search",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (searchQuery.isNotEmpty()) {
+                                                IconButton(onClick = { 
+                                                    searchQuery = ""
+                                                    scope.launch {
+                                                        stopsDataStore.searchForStops("")
+                                                    }
+                                                }) {
+                                                    Icon(
+                                                        Icons.Default.Clear,
+                                                        contentDescription = "Clear search",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(28.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedBorderColor = Color.Transparent,
+                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                        )
                                     )
-                                    Text(
-                                        "Loading more results...",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            }
+                        }
+                    }
+                    
+                    when {
+                        isLoadingStops || isLoadingLocation || isLoading -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        CircularProgressIndicator()
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = when {
+                                                isLoadingLocation -> "Getting your location..."
+                                                isLoadingStops || isLoading -> "Loading stops..."
+                                                else -> "Loading..."
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        error != null || locationError != null -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "Error loading stops",
+                                            style = MaterialTheme.typography.headlineSmall
+                                        )
+                                        Text(
+                                            text = (error ?: locationError)?.message ?: "Unknown error",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = {
+                                                stopsDataStore.clearError()
+                                                mainViewModel.clearLocationError()
+                                                mainViewModel.retry()
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Refresh,
+                                                contentDescription = null
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        currentFilteredStops.isEmpty() && isSearching -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        CircularProgressIndicator()
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Searching...")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        currentFilteredStops.isEmpty() -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = if (searchQuery.isNotEmpty()) {
+                                                "No stops found for \"$searchQuery\""
+                                            } else {
+                                                "No stops found nearby"
+                                            },
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        Button(
+                                            onClick = {
+                                                mainViewModel.retry()
+                                            }
+                                        ) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        else -> {
+                            items(currentFilteredStops) { stop ->
+                                val currentSelectedStops = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
+                                val isSelected = currentSelectedStops.any { it.number == stop.number }
+                                val canSelect = !isSelected && currentSelectedStops.size < maxStops
+                                
+                                Column {
+                                    SelectableStopRow(
+                                        stop = stop,
+                                        isSelected = isSelected,
+                                        enabled = canSelect || isSelected,
+                                        onClick = {
+                                            val currentList = if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
+                                            val newList = if (isSelected) {
+                                                currentList.filter { it.number != stop.number }
+                                            } else if (currentList.size < maxStops) {
+                                                currentList + stop
+                                            } else {
+                                                currentList
+                                            }
+                                            
+                                            if (isClosestStop && selectedPerferredStopsInClosestStops) {
+                                                onPreferredStopsChange(newList)
+                                            } else {
+                                                onSelectedStopsChange(newList)
+                                            }
+                                        }
                                     )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
+                            
+                            if (isSearching) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                            Text(
+                                                "Loading more results...",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
