@@ -90,6 +90,31 @@ fun MapViewScreen(
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     
+    val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
+    val liveLocation by viewModel.currentLocation.observeAsState()
+    
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
+        if (locationPermissionsState.allPermissionsGranted) {
+            viewModel.initializeGlobal()
+        }
+    }
+    
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized) {
+        if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && liveLocation == null) {
+            try {
+                val currentLocation = viewModel.getCurrentLocationForCamera()
+                if (currentLocation != null) {
+                    viewModel.updateCurrentLocation(currentLocation)
+                    println("MapViewScreen: Got location for camera positioning")
+                } else {
+                    println("MapViewScreen: No location available for camera positioning")
+                }
+            } catch (e: Exception) {
+                println("MapViewScreen: Failed to get location for camera: ${e.message}")
+            }
+        }
+    }
+    
     LaunchedEffect(Unit) {
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
@@ -114,47 +139,41 @@ fun MapViewScreen(
     }
     
     
-    val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
-    
-    val liveLocation by viewModel.currentLocation.observeAsState()
-    
-
-    LaunchedEffect(showMap, isViewModelInitialized, isMapsInitialized, hasCameraInitializedToUserLocation) {
-        if (showMap && isViewModelInitialized && isMapsInitialized && !hasCameraInitializedToUserLocation) {
-            liveLocation?.let { location ->
-                val latLng = LatLng(location.latitude, location.longitude)
-                userLocation = latLng
-                locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
-                
-                try {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                        ),
-                        1500
+    LaunchedEffect(liveLocation, showMap, isMapsInitialized) {
+        if (showMap && isMapsInitialized && liveLocation != null && !hasCameraInitializedToUserLocation) {
+            val location = liveLocation!!
+            val latLng = LatLng(location.latitude, location.longitude)
+            userLocation = latLng
+            locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
+            
+            try {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                    ),
+                    1500
+                )
+                hasCameraInitializedToUserLocation = true
+                println("MapViewScreen: Camera initialized to user location")
+            } catch (e: Exception) {
+                cameraPositionState.move(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                     )
-                    hasCameraInitializedToUserLocation = true
-                    println("MapViewScreen: Camera initialized to user location (switched from another tab)")
-                } catch (e: Exception) {
-                    cameraPositionState.move(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                        )
-                    )
-                    hasCameraInitializedToUserLocation = true
-                    println("MapViewScreen: Camera moved to user location (fallback)")
-                }
+                )
+                hasCameraInitializedToUserLocation = true
+                println("MapViewScreen: Camera moved to user location (fallback)")
             }
         }
     }
     
-    LaunchedEffect(liveLocation) {
-        liveLocation?.let { location ->
-            val newLatLng = LatLng(location.latitude, location.longitude)
+    LaunchedEffect(liveLocation, hasCameraInitializedToUserLocation) {
+        if (hasCameraInitializedToUserLocation && liveLocation != null) {
+            val newLatLng = LatLng(liveLocation!!.latitude, liveLocation!!.longitude)
             val previousLocation = userLocation
             
             userLocation = newLatLng
-            locationStatus = "Location: ${"%.4f".format(location.latitude)}, ${"%.4f".format(location.longitude)}"
+            locationStatus = "Location: ${"%.4f".format(liveLocation!!.latitude)}, ${"%.4f".format(liveLocation!!.longitude)}"
             
             if (previousLocation != null && isMapsInitialized && showMap) {
                 val distance = FloatArray(1)
@@ -318,7 +337,43 @@ fun MapViewScreen(
             }
             
             FloatingActionButton(
-                onClick = { viewModel.retry() },
+                onClick = {
+                    if (locationPermissionsState.allPermissionsGranted) {
+                        scope.launch {
+                            try {
+                                val currentLocation = viewModel.getCurrentLocationForCamera()
+                                if (currentLocation != null) {
+                                    val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
+                                    userLocation = latLng
+                                    locationStatus = "Location: ${"%.4f".format(currentLocation.latitude)}, ${"%.4f".format(currentLocation.longitude)}"
+                                    viewModel.updateCurrentLocation(currentLocation)
+                                    
+                                    try {
+                                        cameraPositionState.animate(
+                                            CameraUpdateFactory.newCameraPosition(
+                                                CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                                            ),
+                                            1500
+                                        )
+                                    } catch (e: Exception) {
+                                        cameraPositionState.move(
+                                            CameraUpdateFactory.newCameraPosition(
+                                                CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                                            )
+                                        )
+                                    }
+                                    hasCameraInitializedToUserLocation = true
+                                    println("MapViewScreen: Camera reset to user location")
+                                } else {
+                                    println("MapViewScreen: No location available for camera reset")
+                                }
+                            } catch (e: Exception) {
+                                println("MapViewScreen: Failed to get location for camera reset: ${e.message}")
+                            }
+                        }
+                    }
+                    viewModel.retry()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)

@@ -46,7 +46,6 @@ import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
-//import com.aymanhki.peektransit.widgets.PeekTransitWidgetReceiver
 
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
@@ -71,7 +70,7 @@ class MainActivity : ComponentActivity() {
         
         MapSnapshotCache.initialize(applicationContext)
         
-        val stopNumber = -1 //intent?.getIntExtra(PeekTransitWidgetReceiver.STOP_NUMBER_KEY, -1) ?: -1
+        val stopNumber = -1
 
         enableEdgeToEdge()
         setContent {

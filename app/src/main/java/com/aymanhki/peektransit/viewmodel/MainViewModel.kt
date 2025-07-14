@@ -156,6 +156,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentLocation.postValue(location)
     }
     
+    suspend fun getCurrentLocationForCamera(): Location? {
+        return try {
+            locationManager.getCurrentLocation()
+        } catch (e: Exception) {
+            println("MainViewModel: Failed to get current location for camera: ${e.message}")
+            null
+        }
+    }
+    
     fun updateSearchQuery(query: String) {
         _searchQuery.postValue(query)
     }

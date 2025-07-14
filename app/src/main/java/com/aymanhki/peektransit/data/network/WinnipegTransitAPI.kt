@@ -102,9 +102,9 @@ class WinnipegTransitAPI private constructor() {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(errorHandlingInterceptor)
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS) 
-        .writeTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
     

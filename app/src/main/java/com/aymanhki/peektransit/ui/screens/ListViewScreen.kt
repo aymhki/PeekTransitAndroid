@@ -80,6 +80,12 @@ fun ListViewScreen(
 
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
 
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
+        if (locationPermissionsState.allPermissionsGranted) {
+            viewModel.initializeGlobal()
+        }
+    }
+
     LaunchedEffect(localSearchQuery, isUserInput) {
         if (!isUserInput) {
             viewModel.updateSearchQuery(localSearchQuery)
