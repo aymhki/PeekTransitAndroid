@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import com.aymanhki.peektransit.ui.components.CustomModalBottomSheet
+import com.aymanhki.peektransit.ui.components.ErrorSnackbar
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.compose.runtime.*
@@ -446,25 +447,25 @@ fun MapViewScreen(
         
         val currentError = error ?: locationError
         currentError?.let { transitError ->
-            Snackbar(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                action = {
-                    TextButton(onClick = { 
-                        viewModel.clearError()
-                        viewModel.clearLocationError()
-                    }) {
-                        Text("Dismiss")
-                    }
-                }
-            ) {
-                Text(
-                    text = if (transitError.message.contains("outside Winnipeg")) {
-                        "This app only works in Winnipeg, MB. ${transitError.message}"
-                    } else {
-                        transitError.message
-                    }
-                )
-            }
+            ErrorSnackbar(
+                error = transitError,
+                onRetry = {
+                    viewModel.clearError()
+                    viewModel.clearLocationError()
+                    viewModel.retry()
+                },
+                onDismiss = {
+                    viewModel.clearError()
+                    viewModel.clearLocationError()
+                },
+                retryButtonText = when {
+                    locationError != null -> "Retry Location"
+                    else -> "Retry"
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 16.dp, end = 16.dp, bottom = 88.dp) // Position above FAB
+            )
         }
     }
     

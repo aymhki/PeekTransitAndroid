@@ -35,6 +35,7 @@ import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.repository.StopsDataStore
 import com.aymanhki.peektransit.managers.SavedStopsManager
 import com.aymanhki.peektransit.ui.components.CircularCheckbox
+import com.aymanhki.peektransit.ui.components.ErrorView
 import com.aymanhki.peektransit.ui.components.MapPreview
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.ui.components.VariantBadge
@@ -446,38 +447,22 @@ fun StopSelectionStep(
                         
                         error != null || locationError != null -> {
                             item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = "Error loading stops",
-                                            style = MaterialTheme.typography.headlineSmall
-                                        )
-                                        Text(
-                                            text = (error ?: locationError)?.message ?: "Unknown error",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Button(
-                                            onClick = {
-                                                stopsDataStore.clearError()
-                                                mainViewModel.clearLocationError()
-                                                mainViewModel.retry()
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Refresh,
-                                                contentDescription = null
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Retry")
-                                        }
-                                    }
+                                val currentError = error ?: locationError
+                                if (currentError != null) {
+                                    ErrorView(
+                                        error = currentError,
+                                        title = "Error Loading Stops",
+                                        onRetry = {
+                                            stopsDataStore.clearError()
+                                            mainViewModel.clearLocationError()
+                                            mainViewModel.retry()
+                                        },
+                                        retryButtonText = when {
+                                            locationError != null -> "Retry Location"
+                                            else -> "Retry"
+                                        },
+                                        modifier = Modifier.padding(vertical = 16.dp)
+                                    )
                                 }
                             }
                         }

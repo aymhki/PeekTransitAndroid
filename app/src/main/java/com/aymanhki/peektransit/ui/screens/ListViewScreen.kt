@@ -26,6 +26,7 @@ import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
+import com.aymanhki.peektransit.ui.components.ErrorSnackbar
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
@@ -438,37 +439,38 @@ fun ListViewScreen(
 
                     val currentError = if (localSearchQuery.isNotEmpty()) searchError else (error ?: locationError)
                     currentError?.let { transitError ->
-                        Box(
+                        ErrorSnackbar(
+                            error = transitError,
+                            onRetry = {
+                                if (localSearchQuery.isNotEmpty()) {
+                                    viewModel.clearSearchError()
+                                    scope.launch {
+                                        val location = locationManager.getCurrentLocation()
+                                        viewModel.searchForStops(localSearchQuery, location)
+                                    }
+                                } else {
+                                    viewModel.clearError()
+                                    viewModel.clearLocationError()
+                                    viewModel.retry()
+                                }
+                            },
+                            onDismiss = {
+                                if (localSearchQuery.isNotEmpty()) {
+                                    viewModel.clearSearchError()
+                                } else {
+                                    viewModel.clearError()
+                                    viewModel.clearLocationError()
+                                }
+                            },
+                            retryButtonText = when {
+                                localSearchQuery.isNotEmpty() -> "Retry Search"
+                                locationError != null -> "Retry Location"
+                                else -> "Retry"
+                            },
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
                                 .padding(16.dp)
-                        ) {
-                            Snackbar(
-                                action = {
-                                    TextButton(
-                                        onClick = {
-                                            if (localSearchQuery.isNotEmpty()) {
-                                                viewModel.clearSearchError()
-                                            } else {
-                                                viewModel.clearError()
-                                                viewModel.clearLocationError()
-                                            }
-                                        }
-                                    ) {
-                                        Text("Dismiss")
-                                    }
-                                }
-                            ) {
-                                Text(
-                                    text = if (transitError.message.contains("outside Winnipeg")) {
-                                        "This app only works in Winnipeg, MB. ${transitError.message}"
-                                    } else {
-                                        transitError.message
-                                    }
-                                )
-                            }
-                        }
+                        )
                     }
                 }
             }
