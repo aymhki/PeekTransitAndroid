@@ -12,8 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Note
+import androidx.compose.material.icons.filled.BackupTable
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -52,7 +55,7 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
     object Stops : BottomNavItem("stops", "Stops", Icons.AutoMirrored.Filled.List)
     object Saved : BottomNavItem("saved", "Saved", Icons.Default.Bookmark)
-    object Widgets : BottomNavItem("widgets", "Widgets", Icons.AutoMirrored.Filled.Note)
+    object Widgets : BottomNavItem("widgets", "Widgets", Icons.Default.Widgets)
     object More : BottomNavItem("more", "More", Icons.Default.MoreHoriz)
 }
 
