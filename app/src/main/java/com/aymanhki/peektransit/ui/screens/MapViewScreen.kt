@@ -103,7 +103,6 @@ fun MapViewScreen(
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized, hasCameraInitializedToUserLocation) {
         if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && !hasCameraInitializedToUserLocation) {
             try {
-                // If liveLocation is already available, use it directly
                 val currentLocation = liveLocation ?: viewModel.getCurrentLocationForCamera()
                 if (currentLocation != null) {
                     if (liveLocation == null) {
@@ -467,7 +466,7 @@ fun MapViewScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(start = 16.dp, end = 16.dp, bottom = 88.dp) // Position above FAB
+                    .padding(start = 16.dp, end = 16.dp, bottom = 88.dp)
             )
         }
     }
