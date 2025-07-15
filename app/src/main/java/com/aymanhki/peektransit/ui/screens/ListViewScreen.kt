@@ -50,10 +50,6 @@ fun ListViewScreen(
 
     val stops by viewModel.stops.observeAsState(emptyList())
     val searchResults by viewModel.searchResults.observeAsState(emptyList())
-
-    LaunchedEffect(stops) {
-        println("ListViewScreen: Stops list updated with ${stops.size} stops")
-    }
     val isLoadingStops by viewModel.isLoadingStops.observeAsState(false)
     val isLoadingLocation by viewModel.isLoadingLocation.observeAsState(false)
     val isLoading by viewModel.isLoading.observeAsState(false)

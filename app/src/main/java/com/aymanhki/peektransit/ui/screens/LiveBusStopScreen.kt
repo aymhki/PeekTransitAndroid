@@ -425,21 +425,6 @@ fun LiveBusStopScreen(
                         }
                     }
 
-                    !hasAttemptedScheduleFetch -> {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator()
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text("Loading arrivals...")
-                                }
-                            }
-                        }
-                    }
-
                     error != null -> {
                         item {
                             Column(
@@ -480,6 +465,21 @@ fun LiveBusStopScreen(
                                     }
                                 }) {
                                     Text("Retry")
+                                }
+                            }
+                        }
+                    }
+
+                    !hasAttemptedScheduleFetch -> {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator()
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text("Loading arrivals...")
                                 }
                             }
                         }

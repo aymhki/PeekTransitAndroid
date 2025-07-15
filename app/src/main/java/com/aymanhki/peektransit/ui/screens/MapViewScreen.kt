@@ -100,12 +100,15 @@ fun MapViewScreen(
         }
     }
     
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized) {
-        if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && liveLocation == null) {
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized, hasCameraInitializedToUserLocation) {
+        if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && !hasCameraInitializedToUserLocation) {
             try {
-                val currentLocation = viewModel.getCurrentLocationForCamera()
+                // If liveLocation is already available, use it directly
+                val currentLocation = liveLocation ?: viewModel.getCurrentLocationForCamera()
                 if (currentLocation != null) {
-                    viewModel.updateCurrentLocation(currentLocation)
+                    if (liveLocation == null) {
+                        viewModel.updateCurrentLocation(currentLocation)
+                    }
                     println("MapViewScreen: Got location for camera positioning")
                 } else {
                     println("MapViewScreen: No location available for camera positioning")
