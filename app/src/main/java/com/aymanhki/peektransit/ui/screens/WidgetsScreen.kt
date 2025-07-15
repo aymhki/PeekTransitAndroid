@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.data.repository.StopsDataStore
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
+import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import com.aymanhki.peektransit.ui.components.WidgetRowView
 import com.aymanhki.peektransit.ui.screens.widgetsetup.WidgetSetupView
@@ -39,6 +40,7 @@ fun WidgetsScreen(
     var editingWidget by remember { mutableStateOf<WidgetModel?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     
     val coroutineScope = rememberCoroutineScope()
     
@@ -137,10 +139,20 @@ fun WidgetsScreen(
             }
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        CustomPullToRefreshBox(
+            modifier = Modifier.padding(paddingValues),
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                coroutineScope.launch {
+                    isRefreshing = true
+                    try {
+                        savedWidgetsManager.loadSavedWidgets()
+                        kotlinx.coroutines.delay(100)
+                    } finally {
+                        isRefreshing = false
+                    }
+                }
+            }
         ) {
             when {
                 isLoading -> {

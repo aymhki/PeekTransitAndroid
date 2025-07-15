@@ -16,8 +16,10 @@ class SavedWidgetsManager(context: Context) {
         PREFS_NAME,
         Context.MODE_PRIVATE
     )
+
     private val gson = GsonBuilder()
         .registerTypeAdapter(WidgetModel::class.java, WidgetModelTypeAdapter())
+        .serializeSpecialFloatingPointValues()
         .create()
     
     private val _savedWidgets = MutableStateFlow<List<WidgetModel>>(emptyList())

@@ -99,7 +99,9 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
     
     private fun parseStopFromMap(map: Map<String, Any>): Stop {
         return try {
-            val gson = Gson()
+            val gson = GsonBuilder()
+                .serializeSpecialFloatingPointValues()
+                .create()
             val json = gson.toJson(map)
             gson.fromJson(json, Stop::class.java)
         } catch (e: Exception) {
@@ -109,7 +111,9 @@ class WidgetDataTypeAdapter : JsonDeserializer<Map<String, Any>>, JsonSerializer
     
     private fun parseVariantFromMap(map: Map<String, Any>): Variant {
         return try {
-            val gson = Gson()
+            val gson = GsonBuilder()
+                .serializeSpecialFloatingPointValues()
+                .create()
             val json = gson.toJson(map)
             gson.fromJson(json, Variant::class.java)
         } catch (e: Exception) {

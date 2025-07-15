@@ -18,6 +18,7 @@ data class WidgetModel(
         private fun createGson(): Gson {
             return GsonBuilder()
                 .registerTypeAdapter(WidgetModel::class.java, WidgetModelTypeAdapter())
+                .serializeSpecialFloatingPointValues()
                 .create()
         }
         

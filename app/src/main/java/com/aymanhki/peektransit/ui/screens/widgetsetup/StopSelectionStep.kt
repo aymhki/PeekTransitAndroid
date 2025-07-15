@@ -557,6 +557,8 @@ fun StopSelectionStep(
                                                 currentList
                                             }
                                             
+                                            
+                                            
                                             if (isClosestStop && selectedPerferredStopsInClosestStops) {
                                                 onPreferredStopsChange(newList)
                                             } else {
