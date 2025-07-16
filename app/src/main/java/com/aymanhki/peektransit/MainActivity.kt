@@ -110,7 +110,9 @@ fun MainScreen(initialStopNumber: Int? = null) {
     
     val mainViewModel: MainViewModel = viewModel()
     
+    // Initialize location and ViewModel immediately when app starts
     LaunchedEffect(Unit) {
+        println("MainActivity: Initializing global state immediately")
         mainViewModel.initializeGlobal()
     }
     
