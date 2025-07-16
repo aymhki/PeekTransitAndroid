@@ -1,7 +1,3 @@
 <resources>
     <string name="app_name">Peek Transit</string>
-    <string name="widget_description">Shows real-time bus arrival information for your selected stops</string>
-    <string name="widget_small_description">Small widget - Shows real-time bus arrival information (2x2) - Maximum 1 bus stop with two arrival entries</string>
-    <string name="widget_medium_description">Medium widget - Shows real-time bus arrival information (4x2) - Maximum 2 bus stops with two arrival entries each</string>
-    <string name="widget_large_description">Large widget - Shows real-time bus arrival information (4x4) - Maximum 3 bus stops with two arrival entries each</string>
 </resources>
