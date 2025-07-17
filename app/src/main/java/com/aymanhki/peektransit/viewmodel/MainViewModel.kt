@@ -73,9 +73,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun initializeGlobal() {
         if (_isInitialized.value == false && locationManager.hasLocationPermission()) {
-            // Fetch location immediately for camera positioning, independently of stops loading
             fetchLocationForCamera()
-            // Then fetch location and load stops
             fetchLocationAndLoadStops()
         }
     }
@@ -83,33 +81,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun fetchLocationForCamera() {
         viewModelScope.launch {
             try {
-                // Force fresh location fetch for camera positioning
                 val location = locationManager.getCurrentLocation(forceRefresh = true)
                 if (location != null) {
                     _currentLocation.postValue(location)
-                    println("MainViewModel: Location fetched for camera positioning: ${location.latitude}, ${location.longitude}")
                 } else {
-                    println("MainViewModel: Failed to get location for camera positioning - trying again without force refresh")
-                    // Fallback: try again without force refresh
                     val fallbackLocation = locationManager.getCurrentLocation(forceRefresh = false)
                     if (fallbackLocation != null) {
                         _currentLocation.postValue(fallbackLocation)
-                        println("MainViewModel: Fallback location fetched for camera positioning: ${fallbackLocation.latitude}, ${fallbackLocation.longitude}")
                     } else {
-                        println("MainViewModel: Both location attempts failed for camera positioning")
                     }
                 }
             } catch (e: Exception) {
-                println("MainViewModel: Exception fetching location for camera: ${e.message}")
-                // Try one more time with a simple approach
                 try {
                     val simpleLocation = locationManager.getCurrentLocation(forceRefresh = false)
                     if (simpleLocation != null) {
                         _currentLocation.postValue(simpleLocation)
-                        println("MainViewModel: Simple location fetch succeeded: ${simpleLocation.latitude}, ${simpleLocation.longitude}")
                     }
                 } catch (e2: Exception) {
-                    println("MainViewModel: All location fetch attempts failed: ${e2.message}")
+
                 }
             }
         }

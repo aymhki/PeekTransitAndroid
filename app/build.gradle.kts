@@ -12,8 +12,8 @@ android {
         applicationId = "com.aymanhki.peektransit"
         minSdk = 31
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.2"
+        versionCode = 8
+        versionName = "1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -94,7 +94,6 @@ fun MapViewScreen(
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
     val liveLocation by viewModel.currentLocation.observeAsState()
     
-    // Initialize maps
     LaunchedEffect(Unit) {
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
@@ -118,21 +117,16 @@ fun MapViewScreen(
         }
     }
     
-    // Initialize ViewModel when permissions are granted
     LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
         if (locationPermissionsState.allPermissionsGranted) {
             viewModel.initializeGlobal()
         }
     }
     
-    // CENTRALIZED CAMERA POSITIONING - This handles ALL camera positioning logic
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized, liveLocation, hasCameraInitializedToUserLocation) {
-        // Only proceed if we have permissions, map is ready, and camera hasn't been initialized yet
         if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && !hasCameraInitializedToUserLocation) {
-            println("MapViewScreen: Starting camera positioning process")
-            
+
             try {
-                // Try to get location - first from LiveData, then fetch fresh if needed
                 val currentLocation = liveLocation ?: viewModel.getCurrentLocationForCamera()
                 
                 if (currentLocation != null) {
@@ -140,12 +134,10 @@ fun MapViewScreen(
                     userLocation = latLng
                     locationStatus = "Location: ${"%.4f".format(currentLocation.latitude)}, ${"%.4f".format(currentLocation.longitude)}"
                     
-                    // Update ViewModel's location if we fetched it fresh
                     if (liveLocation == null) {
                         viewModel.updateCurrentLocation(currentLocation)
                     }
                     
-                    // Position camera with animation, fallback to immediate move if animation fails
                     try {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newCameraPosition(
@@ -164,7 +156,6 @@ fun MapViewScreen(
                         println("MapViewScreen: Camera moved to user location (fallback)")
                     }
                     
-                    // Mark as initialized
                     hasCameraInitializedToUserLocation = true
                     println("MapViewScreen: Camera positioning completed successfully")
                     
@@ -178,13 +169,9 @@ fun MapViewScreen(
             }
         }
     }
-    
-    // FALLBACK: Position camera when map becomes the current destination 
-    // This ensures camera positioning works even when user switches to Map tab after opening app on different tab
+
     LaunchedEffect(isCurrentDestination) {
         if (isCurrentDestination && locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && !hasCameraInitializedToUserLocation) {
-            println("MapViewScreen: Fallback camera positioning triggered for current destination")
-            
             try {
                 val currentLocation = liveLocation ?: viewModel.getCurrentLocationForCamera()
                 
@@ -223,19 +210,14 @@ fun MapViewScreen(
         }
     }
     
-    // TIMEOUT FALLBACK: If location takes too long, position camera to default Winnipeg location
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, showMap, isMapsInitialized) {
         if (locationPermissionsState.allPermissionsGranted && showMap && isMapsInitialized && !hasCameraInitializedToUserLocation) {
-            println("MapViewScreen: Starting timeout fallback for camera positioning")
-            
-            // Wait for 5 seconds for location to be available
+
             kotlinx.coroutines.delay(5000)
             
-            // If still no location and camera not initialized, use default location
             if (liveLocation == null && !hasCameraInitializedToUserLocation) {
-                println("MapViewScreen: Location timeout reached, using default Winnipeg location")
-                
-                val defaultLatLng = LatLng(49.8951, -97.1384) // Winnipeg center
+
+                val defaultLatLng = LatLng(49.8951, -97.1384)
                 locationStatus = "Using default location (Winnipeg)"
                 
                 try {
