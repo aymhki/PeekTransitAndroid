@@ -344,3 +344,4 @@ object SettingsKeys {
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
 }
+
