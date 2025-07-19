@@ -145,10 +145,7 @@ object PeekTransitConstants {
     val EARLY_OR_DUE_TEXT_COLOR_IN_MODERN_THEME_ALWAYS = AccentBlue
     val CLASSIC_THEME_FONT = R.font.lcd_dot
     val MODERN_THEME_FONT = R.font.courier_prime_bold
-
     val ACCENT_COLOR_IN_ALL_THEMES = AccentBlue
-
-
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
     const val LONG_SCHEDULE_ENTRY_WITH_LATE_FOR_TESTING = "899" + SCHEDULE_STRING_SEPARATOR + "Kildonan Place" + SCHEDULE_STRING_SEPARATOR + LATE_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 AM"
@@ -293,15 +290,10 @@ object PeekTransitConstants {
     
     // Widget-specific helper functions
     fun getScheduleStringSeparator(): String = SCHEDULE_STRING_SEPARATOR
-    
     fun getWidgetTextPlaceholder(): String = WIDGET_TEXT_PLACEHOLDER
-    
     fun getMaxBusRouteLengthForWidget(): Int = MAX_BUS_ROUTE_LENGTH_FOR_WIDGET
-    
     fun getMaxBusRoutePrefixLengthForWidget(): Int = MAX_BUS_ROUTE_PREFIX_LENGTH_FOR_WIDGET
-    
     fun getStopNameMaxPrefixLengthForWidget(): Int = STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET
-    
     fun getRefreshWidgetTimelineAfterHowManySeconds(): Int = REFRESH_WIDGET_TIMELINE_AFTER_SECONDS
 
     fun initAPIKey(context: Context) {
@@ -352,4 +344,3 @@ object SettingsKeys {
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
 }
-
