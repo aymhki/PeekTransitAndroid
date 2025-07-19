@@ -1,16 +1,17 @@
 package com.aymanhki.peektransit.utils
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
 
 object PeekTransitConstants {
 
+
     // API Configuration
-    lateinit var TRANSIT_API_KEY: String
+    var TRANSIT_API_KEY: String = ""
     const val BASE_URL = "https://api.winnipegtransit.com/v4/"
     
     // Stop Configuration
@@ -302,6 +303,15 @@ object PeekTransitConstants {
     fun getStopNameMaxPrefixLengthForWidget(): Int = STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET
     
     fun getRefreshWidgetTimelineAfterHowManySeconds(): Int = REFRESH_WIDGET_TIMELINE_AFTER_SECONDS
+
+    fun initAPIKey(context: Context) {
+        if ( TRANSIT_API_KEY.isBlank() || TRANSIT_API_KEY.isEmpty() )
+        {
+            TRANSIT_API_KEY = context.applicationContext.packageManager
+                .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+                .metaData.getString("TRANSIT_API_KEY") ?: ""
+        }
+    }
 }
 
 enum class DefaultTab(val index: Int, val displayName: String, val icon: String) {
@@ -342,3 +352,4 @@ object SettingsKeys {
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
 }
+
