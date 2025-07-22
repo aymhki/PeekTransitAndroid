@@ -9,4 +9,26 @@
     <color name="white">#FFFFFFFF</color>
     
     <color name="splash_background">#FFFFFFFF</color>
+
+    <color name="primary">#FF2A7DE3</color>
+    <color name="secondary">#FF2A7DE3</color>
+    <color name="tertiary">#FF2A7DE3</color>
+    <color name="background">#FFFFFFFF</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="surfaceVariant">#FFF0F0F0</color>
+    <color name="primaryContainer">#FF2A7DE3</color>
+    <color name="secondaryContainer">#FF2A7DE3</color>
+    <color name="tertiaryContainer">#FF2A7DE3</color>
+    <color name="onPrimary">#FFFFFFFF</color>
+    <color name="onSecondary">#FFFFFFFF</color>
+    <color name="onTertiary">#FFFFFFFF</color>
+    <color name="onPrimaryContainer">#FFFFFFFF</color>
+    <color name="onSecondaryContainer">#FFFFFFFF</color>
+    <color name="onTertiaryContainer">#FFFFFFFF</color>
+    <color name="onBackground">#FF000000</color>
+    <color name="onSurface">#FF000000</color>
+    <color name="onSurfaceVariant">#FF000000</color>
+    <color name="error">#FFD2183B</color>
+
+
 </resources>

@@ -11,28 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AccentBlue,
-    secondary = AccentBlue,
-    tertiary = AccentBlue,
-    background = Color(0xFF171717),
-    surface = Color(0xFF232323),
-    surfaceVariant = Color(0xFF313131),
-    primaryContainer = AccentBlue,
-    secondaryContainer = AccentBlue,
-    tertiaryContainer = AccentBlue,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onPrimaryContainer = Color.White,
-    onSecondaryContainer = Color.White,
-    onTertiaryContainer = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White,
-    onSurfaceVariant = Color.White,
-    error = Color(0xFFD2183B),
-)
-
 private val LightColorScheme = lightColorScheme(
     primary = AccentBlue,
     secondary = AccentBlue,
@@ -52,6 +30,28 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color.Black,
     onSurface = Color.Black,
     onSurfaceVariant = Color.Black,
+    error = Color(0xFFD2183B),
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = AccentBlue,
+    secondary = AccentBlue,
+    tertiary = AccentBlue,
+    background = Color(0xFF171717),
+    surface = Color(0xFF232323),
+    surfaceVariant = Color(0xFF313131),
+    primaryContainer = AccentBlue,
+    secondaryContainer = AccentBlue,
+    tertiaryContainer = AccentBlue,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onPrimaryContainer = Color.White,
+    onSecondaryContainer = Color.White,
+    onTertiaryContainer = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    onSurfaceVariant = Color.White,
     error = Color(0xFFD2183B),
 )
 

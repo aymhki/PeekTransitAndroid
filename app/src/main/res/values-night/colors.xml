@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_background">#FF121212</color>
+    <color name="splash_background">#FF313131</color>
+    <color name="primary">#FF2A7DE3</color>
+    <color name="secondary">#FF2A7DE3</color>
+    <color name="tertiary">#FF2A7DE3</color>
+    <color name="background">#FF171717</color>
+    <color name="surface">#FF232323</color>
+    <color name="surfaceVariant">#FF313131</color>
+    <color name="primaryContainer">#FF2A7DE3</color>
+    <color name="secondaryContainer">#FF2A7DE3</color>
+    <color name="tertiaryContainer">#FF2A7DE3</color>
+    <color name="onPrimary">#FFFFFFFF</color>
+    <color name="onSecondary">#FFFFFFFF</color>
+    <color name="onTertiary">#FFFFFFFF</color>
+    <color name="onPrimaryContainer">#FFFFFFFF</color>
+    <color name="onSecondaryContainer">#FFFFFFFF</color>
+    <color name="onTertiaryContainer">#FFFFFFFF</color>
+    <color name="onBackground">#FFFFFFFF</color>
+    <color name="onSurface">#FFFFFFFF</color>
+    <color name="onSurfaceVariant">#FFFFFFFF</color>
+    <color name="error">#FFD2183B</color>
+
 </resources> 
