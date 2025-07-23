@@ -388,7 +388,7 @@ object PeekTransitConstants {
         }
     }
 
-    fun triggerWidgetCoreUpdatesManagerWithUserSettings(context: Context, triggerWidgetUpdateAfterStartingTheWorker: Boolean, startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences: Boolean) {
+    fun triggerWidgetCoreUpdatesManagerWithUserSettings(context: Context, sendBroadcastToTriggerWidgetsLooksUpdates: Boolean, startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences: Boolean) {
 
         val settingsManager = SettingsManager.getInstance(context)
         val userOptedInForManualUpdates = settingsManager.userOptedInForManualWidgetUpdates
@@ -413,7 +413,7 @@ object PeekTransitConstants {
             )
         }
 
-        if (triggerWidgetUpdateAfterStartingTheWorker) {
+        if (sendBroadcastToTriggerWidgetsLooksUpdates) {
             triggerAllWidgetsLooksUpdates(context)
         }
     }
