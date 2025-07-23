@@ -13,10 +13,15 @@ import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
+import com.aymanhki.peektransit.managers.SettingsManager
+import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
+import com.aymanhki.peektransit.workers.WidgetUpdateManager
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
+    const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 10L
+    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
 
     // API Configuration
     var TRANSIT_API_KEY: String = ""
@@ -314,8 +319,6 @@ object PeekTransitConstants {
         }
     }
 
-
-    
     fun shouldShowShortRouteName(status: String): Boolean {
         return status.lowercase() in listOf("late", "early", "cancelled")
     }
@@ -367,6 +370,9 @@ object PeekTransitConstants {
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
     }
 
+    fun triggerAllWidgetsUpdates(context: Context) {
+        triggerWidgetUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
+    }
 
     fun triggerWidgetUpdateUsingProvider(context: Context, widgetProvider: Class<out AppWidgetProvider>) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -380,6 +386,21 @@ object PeekTransitConstants {
             }
             context.sendBroadcast(updateIntent)
         }
+    }
+
+    fun startWidgetUpdateManagerWithUserSettings(context: Context) {
+        val settingsManager = SettingsManager.getInstance(context)
+        val userOptedInForManualUpdates = settingsManager.userOptedInForManualWidgetUpdates
+        val userOptedInForManualUpdatesInLowPower = settingsManager.userOptedInForManualWidgetUpdatesInLowPower
+        val widgetUpdatesIntervalInMinutes = settingsManager.widgetManualUpdateMinutes
+
+        WidgetUpdateManager.startUpdates(
+            context,
+            debugging = DEBUG_MODE,
+            userOptedInForManualUpdates = userOptedInForManualUpdates,
+            userOptedInForManualUpdatesInLowPower = userOptedInForManualUpdatesInLowPower,
+            debugIntervalMinutes = widgetUpdatesIntervalInMinutes
+        )
     }
 }
 

@@ -8,9 +8,9 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.managers.SettingsManager
-import com.aymanhki.peektransit.utils.PeekTransitConstants
 import android.content.res.Configuration
 import android.util.Log
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetBackgroundColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextFont
@@ -31,14 +31,7 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
         super.onEnabled(context)
         if (context == null) return
         PeekTransitConstants.initAPIKey(context)
-
-        WidgetUpdateManager.startUpdates(
-            context,
-            debugging = PeekTransitConstants.DEBUG_MODE,
-            userOptedInForManualUpdates = false,
-            userOptedInForManualUpdatesInLowPower = false,
-            debugIntervalMinutes = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
-        )
+        PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(context)
     }
 
     override fun onDisabled(context: Context?) {
@@ -64,15 +57,9 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
         )
 
         if (action in updateActions) {
-            PeekTransitConstants.triggerWidgetUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
+            PeekTransitConstants.triggerAllWidgetsUpdates(context)
         } else if (action == Intent.ACTION_BOOT_COMPLETED) {
-            WidgetUpdateManager.startUpdates(
-                context,
-                debugging = PeekTransitConstants.DEBUG_MODE,
-                userOptedInForManualUpdates = false,
-                userOptedInForManualUpdatesInLowPower = false,
-                debugIntervalMinutes = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
-            )
+            PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(context)
         }
     }
 

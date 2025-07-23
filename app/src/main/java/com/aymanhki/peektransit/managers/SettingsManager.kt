@@ -6,8 +6,8 @@ import com.aymanhki.peektransit.utils.DefaultTab
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.SettingsKeys
 import com.aymanhki.peektransit.utils.StopViewTheme
-import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
 import androidx.core.content.edit
+import com.aymanhki.peektransit.utils.PeekTransitConstants.startWidgetUpdateManagerWithUserSettings
 
 
 class SettingsManager private constructor(private val context: Context) {
@@ -43,7 +43,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putString(SettingsKeys.SHARED_STOP_VIEW_THEME, value.displayName)
             }
 
-            PeekTransitConstants.triggerWidgetUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
+            PeekTransitConstants.triggerAllWidgetsUpdates(context)
         }
 
     var userOptedInForManualWidgetUpdates: Boolean
@@ -52,6 +52,8 @@ class SettingsManager private constructor(private val context: Context) {
             sharedPreferences.edit {
                 putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, value)
             }
+
+            startWidgetUpdateManagerWithUserSettings(context)
         }
 
     var userOptedInForManualWidgetUpdatesInLowPower: Boolean
@@ -60,6 +62,8 @@ class SettingsManager private constructor(private val context: Context) {
             sharedPreferences.edit {
                 putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, value)
             }
+
+            startWidgetUpdateManagerWithUserSettings(context)
         }
 
     var widgetManualUpdateMinutes: Int
@@ -68,6 +72,8 @@ class SettingsManager private constructor(private val context: Context) {
             sharedPreferences.edit {
                 putInt(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, value)
             }
+
+            startWidgetUpdateManagerWithUserSettings(context)
         }
 
 }

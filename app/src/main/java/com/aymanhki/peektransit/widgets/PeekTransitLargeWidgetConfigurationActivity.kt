@@ -37,6 +37,7 @@ class PeekTransitLargeWidgetConfigurationActivity : ComponentActivity() {
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                     }
 
+                    PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(this)
                     val appWidgetManager = AppWidgetManager.getInstance(this)
                     PeekTransitLargeWidgetProvider().updateAppWidget(this, appWidgetManager, appWidgetId)
 

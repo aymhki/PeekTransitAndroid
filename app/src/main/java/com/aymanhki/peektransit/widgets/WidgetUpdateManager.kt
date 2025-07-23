@@ -16,7 +16,8 @@ import androidx.work.WorkManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
+import com.aymanhki.peektransit.utils.PeekTransitConstants.FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
+import com.aymanhki.peektransit.utils.PeekTransitConstants.MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
 import java.util.concurrent.TimeUnit
 
 object WidgetUpdateManager {
@@ -36,9 +37,9 @@ object WidgetUpdateManager {
     fun startUpdates(
         context: Context,
         debugging: Boolean = false,
-        userOptedInForManualUpdates: Boolean = false,
-        userOptedInForManualUpdatesInLowPower: Boolean = false,
-        debugIntervalMinutes: Int = 1
+        userOptedInForManualUpdates: Boolean = true,
+        userOptedInForManualUpdatesInLowPower: Boolean = true,
+        debugIntervalMinutes: Int = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
     ) {
         preferDebugMode = debugging
         this.userOptedInForManualUpdates = userOptedInForManualUpdates
@@ -47,8 +48,14 @@ object WidgetUpdateManager {
         stopUpdates(context)
         registerBatteryReceiver(context)
         updateBasedOnBatteryStatusAndUserPerfrence(context)
-        Log.d(TAG, "Started widget updates, preferred mode: ${if(debugging) "DEBUG" else "PRODUCTION"}")
+        Log.d(TAG, "Started widget updates")
+        Log.d(TAG, "manual updates: $userOptedInForManualUpdates")
+        Log.d(TAG, "manual updates in low power: $userOptedInForManualUpdatesInLowPower")
+        Log.d(TAG, "update interval: $debugUpdateIntervalMinutes minutes")
+        Log.d(TAG, "debug mode is on: $preferDebugMode")
+        PeekTransitConstants.triggerAllWidgetsUpdates(context)
     }
+
 
     fun stopUpdates(context: Context) {
         stopAlarmUpdates(context)
@@ -61,19 +68,16 @@ object WidgetUpdateManager {
         val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
         val shouldDoManualUpdates = (preferDebugMode || userOptedInForManualUpdates)
         val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
+        isCurrentlyInDebugMode = shouldUseAlarmBasedWorkManager
 
-        if (shouldUseAlarmBasedWorkManager != isCurrentlyInDebugMode) {
-            isCurrentlyInDebugMode = shouldUseAlarmBasedWorkManager
-
-            if (shouldUseAlarmBasedWorkManager) {
-                Log.d(TAG, "Switching to debug mode updates")
-                stopProductionModeUpdates(context)
-                startDebugModeUpdates(context)
-            } else {
-                Log.d(TAG, "Switching to production mode updates")
-                stopAlarmUpdates(context)
-                startProductionModeUpdates(context)
-            }
+        if (shouldUseAlarmBasedWorkManager) {
+            Log.d(TAG, "Using manual mode updates")
+            stopProductionModeUpdates(context)
+            startDebugModeUpdates(context)
+        } else {
+            Log.d(TAG, "Using auto mode updates")
+            stopAlarmUpdates(context)
+            startProductionModeUpdates(context)
         }
     }
 
@@ -122,8 +126,6 @@ object WidgetUpdateManager {
     }
 
     private fun startDebugModeUpdates(context: Context) {
-        Log.d(TAG, "Starting debug mode updates every $debugUpdateIntervalMinutes minute(s)")
-
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
             action = ACTION_UPDATE_WIDGET
@@ -147,11 +149,9 @@ object WidgetUpdateManager {
     }
 
     private fun startProductionModeUpdates(context: Context) {
-        Log.d(TAG, "Starting production mode updates")
-
         val updateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
-            15, TimeUnit.MINUTES,
-            5, TimeUnit.MINUTES
+            MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES, TimeUnit.MINUTES,
+            FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES, TimeUnit.MINUTES
         ).build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -184,10 +184,7 @@ object WidgetUpdateManager {
     }
 
     fun forceWidgetUpdate(context: Context) {
-        PeekTransitConstants.triggerWidgetUpdateUsingProvider(
-            context,
-            PeekTransitLargeWidgetProvider::class.java
-        )
+        PeekTransitConstants.triggerAllWidgetsUpdates(context)
     }
 
     class BatteryStatusReceiver : BroadcastReceiver() {
@@ -206,7 +203,7 @@ object WidgetUpdateManager {
 
     class WidgetUpdateReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            Log.d(TAG, "Debug mode widget update triggered")
+            Log.d(TAG, "Manual mode widget update triggered")
             if (intent.action == ACTION_UPDATE_WIDGET) {
                 workToUpdateWidget(context)
                 forceWidgetUpdate(context)
