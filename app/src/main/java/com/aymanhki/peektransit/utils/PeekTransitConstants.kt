@@ -19,7 +19,7 @@ import com.aymanhki.peektransit.workers.WidgetUpdateManager
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
-    const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
+    const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 3
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 10L
     const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
 
