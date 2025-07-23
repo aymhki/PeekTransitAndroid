@@ -138,7 +138,7 @@ object PeekTransitConstants {
     const val STOP_NAME_FONT_SIZE_LOCKSCREEN = 9f
     const val STOP_NAME_FONT_SIZE_DEFAULT = 8f
     
-    const val LAST_SEEN_FONT_SIZE = 18f
+    const val LAST_SEEN_FONT_SIZE = 14f
     const val LAST_SEEN_FONT_SIZE_DEFAULT = 18f
 
     // Created specifically to be used in the widget glance component,

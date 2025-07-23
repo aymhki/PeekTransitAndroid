@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.core.content.edit
 
 class SavedWidgetsManager(context: Context) {
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
@@ -84,7 +85,7 @@ class SavedWidgetsManager(context: Context) {
     private fun saveWidgets(widgets: List<WidgetModel>) {
         try {
             val json = gson.toJson(widgets)
-            sharedPreferences.edit().putString(KEY_SAVED_WIDGETS, json).apply()
+            sharedPreferences.edit { putString(KEY_SAVED_WIDGETS, json) }
             _savedWidgets.value = widgets
             
             // TODO: Trigger widget update when widget functionality is implemented
@@ -97,10 +98,10 @@ class SavedWidgetsManager(context: Context) {
     fun cacheWidgetData(widgetId: String, scheduleData: List<String>, lastUpdatedTime: Long) {
         try {
             val scheduleJson = gson.toJson(scheduleData)
-            sharedPreferences.edit()
-                .putString("widget_cache_schedule_$widgetId", scheduleJson)
-                .putLong("widget_cache_updated_time_$widgetId", lastUpdatedTime)
-                .apply()
+            sharedPreferences.edit {
+                putString("widget_cache_schedule_$widgetId", scheduleJson)
+                    .putLong("widget_cache_updated_time_$widgetId", lastUpdatedTime)
+            }
         } catch (e: Exception) {
 
         }

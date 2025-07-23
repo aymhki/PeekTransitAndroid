@@ -16,14 +16,9 @@ class SettingsManager private constructor(private val context: Context) {
     
     companion object {
         private const val PREFS_NAME = "PeekTransitSettings"
-        
-        @Volatile
-        private var INSTANCE: SettingsManager? = null
-        
+
         fun getInstance(context: Context): SettingsManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: SettingsManager(context.applicationContext).also { INSTANCE = it }
-            }
+            return SettingsManager(context.applicationContext)
         }
     }
     
