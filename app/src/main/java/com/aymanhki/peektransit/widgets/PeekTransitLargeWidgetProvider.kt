@@ -82,7 +82,7 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
             val lastUpdatedString = "Last updated: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))}"
 
             if (showLastUpdatedStatus) {
-                views.setImageViewBitmap(R.id.last_updated_status_text_image, generateTextBitmap(
+                views.setImageViewBitmap(R.id.peek_transit_large_widget_last_updated_status_text_image, generateTextBitmap(
                     context,
                     getWidgetTextFont(currentTheme),
                     null,
@@ -91,6 +91,8 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
                     getWidgetTextColor(currentTheme, isNightMode),
                     lastUpdatedString
                 ))
+
+                views.setContentDescription(R.id.peek_transit_large_widget_last_updated_status_text_image, lastUpdatedString)
             }
         } else {
             views = RemoteViews(context.packageName, R.layout.peek_transit_large_initial_layout)
