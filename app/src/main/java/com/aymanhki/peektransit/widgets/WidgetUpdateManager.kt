@@ -1,4 +1,4 @@
-package com.aymanhki.peektransit.workers
+package com.aymanhki.peektransit.widgets
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -45,6 +45,7 @@ object WidgetUpdateManager {
         this.userOptedInForManualUpdates = userOptedInForManualUpdates
         this.userOptedInForManualUpdatesInLowPower = userOptedInForManualUpdatesInLowPower
         this.debugUpdateIntervalMinutes = debugIntervalMinutes
+        PeekTransitConstants.initAPIKey(context)
         stopUpdates(context)
         registerBatteryReceiver(context)
         updateBasedOnBatteryStatusAndUserPerfrence(context)
@@ -53,7 +54,50 @@ object WidgetUpdateManager {
         Log.d(TAG, "manual updates in low power: $userOptedInForManualUpdatesInLowPower")
         Log.d(TAG, "update interval: $debugUpdateIntervalMinutes minutes")
         Log.d(TAG, "debug mode is on: $preferDebugMode")
-        PeekTransitConstants.triggerAllWidgetsUpdates(context)
+    }
+
+    fun startUpdatesIfTheCurrentUpdaterDoesNotMatchUserPreferences(
+        context: Context,
+        debugging: Boolean = false,
+        userOptedInForManualUpdates: Boolean = true,
+        userOptedInForManualUpdatesInLowPower: Boolean = true,
+        debugIntervalMinutes: Int = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
+    ) {
+        val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
+        val shouldDoManualUpdates = (preferDebugMode || WidgetUpdateManager.userOptedInForManualUpdates)
+        val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || WidgetUpdateManager.userOptedInForManualUpdatesInLowPower)
+
+        if (shouldUseAlarmBasedWorkManager) {
+            if (!checkAlarmUpdatesAreRunning(context)) {
+                stopProductionModeUpdates(context)
+                startDebugModeUpdates(context)
+            }
+        } else {
+            if (!checkProductionModeUpdatesAreRunning(context)) {
+                stopAlarmUpdates(context)
+                startProductionModeUpdates(context)
+            }
+        }
+    }
+
+    fun checkAlarmUpdatesAreRunning(context: Context): Boolean {
+        val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
+            action = ACTION_UPDATE_WIDGET
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+
+
+        return pendingIntent != null
+    }
+
+    fun checkProductionModeUpdatesAreRunning(context: Context): Boolean {
+        return WorkManager.getInstance(context).getWorkInfosByTag(WORK_NAME).get().any { it.state.isFinished.not() }
     }
 
 
@@ -184,7 +228,7 @@ object WidgetUpdateManager {
     }
 
     fun forceWidgetUpdate(context: Context) {
-        PeekTransitConstants.triggerAllWidgetsUpdates(context)
+        PeekTransitConstants.triggerAllWidgetsLooksUpdates(context)
     }
 
     class BatteryStatusReceiver : BroadcastReceiver() {
@@ -197,6 +241,31 @@ object WidgetUpdateManager {
                     Log.d(TAG, "Battery or power save mode changed: ${intent.action}")
                     updateBasedOnBatteryStatusAndUserPerfrence(context)
                 }
+            }
+        }
+    }
+
+    class PackageReplacedReceiver : BroadcastReceiver() {
+
+        val actions = listOf(
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_MY_PACKAGE_UNSUSPENDED,
+            Intent.ACTION_MY_PACKAGE_SUSPENDED,
+            Intent.ACTION_PACKAGE_REPLACED,
+            Intent.ACTION_PACKAGE_ADDED,
+            Intent.ACTION_PACKAGE_REMOVED,
+            Intent.ACTION_PACKAGE_CHANGED,
+            Intent.ACTION_PACKAGE_DATA_CLEARED,
+            Intent.ACTION_PACKAGE_FULLY_REMOVED,
+        )
+
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action in  actions ) {
+                Log.d("PackageReplacedReceiver", "App updated, restarting widget updates")
+                PeekTransitConstants.initAPIKey(context)
+                PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
+            } else {
+                Log.d("PackageReplacedReceiver", "Received action: ${intent.action}")
             }
         }
     }

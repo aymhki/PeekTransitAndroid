@@ -7,7 +7,7 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.SettingsKeys
 import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.core.content.edit
-import com.aymanhki.peektransit.utils.PeekTransitConstants.startWidgetUpdateManagerWithUserSettings
+import com.aymanhki.peektransit.utils.PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings
 
 
 class SettingsManager private constructor(private val context: Context) {
@@ -43,7 +43,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putString(SettingsKeys.SHARED_STOP_VIEW_THEME, value.displayName)
             }
 
-            PeekTransitConstants.triggerAllWidgetsUpdates(context)
+            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var userOptedInForManualWidgetUpdates: Boolean
@@ -53,7 +53,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, value)
             }
 
-            startWidgetUpdateManagerWithUserSettings(context)
+            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var userOptedInForManualWidgetUpdatesInLowPower: Boolean
@@ -63,7 +63,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, value)
             }
 
-            startWidgetUpdateManagerWithUserSettings(context)
+            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var widgetManualUpdateMinutes: Int
@@ -73,7 +73,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putInt(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, value)
             }
 
-            startWidgetUpdateManagerWithUserSettings(context)
+            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
 }

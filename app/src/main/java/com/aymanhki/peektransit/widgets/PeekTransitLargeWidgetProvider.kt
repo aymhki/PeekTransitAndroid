@@ -14,7 +14,6 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetBackgroundColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextFont
-import com.aymanhki.peektransit.workers.WidgetUpdateManager
 import generateTextBitmap
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -22,6 +21,8 @@ import java.time.format.DateTimeFormatter
 class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, false, true)
+
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
@@ -30,8 +31,7 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
     override fun onEnabled(context: Context?) {
         super.onEnabled(context)
         if (context == null) return
-        PeekTransitConstants.initAPIKey(context)
-        PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(context)
+        PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, false, false)
     }
 
     override fun onDisabled(context: Context?) {
@@ -48,18 +48,16 @@ class PeekTransitLargeWidgetProvider : AppWidgetProvider() {
         val updateActions = listOf(
             Intent.ACTION_CONFIGURATION_CHANGED,
             Intent.ACTION_USER_PRESENT,
-            Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_LOCALE_CHANGED,
             Intent.ACTION_DATE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_SCREEN_ON,
             Intent.ACTION_SCREEN_OFF,
+            Intent.ACTION_BOOT_COMPLETED,
         )
 
         if (action in updateActions) {
-            PeekTransitConstants.triggerAllWidgetsUpdates(context)
-        } else if (action == Intent.ACTION_BOOT_COMPLETED) {
-            PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(context)
+            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
     }
 

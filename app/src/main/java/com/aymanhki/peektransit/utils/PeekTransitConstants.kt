@@ -15,13 +15,13 @@ import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
-import com.aymanhki.peektransit.workers.WidgetUpdateManager
+import com.aymanhki.peektransit.widgets.WidgetUpdateManager
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 3
-    const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 10L
-    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
+    const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 1L
+    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 1L
 
     // API Configuration
     var TRANSIT_API_KEY: String = ""
@@ -370,11 +370,11 @@ object PeekTransitConstants {
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
     }
 
-    fun triggerAllWidgetsUpdates(context: Context) {
-        triggerWidgetUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
+    fun triggerAllWidgetsLooksUpdates(context: Context) {
+        triggerWidgetLooksUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
     }
 
-    fun triggerWidgetUpdateUsingProvider(context: Context, widgetProvider: Class<out AppWidgetProvider>) {
+    fun triggerWidgetLooksUpdateUsingProvider(context: Context, widgetProvider: Class<out AppWidgetProvider>) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, widgetProvider)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -388,19 +388,34 @@ object PeekTransitConstants {
         }
     }
 
-    fun startWidgetUpdateManagerWithUserSettings(context: Context) {
+    fun triggerWidgetCoreUpdatesManagerWithUserSettings(context: Context, triggerWidgetUpdateAfterStartingTheWorker: Boolean, startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences: Boolean) {
+
         val settingsManager = SettingsManager.getInstance(context)
         val userOptedInForManualUpdates = settingsManager.userOptedInForManualWidgetUpdates
         val userOptedInForManualUpdatesInLowPower = settingsManager.userOptedInForManualWidgetUpdatesInLowPower
         val widgetUpdatesIntervalInMinutes = settingsManager.widgetManualUpdateMinutes
 
-        WidgetUpdateManager.startUpdates(
-            context,
-            debugging = DEBUG_MODE,
-            userOptedInForManualUpdates = userOptedInForManualUpdates,
-            userOptedInForManualUpdatesInLowPower = userOptedInForManualUpdatesInLowPower,
-            debugIntervalMinutes = widgetUpdatesIntervalInMinutes
-        )
+        if (startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences) {
+            WidgetUpdateManager.startUpdatesIfTheCurrentUpdaterDoesNotMatchUserPreferences(
+                context,
+                debugging = DEBUG_MODE,
+                userOptedInForManualUpdates = userOptedInForManualUpdates,
+                userOptedInForManualUpdatesInLowPower = userOptedInForManualUpdatesInLowPower,
+                debugIntervalMinutes = widgetUpdatesIntervalInMinutes
+            )
+        } else {
+            WidgetUpdateManager.startUpdates(
+                context,
+                debugging = DEBUG_MODE,
+                userOptedInForManualUpdates = userOptedInForManualUpdates,
+                userOptedInForManualUpdatesInLowPower = userOptedInForManualUpdatesInLowPower,
+                debugIntervalMinutes = widgetUpdatesIntervalInMinutes
+            )
+        }
+
+        if (triggerWidgetUpdateAfterStartingTheWorker) {
+            triggerAllWidgetsLooksUpdates(context)
+        }
     }
 }
 

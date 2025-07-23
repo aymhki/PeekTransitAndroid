@@ -1,12 +1,10 @@
 package com.aymanhki.peektransit.widgets
 
-import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getSavedWidgetsForTargetSize
 
@@ -37,10 +35,7 @@ class PeekTransitLargeWidgetConfigurationActivity : ComponentActivity() {
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                     }
 
-                    PeekTransitConstants.startWidgetUpdateManagerWithUserSettings(this)
-                    val appWidgetManager = AppWidgetManager.getInstance(this)
-                    PeekTransitLargeWidgetProvider().updateAppWidget(this, appWidgetManager, appWidgetId)
-
+                    PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(this, true, false)
                     setResult(RESULT_OK, resultValue)
                     finish()
                 }

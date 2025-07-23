@@ -291,7 +291,7 @@ fun MoreScreen(
 
                                                 if (!widgetUpdateMode.isManual) {
                                                     Text(
-                                                        text = "Widget would update every 10 to 15 minutes automatically.",
+                                                        text = "Widget would update every 15 minutes automatically.",
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
@@ -368,7 +368,7 @@ fun MoreScreen(
                                                             )
                                                         } else if (!lowPowerMode) {
                                                             Text(
-                                                                text = "Widget would update every 10 to 15 minutes when in low power",
+                                                                text = "Widget would update every 15 minutes when in low power",
                                                                 style = MaterialTheme.typography.bodyMedium,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )

@@ -2,8 +2,10 @@ package com.aymanhki.peektransit
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +22,12 @@ import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -65,17 +71,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        PeekTransitConstants.TRANSIT_API_KEY = getTransitApiKey(applicationContext)
 
         LocationManagerProvider.getInstance(this)
-        
         permissionManager = PermissionManager(this)
-        
         MapSnapshotCache.initialize(applicationContext)
-        
+
+
         val stopNumber = -1
 
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
             val context = LocalContext.current
             val settingsManager = remember { SettingsManager.getInstance(context) }
@@ -87,9 +93,22 @@ class MainActivity : ComponentActivity() {
                     kotlinx.coroutines.delay(100)
                 }
             }
-            
+
+
             val forceDarkTheme = currentTheme == com.aymanhki.peektransit.utils.StopViewTheme.CLASSIC
-            
+            val isNightMode = when (applicationContext.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+                    Configuration.UI_MODE_NIGHT_YES -> true
+                    Configuration.UI_MODE_NIGHT_NO -> false
+                    else -> false
+                }
+
+
+            LaunchedEffect(forceDarkTheme, isNightMode) {
+                val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+                insetsController.isAppearanceLightNavigationBars = !forceDarkTheme && !isNightMode
+                insetsController.isAppearanceLightStatusBars = !forceDarkTheme && !isNightMode
+            }
+
             PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
                 CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
                     MainScreen(initialStopNumber = if (stopNumber > 0) stopNumber else null)
@@ -238,11 +257,4 @@ fun MainScreen(initialStopNumber: Int? = null) {
             }
         }
     }
-}
-
-fun getTransitApiKey(context: Context): String {
-    val applicationInfo = context.packageManager
-        .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-
-    return applicationInfo.metaData.getString("TRANSIT_API_KEY") ?: ""
 }
