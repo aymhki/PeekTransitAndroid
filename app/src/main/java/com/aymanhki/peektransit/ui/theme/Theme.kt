@@ -31,6 +31,7 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color.Black,
     onSurfaceVariant = Color.Black,
     error = Color(0xFFD2183B),
+    inversePrimary = Color(0xFFFFD600)
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -53,6 +54,8 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Color.White,
     onSurfaceVariant = Color.White,
     error = Color(0xFFD2183B),
+    inversePrimary = Color(0xFFFFD600)
+
 )
 
 @Composable

@@ -6,6 +6,7 @@
     android:gravity="center"
     android:weightSum="100"
     android:background="@color/surface"
+    android:id="@+id/peek_transit_large_initial_layout"
 >
 
     <ImageView

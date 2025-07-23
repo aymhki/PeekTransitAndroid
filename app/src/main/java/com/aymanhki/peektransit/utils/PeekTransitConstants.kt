@@ -1,14 +1,22 @@
 package com.aymanhki.peektransit.utils
 
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
+import com.aymanhki.peektransit.data.models.WidgetModel
+import com.aymanhki.peektransit.managers.SavedWidgetsManager
 
 object PeekTransitConstants {
-
+    const val DEBUG_MODE = false
+    const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
 
     // API Configuration
     var TRANSIT_API_KEY: String = ""
@@ -130,8 +138,8 @@ object PeekTransitConstants {
     const val STOP_NAME_FONT_SIZE_LOCKSCREEN = 9f
     const val STOP_NAME_FONT_SIZE_DEFAULT = 8f
     
-    const val LAST_SEEN_FONT_SIZE = 10f
-    const val LAST_SEEN_FONT_SIZE_DEFAULT = 8f
+    const val LAST_SEEN_FONT_SIZE = 18f
+    const val LAST_SEEN_FONT_SIZE_DEFAULT = 18f
 
     // Created specifically to be used in the widget glance component,
     // since the glance component for widgets can't access material colors and fonts like the preview in app.
@@ -276,6 +284,37 @@ object PeekTransitConstants {
             else -> 100
         }
     }
+
+    fun getWidgetBackgroundColor(stopViewTheme: StopViewTheme, isDarkMode: Boolean): Int {
+        return when (stopViewTheme) {
+            StopViewTheme.MODERN -> if (isDarkMode) BACKGROUND_COLOR_IN_MODERN_THEME_NIGHT else BACKGROUND_COLOR_IN_MODERN_THEME_DAY
+            StopViewTheme.CLASSIC -> CLASSIC_THEM_BACKGROUND_COLOR_ALWAYS
+        }.toArgb()
+    }
+
+    fun getWidgetTextFont(stopViewTheme: StopViewTheme): Int {
+        return when (stopViewTheme) {
+            StopViewTheme.MODERN ->  MODERN_THEME_FONT
+            StopViewTheme.CLASSIC -> CLASSIC_THEME_FONT
+        }
+    }
+
+    fun getWidgetTextColor(stopViewTheme: StopViewTheme, isDarkMode: Boolean): Int {
+        return when (stopViewTheme) {
+            StopViewTheme.MODERN -> if (isDarkMode) TEXT_COLOR_IN_MODERN_THEME_NIGHT else TEXT_COLOR_IN_MODERN_THEME_DAY
+            StopViewTheme.CLASSIC -> CLASSIC_THEM_TEXT_COLOR
+        }.toArgb()
+    }
+
+    fun getWidgetStatusTextColor(status: String, stopViewTheme: StopViewTheme): Int {
+        return when (status.lowercase()) {
+            LATE_STATUS_TEXT, CANCELLED_STATUS_TEXT -> LATE_OR_CANCELLED_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
+            EARLY_STATUS_TEXT, DUE_STATUS_TEXT -> EARLY_OR_DUE_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
+            else -> CLASSIC_THEM_TEXT_COLOR.toArgb()
+        }
+    }
+
+
     
     fun shouldShowShortRouteName(status: String): Boolean {
         return status.lowercase() in listOf("late", "early", "cancelled")
@@ -302,6 +341,44 @@ object PeekTransitConstants {
             TRANSIT_API_KEY = context.applicationContext.packageManager
                 .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
                 .metaData.getString("TRANSIT_API_KEY") ?: ""
+        }
+    }
+
+    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
+    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
+
+    fun getSavedWidgetsForTargetSize(context: Context, targetSize: String): List<WidgetModel> {
+        val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
+        return savedWidgetsManager.savedWidgets.value.filter { it.widgetData["size"] == targetSize }
+    }
+
+    fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
+        val prefs = context.getSharedPreferences(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        with(prefs.edit()) {
+            putString(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
+            apply()
+        }
+    }
+
+    fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {
+        val prefs = context.getSharedPreferences(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val widgetId = prefs.getString(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
+        val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
+        return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
+    }
+
+
+    fun triggerWidgetUpdateUsingProvider(context: Context, widgetProvider: Class<out AppWidgetProvider>) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, widgetProvider)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+
+        if (appWidgetIds.isNotEmpty()) {
+            val updateIntent = Intent(context, widgetProvider).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+            }
+            context.sendBroadcast(updateIntent)
         }
     }
 }
@@ -343,5 +420,8 @@ object SettingsKeys {
     const val DEFAULT_TAB = "default_tab_preference"
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
+    const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES = "widget_update_settings_manual_updates"
+    const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER = "widget_update_settings_manual_updates_in_low_power"
+    const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES = "widget_update_settings_manual_updates_minutes"
 }
 

@@ -20,6 +20,19 @@ import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import com.aymanhki.peektransit.ui.components.SettingsRow
 import com.aymanhki.peektransit.utils.DefaultTab
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 data class SettingsSection(
     val title: String,
@@ -33,6 +46,8 @@ data class SettingsItem(
     val action: SettingsAction,
     val endContent: @Composable (() -> Unit)? = null
 )
+
+data class WidgetUpdateMode(val isManual: Boolean)
 
 sealed class SettingsAction {
     object ThemeSelection : SettingsAction()
@@ -51,7 +66,9 @@ fun MoreScreen(
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     var selectedDefaultTab by remember { mutableStateOf(settingsManager.defaultTab) }
-    
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     val settingsSections = listOf(
         SettingsSection(
             title = "Preferences",
@@ -69,7 +86,7 @@ fun MoreScreen(
                     action = SettingsAction.ThemeSelection,
                     endContent = {
                         var expanded by remember { mutableStateOf(false) }
-                        
+
                         Box {
                             OutlinedButton(
                                 onClick = { expanded = !expanded },
@@ -92,7 +109,7 @@ fun MoreScreen(
                                     )
                                 }
                             }
-                            
+
                             DropdownMenu(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false }
@@ -110,6 +127,12 @@ fun MoreScreen(
                             }
                         }
                     }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Update,
+                    iconColor = Color(0xFF4CAF50),
+                    text = "Widget Updates",
+                    action = SettingsAction.ThemeSelection
                 )
             )
         ),
@@ -180,31 +203,207 @@ fun MoreScreen(
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        
+
                         section.items.forEach { item ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        when (item.action) {
-                                            SettingsAction.ThemeSelection -> if (item.text.contains("Theme")) onNavigateToThemeSelection()
-                                            SettingsAction.About -> onNavigateToAbout()
-                                            SettingsAction.Credits -> onNavigateToCredits()
-                                            SettingsAction.TermsAndPrivacy -> onNavigateToTermsAndPrivacy()
+                            if (item.text.contains("Widget Updates")) {
+                                var expanded by remember { mutableStateOf(false) }
+                                var widgetUpdateMode by remember {
+                                    mutableStateOf(WidgetUpdateMode(settingsManager.userOptedInForManualWidgetUpdates))
+                                }
+                                var updateInterval by remember { mutableStateOf(settingsManager.widgetManualUpdateMinutes.toString()) }
+                                var lowPowerMode by remember { mutableStateOf(settingsManager.userOptedInForManualWidgetUpdatesInLowPower) }
+
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { expanded = !expanded }
+                                            .padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        SettingsRow(
+                                            icon = item.icon,
+                                            iconColor = item.iconColor,
+                                            text = item.text,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        Icon(
+                                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = if (expanded) "Collapse" else "Expand",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    AnimatedVisibility(
+                                        visible = expanded,
+                                        enter = expandVertically(),
+                                        exit = shrinkVertically()
+                                    ) {
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    FilterChip(
+                                                        onClick = {
+                                                            widgetUpdateMode = WidgetUpdateMode(false)
+                                                            settingsManager.userOptedInForManualWidgetUpdates = false
+                                                        },
+                                                        label = {
+                                                            Text(
+                                                                "Auto",
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                                                                textAlign = TextAlign.Center
+                                                            )
+                                                        },
+                                                        selected = !widgetUpdateMode.isManual,
+                                                        modifier = Modifier.weight(1f).height(48.dp)
+                                                    )
+                                                    FilterChip(
+                                                        onClick = {
+                                                            widgetUpdateMode = WidgetUpdateMode(true)
+                                                            settingsManager.userOptedInForManualWidgetUpdates = true
+                                                        },
+                                                        label = {
+                                                            Text(
+                                                                "Manual",
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                                                                textAlign = TextAlign.Center
+                                                            )
+                                                        },
+                                                        selected = widgetUpdateMode.isManual,
+                                                        modifier = Modifier.weight(1f).height(48.dp)
+                                                    )
+                                                }
+
+                                                if (!widgetUpdateMode.isManual) {
+                                                    Text(
+                                                        text = "Widget could take up to 30 minutes to update",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+
+                                                AnimatedVisibility(
+                                                    visible = widgetUpdateMode.isManual,
+                                                    enter = expandVertically(),
+                                                    exit = shrinkVertically()
+                                                ) {
+                                                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                                        Column {
+                                                            Text(
+                                                                text = "Enter how often you want the widget to update in minutes:",
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onSurface,
+                                                                modifier = Modifier.padding(bottom = 8.dp)
+                                                            )
+                                                            OutlinedTextField(
+                                                                value = updateInterval,
+                                                                onValueChange = { newValue ->
+                                                                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                                                                        updateInterval = newValue
+                                                                        if (newValue.isNotEmpty()) {
+                                                                            newValue.toIntOrNull()?.let { intValue ->
+                                                                                settingsManager.widgetManualUpdateMinutes = intValue
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .onFocusChanged { focusState ->
+                                                                        if (!focusState.isFocused && updateInterval.isEmpty()) {
+                                                                            updateInterval = settingsManager.widgetManualUpdateMinutes.toString()
+                                                                        }
+                                                                    },
+                                                                singleLine = true,
+                                                                placeholder = { Text("Enter minutes") },
+                                                                keyboardActions = KeyboardActions(onDone = {
+                                                                    keyboardController?.hide()
+                                                                    focusManager.clearFocus()
+                                                                }),
+                                                            )
+                                                        }
+
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = "Manual Update Even In Low Power Mode",
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onSurface,
+                                                                modifier = Modifier.weight(1f).padding(end = 16.dp)
+                                                            )
+                                                            Switch(
+                                                                checked = lowPowerMode,
+                                                                onCheckedChange = {
+                                                                    lowPowerMode = it
+                                                                    settingsManager.userOptedInForManualWidgetUpdatesInLowPower = it
+                                                                }
+                                                            )
+                                                        }
+
+                                                        val intervalMinutes = updateInterval.toIntOrNull() ?: 0
+                                                        if (lowPowerMode && intervalMinutes < 5 && intervalMinutes > 0) {
+                                                            Text(
+                                                                text = "Careful. This setting might drain your battery over time",
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.inversePrimary,
+                                                                fontWeight = FontWeight.Normal
+                                                            )
+                                                        } else if (!lowPowerMode) {
+                                                            Text(
+                                                                text = "Widget could take up to 30 minutes to update when low power mode is on",
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SettingsRow(
-                                    icon = item.icon,
-                                    iconColor = item.iconColor,
-                                    text = item.text,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                item.endContent?.invoke()
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            when (item.action) {
+                                                SettingsAction.ThemeSelection -> if (item.text.contains("Theme")) onNavigateToThemeSelection()
+                                                SettingsAction.About -> onNavigateToAbout()
+                                                SettingsAction.Credits -> onNavigateToCredits()
+                                                SettingsAction.TermsAndPrivacy -> onNavigateToTermsAndPrivacy()
+                                            }
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    SettingsRow(
+                                        icon = item.icon,
+                                        iconColor = item.iconColor,
+                                        text = item.text,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    item.endContent?.invoke()
+                                }
                             }
                         }
                     }

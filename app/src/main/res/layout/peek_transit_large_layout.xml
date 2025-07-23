@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    android:weightSum="4"
+    android:weightSum="5"
     android:id="@+id/peek_transit_large_layout"
 >
 
@@ -329,6 +329,25 @@
                 android:layout_weight="25"
                 android:contentDescription="@string/bus_stop_3_schedule_entry_2_arrival_time_text_image" />
         </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:weightSum="1"
+        android:id="@+id/peek_transit_large_last_updated_status_layout"
+    >
+        <ImageView
+            android:id="@+id/last_updated_status_text_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/last_updated_status_text_image"  />
+
     </LinearLayout>
 
 </LinearLayout>
