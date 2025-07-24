@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class RequestRateLimiter {
     private var lastRequestTime: Long = System.currentTimeMillis()
-    private val minimumRequestInterval: Long = (PeekTransitConstants.MINIMUM_REQUEST_INTERVAL * 1000).toLong()
+    private val minimumRequestInterval: Long = (PeekTransitConstants.MINIMUM_REQUEST_INTERVAL_IN_SECONDS * 1000).toLong()
     
     private val callCount = AtomicInteger(0)
     private var minuteStartTime: Long = System.currentTimeMillis()

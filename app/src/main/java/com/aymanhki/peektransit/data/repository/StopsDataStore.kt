@@ -20,7 +20,7 @@ class StopsDataStore private constructor() {
     private var lastFetchLocation: Location? = null
     private var cachedStops: List<Stop> = emptyList()
     private val cacheDuration: Long = 30000
-    private val locationDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS.toFloat()
+    private val locationDistanceThreshold: Float = PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS.toFloat()
     
     private var searchJob: Job? = null
     private var loadStopsJob: Job? = null

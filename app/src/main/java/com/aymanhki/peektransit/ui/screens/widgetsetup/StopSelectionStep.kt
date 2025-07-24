@@ -7,16 +7,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,7 +35,6 @@ import com.aymanhki.peektransit.ui.components.CircularCheckbox
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
 import com.aymanhki.peektransit.ui.components.ErrorView
 import com.aymanhki.peektransit.ui.components.MapPreview
-import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.ui.components.VariantBadge
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
@@ -97,9 +93,9 @@ fun StopSelectionStep(
         }
     }
 
-    val maxPerferredStopsInClosestStops = PeekTransitConstants.getMaxPerferredstopsInClosestStops()
+    val maxPreferredStopsInClosestStops = PeekTransitConstants.getMaxPreferredStopsInClosestStops(widgetSize)
     val maxStops = if (selectedPerferredStopsInClosestStops) {
-        maxPerferredStopsInClosestStops
+        maxPreferredStopsInClosestStops
     } else {
         if (multipleEntriesPerVariant) {
             PeekTransitConstants.getMaxStopsAllowedForMultipleEntries(widgetSize)
@@ -686,7 +682,7 @@ private fun SelectableStopRow(
                         val distance = if (stop.distances.direct != Double.POSITIVE_INFINITY) stop.distances.direct else null
                         if (distance != null && distance.isFinite()) {
                             Text(
-                                text = " ● ${formatDistance(distance)}",
+                                text = " ● ${PeekTransitConstants.formatDistance(distance)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -731,12 +727,5 @@ private fun SelectableStopRow(
                 }
             }
         }
-    }
-}
-
-private fun formatDistance(distanceInMeters: Double): String {
-    return when {
-        distanceInMeters < 1000 -> "${distanceInMeters.roundToInt()} meters away"
-        else -> "${(distanceInMeters / 1000).let { "%.1f".format(it) }}km away"
     }
 }

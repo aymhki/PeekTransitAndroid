@@ -1,7 +1,6 @@
 package com.aymanhki.peektransit.utils
 
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -18,6 +17,7 @@ import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
 import com.aymanhki.peektransit.widgets.SavedWidgetSchedulesManager
 import com.aymanhki.peektransit.widgets.WidgetSchedule
 import com.aymanhki.peektransit.widgets.WidgetUpdateManager
+import kotlin.math.roundToInt
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
@@ -25,132 +25,48 @@ object PeekTransitConstants {
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 3
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
     const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
-
-    // API Configuration
     var TRANSIT_API_KEY: String = ""
     const val BASE_URL = "https://api.winnipegtransit.com/v4/"
-    
-    // Stop Configuration
-    const val STOPS_DISTANCE_RADIUS = 1000.0 // meters
+    const val STOPS_DISTANCE_RADIUS_IN_METERS = 1000.0
     const val MAX_STOPS_ALLOWED_TO_FETCH = 25
     const val MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH = 15
-    const val DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS = STOPS_DISTANCE_RADIUS/3 // meters
-    
-    // Route Configuration
-    const val MAX_BUS_ROUTE_LENGTH = 10
-    const val MAX_BUS_ROUTE_PREFIX_LENGTH = 8
-    const val TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES = 12 // hours
-    
-    // Widget Configuration
-    const val MAX_STOPS_ALLOWED_SMALL_WIDGET = 2
-    const val MAX_STOPS_ALLOWED_MEDIUM_WIDGET = 2
-    const val MAX_STOPS_ALLOWED_LARGE_WIDGET = 3
-    const val MAX_STOPS_ALLOWED_LOCKSCREEN_WIDGET = 2
-    
-    const val MAX_VARIANTS_ALLOWED_SMALL_WIDGET = 1
-    const val MAX_VARIANTS_ALLOWED_MEDIUM_WIDGET = 2
-    const val MAX_VARIANTS_ALLOWED_LARGE_WIDGET = 2
-    const val MAX_VARIANTS_ALLOWED_LOCKSCREEN_WIDGET = 1
-    
-    // Time Configuration
-    const val PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS = 15 // minutes
+    const val DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS = STOPS_DISTANCE_RADIUS_IN_METERS/3
+    const val TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS = 12
+    const val PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES = 15
     const val MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE = 1
-    const val WINNIPEG_ZONE = "America/Winnipeg"
-    const val DATE_FORMAT_API = "yyyy-MM-dd"
-    const val TIME_FORMAT_API = "HH:mm"
-    
-    // Search Configuration
     const val SEARCH_DEBOUNCE_DELAY_MS = 1500L
-    
-    // Text Constants
     const val SCHEDULE_STRING_SEPARATOR = " ---- "
     const val COMPOSITE_KEY_LINKER_FOR_DICTIONARIES = "-"
     const val WIDGET_TEXT_PLACEHOLDER = "TBD"
-    
-    // Status Text
     const val LATE_STATUS_TEXT = "Late"
     const val EARLY_STATUS_TEXT = "Early"
     const val CANCELLED_STATUS_TEXT = "Cancelled"
     const val OK_STATUS_TEXT = "Ok"
     const val DUE_STATUS_TEXT = "Due"
-    
-    // Time Text
     const val MINUTES_REMAINING_TEXT = "min."
     const val MINUTES_PASSED_TEXT = "min. ago"
     const val GLOBAL_AM_TEXT = "AM"
     const val GLOBAL_PM_TEXT = "PM"
-    
-    // Rate Limiting
     const val MAX_CALLS_PER_MINUTE = 100
-    const val MINIMUM_REQUEST_INTERVAL = 0.1 // seconds
-    
-    // Cache Configuration
-    const val CACHE_DURATION_SECONDS = 30
-    const val REFRESH_WIDGET_TIMELINE_AFTER_SECONDS = 1
-    const val WIDGET_UPDATE_INTERVAL_SECONDS = 300 // 5 minutes
-    
-    // Max preferred stops
-    fun getMaxPerferredstopsInClosestStops(): Int = 5
-    
-    // Location Tracking Configuration
-    // Used by MainViewModel.startLocationMonitoring() for continuous location updates
-    const val LOCATION_UPDATE_INTERVAL_MS = 1000L // How often to request location updates (1 second)
-    
-    // Used by LocationManager.startLocationUpdates() for distance-based location filtering
-    const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 5.0f // Minimum distance to trigger location update (5 meters)
-    
-    // Used by LocationManager.requestFreshLocation() for one-time location requests
-    const val LOCATION_REQUEST_UPDATE_INTERVAL_MS = 1000L // Update interval for fresh location requests
-    const val LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS = 1000L // Minimum interval between location updates
-    const val LOCATION_REQUEST_TIMEOUT_MS = 100000L // Timeout for location requests (100 seconds)
-    
-    // Used by LocationManager.startLocationUpdates() for fine-tuning location updates
-    const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L // Fastest possible location updates (500ms)
-    
-    // Used by MapViewScreen.LaunchedEffect(liveLocation) for camera movement
-    const val MAP_CAMERA_UPDATE_THRESHOLD_METERS = 10.0f // Distance required to move map camera (10 meters)
-    const val MAP_CAMERA_ANIMATION_DURATION_MS = 500 // Camera movement animation duration (500ms)
-
-    // Map Configuration
+    const val MINIMUM_REQUEST_INTERVAL_IN_SECONDS = 0.1
+    const val LOCATION_UPDATE_INTERVAL_MS = 1000L
+    const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 1.0f
+    const val LOCATION_REQUEST_UPDATE_INTERVAL_MS = 1000L
+    const val LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS = 1000L
+    const val LOCATION_REQUEST_TIMEOUT_MS = 100000L
+    const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L
+    const val MAP_CAMERA_UPDATE_THRESHOLD_METERS = 10.0f
+    const val MAP_CAMERA_ANIMATION_DURATION_MS = 500
     const val DEFAULT_MAP_ZOOM = 16.5f
     const val STOP_MARKER_SIZE_DP = 32
-    
-    // Map Preview Configuration
     const val MAP_PREVIEW_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_HEIGHT_SIZE_DP = 160
     const val MAP_PREVIEW_ZOOM_LEVEL = 16.5f
     const val MAP_PREVIEW_RENDER_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP = 160
     const val MAP_PREVIEW_MARKER_SIZE_DP = 20
-
-    // Global API Usage
     const val GLOBAL_API_FOR_SHORT_USAGE = true
-    
-    // Widget-specific constants
-    const val MAX_BUS_ROUTE_LENGTH_FOR_WIDGET = 10
-    const val MAX_BUS_ROUTE_PREFIX_LENGTH_FOR_WIDGET = 10
     const val STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET = 28
-    const val MAX_PREFERRED_STOPS_IN_CLOSEST_STOPS = 5
-    const val GLOBAL_BUS_ICON = "🚌"
-    
-    // Font Sizes
-    const val NORMAL_FONT_SIZE_LARGE = 14f
-    const val NORMAL_FONT_SIZE_MEDIUM = 13f
-    const val NORMAL_FONT_SIZE_SMALL = 12f
-    const val NORMAL_FONT_SIZE_LOCKSCREEN = 12f
-    const val NORMAL_FONT_SIZE_DEFAULT = 10f
-    
-    const val STOP_NAME_FONT_SIZE_LARGE = 11f
-    const val STOP_NAME_FONT_SIZE_MEDIUM = 11f
-    const val STOP_NAME_FONT_SIZE_SMALL = 9f
-    const val STOP_NAME_FONT_SIZE_LOCKSCREEN = 9f
-    const val STOP_NAME_FONT_SIZE_DEFAULT = 8f
-    
-    const val LAST_SEEN_FONT_SIZE = 14f
-    const val LAST_SEEN_FONT_SIZE_DEFAULT = 18f
-
-    // Created specifically to be used in the widget glance component,
-    // since the glance component for widgets can't access material colors and fonts like the preview in app.
     val CLASSIC_THEM_TEXT_COLOR = Color(0xFFFC7C24)
     val CLASSIC_THEM_BACKGROUND_COLOR_ALWAYS = Color.Black
     val BACKGROUND_COLOR_IN_MODERN_THEME_DAY = Color.White
@@ -174,14 +90,27 @@ object PeekTransitConstants {
         LONG_SCHEDULE_ENTRY_WITH_DUE_FOR_TESTING,
         LONG_SCHEDULE_ENTRY_WITH_CANCELLED_FOR_TESTING
     )
-    
-    // Widget size functions
+
+    fun formatDistance(distanceInMeters: Double): String {
+        return when {
+            distanceInMeters < 1000 -> "${distanceInMeters.roundToInt()} meters away"
+            else -> "${(distanceInMeters / 1000).let { "%.1f".format(it) }}km away"
+        }
+    }
+
+    fun getMaxPreferredStopsInClosestStops(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small", "lockscreen", "medium", "large" -> 5
+            else -> 1
+        }
+    }
+
     fun getMaxStopsAllowed(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> MAX_STOPS_ALLOWED_SMALL_WIDGET
-            "medium" -> MAX_STOPS_ALLOWED_MEDIUM_WIDGET
-            "large" -> MAX_STOPS_ALLOWED_LARGE_WIDGET
-            "lockscreen" -> MAX_STOPS_ALLOWED_LOCKSCREEN_WIDGET
+            "small" -> 2
+            "medium" -> 3
+            "large" -> 3
+            "lockscreen" -> 2
             else -> 1
         }
     }
@@ -197,10 +126,10 @@ object PeekTransitConstants {
     
     fun getMaxVariantsAllowed(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> MAX_VARIANTS_ALLOWED_SMALL_WIDGET
-            "medium" -> MAX_VARIANTS_ALLOWED_MEDIUM_WIDGET
-            "large" -> MAX_VARIANTS_ALLOWED_LARGE_WIDGET
-            "lockscreen" -> MAX_VARIANTS_ALLOWED_LOCKSCREEN_WIDGET
+            "small" -> 1
+            "medium" -> 2
+            "large" -> 2
+            "lockscreen" -> 1
             else -> 2
         }
     }
@@ -212,31 +141,30 @@ object PeekTransitConstants {
         }
     }
     
-    // Widget font size functions
     fun getNormalFontSizeForWidgetSize(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> NORMAL_FONT_SIZE_SMALL
-            "medium" -> NORMAL_FONT_SIZE_MEDIUM
-            "large" -> NORMAL_FONT_SIZE_LARGE
-            "lockscreen" -> NORMAL_FONT_SIZE_LOCKSCREEN
-            else -> NORMAL_FONT_SIZE_DEFAULT
+            "small" -> 12f
+            "medium" -> 13f
+            "large" -> 14f
+            "lockscreen" -> 12f
+            else -> 10f
         }
     }
     
     fun getStopNameFontSizeForWidgetSize(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> STOP_NAME_FONT_SIZE_SMALL
-            "medium" -> STOP_NAME_FONT_SIZE_MEDIUM
-            "large" -> STOP_NAME_FONT_SIZE_LARGE
-            "lockscreen" -> STOP_NAME_FONT_SIZE_LOCKSCREEN
-            else -> STOP_NAME_FONT_SIZE_DEFAULT
+            "small" -> 9f
+            "medium" -> 11f
+            "large" -> 11f
+            "lockscreen" -> 9f
+            else -> 8f
         }
     }
     
     fun getLastSeenFontSizeForWidgetSize(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small", "medium", "large", "lockscreen" -> LAST_SEEN_FONT_SIZE
-            else -> LAST_SEEN_FONT_SIZE_DEFAULT
+            "small", "medium", "large", "lockscreen" -> 14f
+            else -> 14f
         }
     }
 
@@ -272,7 +200,6 @@ object PeekTransitConstants {
         }
     }
     
-    // Route display functions
     fun getRouteNumberWidth(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 40
@@ -321,25 +248,12 @@ object PeekTransitConstants {
             else -> CLASSIC_THEM_TEXT_COLOR.toArgb()
         }
     }
-
-    fun shouldShowShortRouteName(status: String): Boolean {
-        return status.lowercase() in listOf("late", "early", "cancelled")
-    }
     
-    // Device detection
     fun isLargeDevice(context: Context): Boolean {
         val configuration = context.resources.configuration
         val screenLayout = configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
         return screenLayout >= Configuration.SCREENLAYOUT_SIZE_LARGE
     }
-    
-    // Widget-specific helper functions
-    fun getScheduleStringSeparator(): String = SCHEDULE_STRING_SEPARATOR
-    fun getWidgetTextPlaceholder(): String = WIDGET_TEXT_PLACEHOLDER
-    fun getMaxBusRouteLengthForWidget(): Int = MAX_BUS_ROUTE_LENGTH_FOR_WIDGET
-    fun getMaxBusRoutePrefixLengthForWidget(): Int = MAX_BUS_ROUTE_PREFIX_LENGTH_FOR_WIDGET
-    fun getStopNameMaxPrefixLengthForWidget(): Int = STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET
-    fun getRefreshWidgetTimelineAfterHowManySeconds(): Int = REFRESH_WIDGET_TIMELINE_AFTER_SECONDS
 
     fun initAPIKey(context: Context) {
         if ( TRANSIT_API_KEY.isBlank() || TRANSIT_API_KEY.isEmpty() )
@@ -349,9 +263,6 @@ object PeekTransitConstants {
                 .metaData.getString("TRANSIT_API_KEY") ?: ""
         }
     }
-    
-    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
-    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
 
     fun getSavedWidgetsForTargetSize(context: Context, targetSize: String): List<WidgetModel> {
         val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
@@ -359,9 +270,9 @@ object PeekTransitConstants {
     }
 
     fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
-        val prefs = context.getSharedPreferences(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         with(prefs.edit()) {
-            putString(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
+            putString(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
             apply()
         }
     }
@@ -381,39 +292,65 @@ object PeekTransitConstants {
     }
 
     fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {
-        val prefs = context.getSharedPreferences(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        val widgetId = prefs.getString(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
+        val prefs = context.getSharedPreferences(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val widgetId = prefs.getString(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
         val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
     }
 
     fun triggerAllWidgetsLooksUpdates(context: Context) {
-        triggerWidgetLooksUpdateUsingProvider(context, PeekTransitLargeWidgetProvider::class.java)
-    }
-
-    fun triggerWidgetLooksUpdateUsingProvider(context: Context, widgetProvider: Class<out AppWidgetProvider>) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
-        val componentName = ComponentName(context, widgetProvider)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
 
-        if (appWidgetIds.isNotEmpty()) {
-            val updateIntent = Intent(context, widgetProvider).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+        allWidgetProviders.forEach { providerClass ->
+            val componentName = ComponentName(context, providerClass)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+
+            if (appWidgetIds.isNotEmpty()) {
+                val updateIntent = Intent(context, providerClass).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                }
+                context.sendBroadcast(updateIntent)
             }
-            context.sendBroadcast(updateIntent)
         }
     }
 
-    fun triggerWidgetCoreUpdatesManagerWithUserSettings(context: Context, sendBroadcastToTriggerWidgetsLooksUpdates: Boolean, startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences: Boolean) {
+    fun appHasAnyActiveWidgets(context: Context): Boolean {
+        if (allWidgetProviders.isEmpty()) return false
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+
+        return allWidgetProviders.any { providerClass ->
+            val componentName = ComponentName(context, providerClass)
+            val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            widgetIds.isNotEmpty()
+        }
+    }
+
+    fun getAllActiveWidgetIds(context: Context): List<Int> {
+        if (allWidgetProviders.isEmpty()) return emptyList()
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val allWidgetIds = mutableListOf<Int>()
+
+        allWidgetProviders.forEach { providerClass ->
+            val componentName = ComponentName(context, providerClass)
+            val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            allWidgetIds.addAll(widgetIds.toList())
+        }
+
+        return allWidgetIds
+    }
+
+    fun triggerWidgetCoreUpdatesManagerWithUserSettings(context: Context, sendBroadcastToTriggerWidgetsLookUpdate: Boolean, startUpdatesIfNeeded: Boolean) {
 
         val settingsManager = SettingsManager.getInstance(context)
         val userOptedInForManualUpdates = settingsManager.userOptedInForManualWidgetUpdates
         val userOptedInForManualUpdatesInLowPower = settingsManager.userOptedInForManualWidgetUpdatesInLowPower
         val widgetUpdatesIntervalInMinutes = settingsManager.widgetManualUpdateMinutes
 
-        if (startUpdatesOnlyIfTheCurrentUpdaterDoesntMatchUserPrefrences) {
-            WidgetUpdateManager.startUpdatesIfTheCurrentUpdaterDoesNotMatchUserPreferences(
+        if (startUpdatesIfNeeded) {
+            WidgetUpdateManager.startCoreUpdatesIfNeeded(
                 context,
                 debugging = DEBUG_MODE,
                 userOptedInForManualUpdates = userOptedInForManualUpdates,
@@ -421,7 +358,7 @@ object PeekTransitConstants {
                 debugIntervalMinutes = widgetUpdatesIntervalInMinutes
             )
         } else {
-            WidgetUpdateManager.startUpdates(
+            WidgetUpdateManager.startCoreUpdates(
                 context,
                 debugging = DEBUG_MODE,
                 userOptedInForManualUpdates = userOptedInForManualUpdates,
@@ -430,10 +367,21 @@ object PeekTransitConstants {
             )
         }
 
-        if (sendBroadcastToTriggerWidgetsLooksUpdates) {
+        if (sendBroadcastToTriggerWidgetsLookUpdate) {
             triggerAllWidgetsLooksUpdates(context)
         }
     }
+
+    val updateActions = listOf(
+        Intent.ACTION_CONFIGURATION_CHANGED,
+        Intent.ACTION_USER_PRESENT,
+        Intent.ACTION_LOCALE_CHANGED,
+        Intent.ACTION_DATE_CHANGED,
+        Intent.ACTION_TIME_CHANGED,
+        Intent.ACTION_SCREEN_ON,
+        Intent.ACTION_SCREEN_OFF,
+        Intent.ACTION_BOOT_COMPLETED,
+    )
 }
 
 enum class DefaultTab(val index: Int, val displayName: String, val icon: String) {
@@ -445,7 +393,7 @@ enum class DefaultTab(val index: Int, val displayName: String, val icon: String)
     
     companion object {
         fun fromIndex(index: Int): DefaultTab {
-            return values().find { it.index == index } ?: MAP
+            return DefaultTab.entries.find { it.index == index } ?: MAP
         }
     }
 }
@@ -458,7 +406,7 @@ enum class StopViewTheme(val displayName: String, val description: String) {
         val DEFAULT = MODERN
         
         fun fromString(value: String?): StopViewTheme {
-            return values().find { it.displayName == value } ?: DEFAULT
+            return StopViewTheme.entries.find { it.displayName == value } ?: DEFAULT
         }
     }
 }
@@ -476,5 +424,12 @@ object SettingsKeys {
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES = "widget_update_settings_manual_updates"
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER = "widget_update_settings_manual_updates_in_low_power"
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES = "widget_update_settings_manual_updates_minutes"
+
+    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
+    const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
 }
+
+val allWidgetProviders = listOf(
+    PeekTransitLargeWidgetProvider::class.java
+)
 

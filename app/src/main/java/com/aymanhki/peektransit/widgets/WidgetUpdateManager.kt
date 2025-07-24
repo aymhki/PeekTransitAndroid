@@ -2,9 +2,7 @@ package com.aymanhki.peektransit.widgets
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -38,7 +36,7 @@ object WidgetUpdateManager {
     private var userOptedInForManualUpdatesInLowPower = false
     private var batteryReceiver: BatteryStatusReceiver? = null
 
-    fun startUpdates(
+    fun startCoreUpdates(
         context: Context,
         debugging: Boolean = false,
         userOptedInForManualUpdates: Boolean = true,
@@ -51,16 +49,20 @@ object WidgetUpdateManager {
         this.debugUpdateIntervalMinutes = debugIntervalMinutes
         PeekTransitConstants.initAPIKey(context)
         stopUpdates(context)
-        registerBatteryReceiver(context)
-        updateBasedOnBatteryStatusAndUserPerfrence(context)
-        Log.d(TAG, "Started widget updates")
-        Log.d(TAG, "manual updates: $userOptedInForManualUpdates")
-        Log.d(TAG, "manual updates in low power: $userOptedInForManualUpdatesInLowPower")
-        Log.d(TAG, "update interval: $debugUpdateIntervalMinutes minutes")
-        Log.d(TAG, "debug mode is on: $preferDebugMode")
+
+        if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
+            registerBatteryReceiver(context)
+            updateBasedOnBatteryStatusAndUserPerfrence(context)
+
+            Log.d(TAG, "Started widget updates")
+            Log.d(TAG, "manual updates: $userOptedInForManualUpdates")
+            Log.d(TAG, "manual updates in low power: $userOptedInForManualUpdatesInLowPower")
+            Log.d(TAG, "update interval: $debugUpdateIntervalMinutes minutes")
+            Log.d(TAG, "debug mode is on: $preferDebugMode")
+        }
     }
 
-    fun startUpdatesIfTheCurrentUpdaterDoesNotMatchUserPreferences(
+    fun startCoreUpdatesIfNeeded(
         context: Context,
         debugging: Boolean = false,
         userOptedInForManualUpdates: Boolean = true,
@@ -70,17 +72,22 @@ object WidgetUpdateManager {
         val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
         val shouldDoManualUpdates = (debugging || userOptedInForManualUpdates)
         val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
+        this.debugUpdateIntervalMinutes = debugIntervalMinutes
 
-        if (shouldUseAlarmBasedWorkManager) {
-            if (!checkAlarmUpdatesAreRunning(context)) {
-                stopProductionModeUpdates(context)
-                startDebugModeUpdates(context)
+        if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
+            if (shouldUseAlarmBasedWorkManager) {
+                if (!checkAlarmUpdatesAreRunning(context)) {
+                    stopProductionModeUpdates(context)
+                    startDebugModeUpdates(context)
+                }
+            } else {
+                if (!checkProductionModeUpdatesAreRunning(context)) {
+                    stopAlarmUpdates(context)
+                    startProductionModeUpdates(context)
+                }
             }
         } else {
-            if (!checkProductionModeUpdatesAreRunning(context)) {
-                stopAlarmUpdates(context)
-                startProductionModeUpdates(context)
-            }
+            stopUpdates(context)
         }
     }
 
@@ -95,7 +102,6 @@ object WidgetUpdateManager {
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
-
 
         return pendingIntent != null
     }
@@ -118,14 +124,18 @@ object WidgetUpdateManager {
         val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
         isCurrentlyInDebugMode = shouldUseAlarmBasedWorkManager
 
-        if (shouldUseAlarmBasedWorkManager) {
-            Log.d(TAG, "Using manual mode updates")
-            stopProductionModeUpdates(context)
-            startDebugModeUpdates(context)
+        if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
+            if (shouldUseAlarmBasedWorkManager) {
+                Log.d(TAG, "Using manual mode updates")
+                stopProductionModeUpdates(context)
+                startDebugModeUpdates(context)
+            } else {
+                Log.d(TAG, "Using auto mode updates")
+                stopAlarmUpdates(context)
+                startProductionModeUpdates(context)
+            }
         } else {
-            Log.d(TAG, "Using auto mode updates")
-            stopAlarmUpdates(context)
-            startProductionModeUpdates(context)
+            stopUpdates(context)
         }
     }
 
@@ -136,8 +146,7 @@ object WidgetUpdateManager {
         val batteryPct = level * 100 / scale
 
         val status = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL
+        val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
 
         return (batteryPct <= LOW_BATTERY_THRESHOLD) && !isCharging
     }
@@ -308,15 +317,7 @@ object WidgetUpdateManager {
 
     fun workToUpdateWidget(context: Context) {
         Log.d(TAG, "Doing Widget Core Update Work")
-
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val allAppWidgetIds = mutableListOf<Int>()
-        allAppWidgetIds.addAll( appWidgetManager.getAppWidgetIds(
-                ComponentName(context, PeekTransitLargeWidgetProvider::class.java)
-            ).toCollection(mutableListOf<Int>())
-        )
-
-        // TODO: add other app widget ids for other widget sizes
+        val allAppWidgetIds = PeekTransitConstants.getAllActiveWidgetIds(context)
 
         for (appWidgetId in allAppWidgetIds) {
             val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)

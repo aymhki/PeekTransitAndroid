@@ -356,7 +356,7 @@ fun MapViewScreen(
                 userLocation?.let { location ->
                     Circle(
                         center = location,
-                        radius = PeekTransitConstants.STOPS_DISTANCE_RADIUS,
+                        radius = PeekTransitConstants.STOPS_DISTANCE_RADIUS_IN_METERS,
                         strokeColor = MaterialTheme.colorScheme.secondary,
                         fillColor = androidx.compose.ui.graphics.Color.Transparent,
                         strokeWidth = 3f

@@ -114,7 +114,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     
                     val shouldUpdate = if (previousLocation != null) {
                         val distance = previousLocation!!.distanceTo(location)
-                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
+                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS
                     } else {
                         true
                     }
@@ -160,8 +160,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     
                     val shouldRefreshStops = if (previousLocation != null) {
                         val distance = previousLocation!!.distanceTo(newLocation)
-                        println("MainViewModel: Distance from previous location: ${distance}m (threshold: ${PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS}m)")
-                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS
+                        println("MainViewModel: Distance from previous location: ${distance}m (threshold: ${PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS}m)")
+                        distance > PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS
                     } else {
                         println("MainViewModel: No previous location, will refresh stops")
                         true

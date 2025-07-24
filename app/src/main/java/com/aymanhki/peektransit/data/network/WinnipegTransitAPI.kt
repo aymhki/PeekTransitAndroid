@@ -123,7 +123,7 @@ class WinnipegTransitAPI private constructor() {
             val response = apiService.getNearbyStops(
                 latitude = userLocation.latitude.toString(),
                 longitude = userLocation.longitude.toString(),
-                distance = PeekTransitConstants.STOPS_DISTANCE_RADIUS.toInt().toString(),
+                distance = PeekTransitConstants.STOPS_DISTANCE_RADIUS_IN_METERS.toInt().toString(),
                 usage = if (forShort) "short" else "long",
                 apiKey = PeekTransitConstants.TRANSIT_API_KEY
             )
@@ -222,7 +222,7 @@ class WinnipegTransitAPI private constructor() {
             val startDate = calendar.time
             
             calendar.time = currentDate
-            calendar.add(Calendar.HOUR, PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES)
+            calendar.add(Calendar.HOUR, PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS)
             val endDate = calendar.time
             
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -300,7 +300,7 @@ class WinnipegTransitAPI private constructor() {
                                     timeDifference < 0 && timeFormat != TimeFormat.CLOCK_TIME -> {
                                         finalArrivalText = "${-timeDifference} ${PeekTransitConstants.MINUTES_PASSED_TEXT}"
                                     }
-                                    timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS && timeFormat != TimeFormat.CLOCK_TIME -> {
+                                    timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES && timeFormat != TimeFormat.CLOCK_TIME -> {
                                         finalArrivalText = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
                                     }
                                     else -> {
@@ -321,11 +321,11 @@ class WinnipegTransitAPI private constructor() {
                                 }
                                 
                                 when {
-                                    delay > 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS && timeFormat != TimeFormat.CLOCK_TIME -> {
+                                    delay > 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES && timeFormat != TimeFormat.CLOCK_TIME -> {
                                         arrivalState = PeekTransitConstants.LATE_STATUS_TEXT
                                         finalArrivalText = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
                                     }
-                                    delay < 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS -> {
+                                    delay < 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES -> {
                                         arrivalState = PeekTransitConstants.EARLY_STATUS_TEXT
                                         finalArrivalText = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
                                     }
@@ -659,7 +659,7 @@ class WinnipegTransitAPI private constructor() {
                         }
                         time.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT) -> {
                             val minutes = time.split(" ")[0].toIntOrNull() ?: 0
-                            if (minutes <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS) {
+                            if (minutes <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES) {
                                 finalTime = time
                             } else {
                                 calendar.time = currentDate
@@ -713,24 +713,6 @@ class WinnipegTransitAPI private constructor() {
         }
         
         enrichedStops
-    }
-    
-    fun getCurrentWinnipegDateTime(): Date {
-        val winnipegTimeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
-        val calendar = Calendar.getInstance(winnipegTimeZone)
-        return Date(calendar.timeInMillis)
-    }
-    
-    fun formatDateForAPI(date: Date): String {
-        val dateFormat = SimpleDateFormat(PeekTransitConstants.DATE_FORMAT_API, Locale.getDefault())
-        dateFormat.timeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
-        return dateFormat.format(date)
-    }
-    
-    fun formatTimeForAPI(date: Date): String {
-        val timeFormat = SimpleDateFormat(PeekTransitConstants.TIME_FORMAT_API, Locale.getDefault())
-        timeFormat.timeZone = TimeZone.getTimeZone(PeekTransitConstants.WINNIPEG_ZONE)
-        return timeFormat.format(date)
     }
     
     suspend fun getOnlyVariantsForStop(stop: Stop): List<Variant> = withContext(Dispatchers.IO) {

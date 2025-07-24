@@ -233,7 +233,7 @@ private fun PreviewWidgetStopView(
     isFirst: Boolean = false,
     fullyLoaded: Boolean = true
 ) {
-    val stopNamePrefixSize = PeekTransitConstants.getStopNameMaxPrefixLengthForWidget()
+    val stopNamePrefixSize = PeekTransitConstants.STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET
     val stopName = stop.name
     val stopNumber = stop.number
     val stopNamePrefix =
