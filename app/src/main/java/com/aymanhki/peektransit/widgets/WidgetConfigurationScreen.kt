@@ -1,11 +1,21 @@
 package com.aymanhki.peektransit.widgets
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aymanhki.peektransit.data.models.WidgetModel
+import com.aymanhki.peektransit.ui.components.CustomTopAppBar
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 
@@ -22,26 +33,37 @@ import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
 fun WidgetConfigurationScreen(
     title: String,
     widgetsToShow: List<WidgetModel>,
-    onWidgetSelected: (WidgetModel) -> Unit
+    onWidgetSelected: (WidgetModel) -> Unit,
+    onCloseWidgetConfigurationScreen: () -> Unit
 ) {
     PeekTransitTheme {
         Scaffold(
+            modifier = Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars),
             topBar = {
-                Text(
-                    text = title,
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        top = 24.dp,
-                        bottom = 24.dp,
-                        end = 16.dp
-                    ),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    CustomTopAppBar(
+                        title = {
+                            Text(
+                                text = title,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = onCloseWidgetConfigurationScreen,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Close"
+                                )
+                            }
+                        }
                 )
             }
-        ) { paddingValues ->
+        ) { innerPadding ->
             LazyColumn(
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier.padding(innerPadding)
             ) {
                 items(widgetsToShow.size) { index ->
                     val widget = widgetsToShow[index]
@@ -54,24 +76,31 @@ fun WidgetConfigurationScreen(
                     ) {
                         Text(
                             text = widget.widgetData["name"] as? String ?: "Unnamed Widget",
-                            modifier = Modifier.padding(16.dp),
                             maxLines = 5,
-                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp),
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                             fontWeight = FontWeight.Normal
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         if (widget.widgetData["isClosestStop"] as? Boolean == true) {
                             Text(
                                 text = "Requires location access to show closest stop",
-                                modifier = Modifier.padding(16.dp),
                                 color = AccentBlue,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
+                                fontSize =  MaterialTheme.typography.bodyMedium.fontSize,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
                 }
             }
+
         }
     }
 }

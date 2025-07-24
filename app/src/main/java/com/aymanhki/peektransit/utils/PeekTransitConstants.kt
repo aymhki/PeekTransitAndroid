@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.PowerManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.aymanhki.peektransit.ui.theme.AccentBlue
@@ -270,9 +271,9 @@ object PeekTransitConstants {
     }
 
     fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
-        val prefs = context.getSharedPreferences(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         with(prefs.edit()) {
-            putString(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
+            putString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
             apply()
         }
     }
@@ -292,8 +293,8 @@ object PeekTransitConstants {
     }
 
     fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {
-        val prefs = context.getSharedPreferences(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        val widgetId = prefs.getString(SettingsKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
+        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val widgetId = prefs.getString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
         val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
     }
@@ -382,6 +383,27 @@ object PeekTransitConstants {
         Intent.ACTION_SCREEN_OFF,
         Intent.ACTION_BOOT_COMPLETED,
     )
+
+    val replacePackageUpdateActions = listOf(
+        Intent.ACTION_MY_PACKAGE_REPLACED,
+        Intent.ACTION_MY_PACKAGE_UNSUSPENDED,
+        Intent.ACTION_MY_PACKAGE_SUSPENDED,
+        Intent.ACTION_PACKAGE_REPLACED,
+        Intent.ACTION_PACKAGE_ADDED,
+        Intent.ACTION_PACKAGE_REMOVED,
+        Intent.ACTION_PACKAGE_CHANGED,
+        Intent.ACTION_PACKAGE_DATA_CLEARED,
+        Intent.ACTION_PACKAGE_FULLY_REMOVED,
+    )
+
+    val batterStatusActions = listOf(
+        Intent.ACTION_BATTERY_CHANGED,
+        Intent.ACTION_BATTERY_LOW,
+        Intent.ACTION_BATTERY_OKAY,
+        PowerManager.ACTION_POWER_SAVE_MODE_CHANGED
+    )
+
+    const val ACTION_UPDATE_WIDGET = "com.aymanhki.peektransit.ACTION_UPDATE_WIDGET"
 }
 
 enum class DefaultTab(val index: Int, val displayName: String, val icon: String) {
@@ -417,14 +439,13 @@ enum class TimeFormat {
     MIXED
 }
 
-object SettingsKeys {
+object SharedPrefrencesKeys {
     const val DEFAULT_TAB = "default_tab_preference"
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES = "widget_update_settings_manual_updates"
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER = "widget_update_settings_manual_updates_in_low_power"
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES = "widget_update_settings_manual_updates_minutes"
-
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
 }

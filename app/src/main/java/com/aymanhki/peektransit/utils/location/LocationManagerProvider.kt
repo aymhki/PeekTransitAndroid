@@ -6,4 +6,4 @@ object LocationManagerProvider {
     fun getInstance(context: Context): LocationManager {
         return LocationManager(context.applicationContext)
     }
-} 
+}

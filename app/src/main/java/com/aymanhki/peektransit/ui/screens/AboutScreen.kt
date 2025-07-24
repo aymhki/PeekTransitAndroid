@@ -54,11 +54,11 @@ fun AboutScreen(
             text = "Email",
             url = "mailto:agamyahk@myumanitoba.ca"
         ),
-        LinkItem(
-            iconRes = R.drawable.instagram_icon,
-            text = "Instagram",
-            url = "https://www.instagram.com/aymanhki/"
-        ),
+//        LinkItem(
+//            iconRes = R.drawable.linkedin_icon,
+//            text = "LinkedIn",
+//            url = "https://www.linkedin.com/in/ayman-agamy/"
+//        ),
         LinkItem(
             iconRes = R.drawable.github_icon,
             text = "GitHub",

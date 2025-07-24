@@ -97,10 +97,8 @@ class StopsDataStore private constructor() {
                 _isLoading.postValue(true)
                 _error.postValue(null)
                 
-                println("StopsDataStore: Loading stops for location: ${userLocation.latitude}, ${userLocation.longitude}")
                 val nearbyStops = api.getNearbyStops(userLocation, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
-                println("StopsDataStore: Successfully loaded ${nearbyStops.size} stops")
-                
+
                 _stops.postValue(nearbyStops)
                 
                 if (!loadingFromWidgetSetup) {
@@ -137,7 +135,6 @@ class StopsDataStore private constructor() {
                     is TransitError -> e
                     is CancellationException -> return@launch
                     else -> {
-                        println("StopsDataStore: API error for location ${userLocation.latitude}, ${userLocation.longitude}: ${e.message}")
                         when {
                             e.message?.contains("ConnectException") == true -> {
                                 TransitError.NetworkError(Exception("Unable to connect to Winnipeg Transit API. Please check your internet connection and try again."))
@@ -191,7 +188,6 @@ class StopsDataStore private constructor() {
         } catch (e: Exception) {
             if (e !is CancellationException) {
                 println("Error enriching stops: ${e.message}")
-
             }
         }
     }
@@ -228,10 +224,7 @@ class StopsDataStore private constructor() {
                 
             } catch (e: Exception) {
                 if (e !is CancellationException) {
-
                     println("Error fetching variants for stop ${stop.number}: ${e.message}")
-
-
                     onStopEnriched(stop)
                 }
             }
@@ -260,22 +253,16 @@ class StopsDataStore private constructor() {
                     val variantIdentifier = variant.key.split("-").firstOrNull() ?: ""
 
                     if (!bulkVariantIdentifiers.contains(variantIdentifier)) {
-
                         println("Cache validation failed: ${variant.key} from stop $stopNumber not found in bulk variants")
-
                         cache.clearAllCaches()
                         return
                     }
                 }
             }
 
-
             println("Variant cache validation passed")
-
         } catch (e: Exception) {
-
             println("Error during cache validation: ${e.message}")
-
         }
     }
 

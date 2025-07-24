@@ -24,13 +24,11 @@ import java.util.concurrent.TimeUnit
 
 object WidgetUpdateManager {
     private const val TAG = "WidgetUpdateManager"
-    private const val ACTION_UPDATE_WIDGET = "com.aymanhki.peektransit.ACTION_UPDATE_WIDGET"
     private const val REQUEST_CODE = 42
     private const val WORK_NAME = "widget_update_worker"
     private var preferDebugMode = false
     private var debugUpdateIntervalMinutes = 1
     private var LOW_BATTERY_THRESHOLD = 15
-
     private var isCurrentlyInDebugMode = false
     private var userOptedInForManualUpdates = false
     private var userOptedInForManualUpdatesInLowPower = false
@@ -93,7 +91,7 @@ object WidgetUpdateManager {
 
     fun checkAlarmUpdatesAreRunning(context: Context): Boolean {
         val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
-            action = ACTION_UPDATE_WIDGET
+            action = PeekTransitConstants.ACTION_UPDATE_WIDGET
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -109,7 +107,6 @@ object WidgetUpdateManager {
     fun checkProductionModeUpdatesAreRunning(context: Context): Boolean {
         return WorkManager.getInstance(context).getWorkInfosByTag(WORK_NAME).get().any { it.state.isFinished.not() }
     }
-
 
     fun stopUpdates(context: Context) {
         stopAlarmUpdates(context)
@@ -161,10 +158,9 @@ object WidgetUpdateManager {
 
         val receiver = BatteryStatusReceiver()
         val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_BATTERY_CHANGED)
-            addAction(Intent.ACTION_BATTERY_LOW)
-            addAction(Intent.ACTION_BATTERY_OKAY)
-            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
+            PeekTransitConstants.batterStatusActions.forEach { action ->
+                addAction(action)
+            }
         }
 
         batteryReceiver = receiver
@@ -185,7 +181,7 @@ object WidgetUpdateManager {
     private fun startDebugModeUpdates(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
-            action = ACTION_UPDATE_WIDGET
+            action = PeekTransitConstants.ACTION_UPDATE_WIDGET
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -222,16 +218,14 @@ object WidgetUpdateManager {
         workToUpdateWidget(context)
     }
 
-
     private fun stopProductionModeUpdates(context: Context) {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 
-
     private fun stopAlarmUpdates(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
-            action = ACTION_UPDATE_WIDGET
+            action = PeekTransitConstants.ACTION_UPDATE_WIDGET
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -244,40 +238,21 @@ object WidgetUpdateManager {
         alarmManager.cancel(pendingIntent)
     }
 
-    fun forceWidgetUpdate(context: Context) {
+    fun broadcastWidgetLooksUpdate(context: Context) {
         PeekTransitConstants.triggerAllWidgetsLooksUpdates(context)
     }
 
     class BatteryStatusReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            when (intent.action) {
-                Intent.ACTION_BATTERY_CHANGED,
-                Intent.ACTION_BATTERY_LOW,
-                Intent.ACTION_BATTERY_OKAY,
-                PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> {
-                    Log.d(TAG, "Battery or power save mode changed: ${intent.action}")
-                    updateBasedOnBatteryStatusAndUserPerfrence(context)
-                }
+            if (intent.action in PeekTransitConstants.batterStatusActions) {
+                updateBasedOnBatteryStatusAndUserPerfrence(context)
             }
         }
     }
 
     class PackageReplacedReceiver : BroadcastReceiver() {
-
-        val actions = listOf(
-            Intent.ACTION_MY_PACKAGE_REPLACED,
-            Intent.ACTION_MY_PACKAGE_UNSUSPENDED,
-            Intent.ACTION_MY_PACKAGE_SUSPENDED,
-            Intent.ACTION_PACKAGE_REPLACED,
-            Intent.ACTION_PACKAGE_ADDED,
-            Intent.ACTION_PACKAGE_REMOVED,
-            Intent.ACTION_PACKAGE_CHANGED,
-            Intent.ACTION_PACKAGE_DATA_CLEARED,
-            Intent.ACTION_PACKAGE_FULLY_REMOVED,
-        )
-
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action in  actions ) {
+            if (intent.action in PeekTransitConstants.replacePackageUpdateActions ) {
                 Log.d("PackageReplacedReceiver", "App updated, restarting widget updates")
                 PeekTransitConstants.initAPIKey(context)
                 PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
@@ -290,9 +265,9 @@ object WidgetUpdateManager {
     class WidgetUpdateReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             Log.d(TAG, "Manual mode widget update triggered")
-            if (intent.action == ACTION_UPDATE_WIDGET) {
+            if (intent.action == PeekTransitConstants.ACTION_UPDATE_WIDGET) {
                 workToUpdateWidget(context)
-                forceWidgetUpdate(context)
+                broadcastWidgetLooksUpdate(context)
             }
         }
     }
@@ -301,12 +276,11 @@ object WidgetUpdateManager {
         context: Context,
         params: WorkerParameters
     ) : CoroutineWorker(context, params) {
-
         override suspend fun doWork(): Result {
             Log.d(TAG, "Production mode widget update triggered")
             try {
                 workToUpdateWidget(applicationContext)
-                forceWidgetUpdate(applicationContext)
+                broadcastWidgetLooksUpdate(applicationContext)
                 return Result.success()
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating widget", e)
@@ -331,7 +305,6 @@ object WidgetUpdateManager {
                 lastUpdatedTime = "",
                 scheduleData = mutableMapOf<String, List<String>>()
             )
-
             val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
             val lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"

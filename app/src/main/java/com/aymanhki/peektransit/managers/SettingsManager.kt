@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.aymanhki.peektransit.utils.DefaultTab
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.SettingsKeys
+import com.aymanhki.peektransit.utils.SharedPrefrencesKeys
 import com.aymanhki.peektransit.utils.StopViewTheme
 import androidx.core.content.edit
 import com.aymanhki.peektransit.utils.PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings
@@ -24,53 +24,53 @@ class SettingsManager private constructor(private val context: Context) {
     
     var defaultTab: DefaultTab
         get() {
-            val tabIndex = sharedPreferences.getInt(SettingsKeys.DEFAULT_TAB, DefaultTab.MAP.index)
+            val tabIndex = sharedPreferences.getInt(SharedPrefrencesKeys.DEFAULT_TAB, DefaultTab.MAP.index)
             return DefaultTab.fromIndex(tabIndex)
         }
         set(value) {
             sharedPreferences.edit {
-                putInt(SettingsKeys.DEFAULT_TAB, value.index)
+                putInt(SharedPrefrencesKeys.DEFAULT_TAB, value.index)
             }
         }
     
     var stopViewTheme: StopViewTheme
         get() {
-            val themeName = sharedPreferences.getString(SettingsKeys.SHARED_STOP_VIEW_THEME, StopViewTheme.DEFAULT.displayName)
+            val themeName = sharedPreferences.getString(SharedPrefrencesKeys.SHARED_STOP_VIEW_THEME, StopViewTheme.DEFAULT.displayName)
             return StopViewTheme.fromString(themeName)
         }
         set(value) {
             sharedPreferences.edit {
-                putString(SettingsKeys.SHARED_STOP_VIEW_THEME, value.displayName)
+                putString(SharedPrefrencesKeys.SHARED_STOP_VIEW_THEME, value.displayName)
             }
 
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var userOptedInForManualWidgetUpdates: Boolean
-        get() = sharedPreferences.getBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, true)
+        get() = sharedPreferences.getBoolean(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, true)
         set(value) {
             sharedPreferences.edit {
-                putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, value)
+                putBoolean(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES, value)
             }
 
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var userOptedInForManualWidgetUpdatesInLowPower: Boolean
-        get() = sharedPreferences.getBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, true)
+        get() = sharedPreferences.getBoolean(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, true)
         set(value) {
             sharedPreferences.edit {
-                putBoolean(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, value)
+                putBoolean(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_IN_LOW_POWER, value)
             }
 
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
     var widgetManualUpdateMinutes: Int
-        get() = sharedPreferences.getInt(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT)
+        get() = sharedPreferences.getInt(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT)
         set(value) {
             sharedPreferences.edit {
-                putInt(SettingsKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, value)
+                putInt(SharedPrefrencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, value)
             }
 
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)

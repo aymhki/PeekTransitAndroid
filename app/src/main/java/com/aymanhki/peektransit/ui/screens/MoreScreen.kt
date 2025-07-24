@@ -28,7 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.platform.LocalFocusManager
@@ -114,7 +113,7 @@ fun MoreScreen(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false }
                             ) {
-                                DefaultTab.values().forEach { tab ->
+                                DefaultTab.entries.forEach { tab ->
                                     DropdownMenuItem(
                                         text = { Text(tab.displayName) },
                                         onClick = {
@@ -313,11 +312,13 @@ fun MoreScreen(
                                                             OutlinedTextField(
                                                                 value = updateInterval,
                                                                 onValueChange = { newValue ->
-                                                                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                                                                    if (newValue.isEmpty() || newValue.all { it.isDigit() })  {
                                                                         updateInterval = newValue
                                                                         if (newValue.isNotEmpty()) {
                                                                             newValue.toIntOrNull()?.let { intValue ->
-                                                                                settingsManager.widgetManualUpdateMinutes = intValue
+                                                                                if (intValue > 0) {
+                                                                                    settingsManager.widgetManualUpdateMinutes = intValue
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -374,6 +375,17 @@ fun MoreScreen(
                                                             )
                                                         }
                                                     }
+                                                }
+
+                                                Button(
+                                                    onClick = { expanded = false },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = MaterialTheme.colorScheme.primary,
+                                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                                    )
+                                                ) {
+                                                    Text("Done")
                                                 }
                                             }
                                         }

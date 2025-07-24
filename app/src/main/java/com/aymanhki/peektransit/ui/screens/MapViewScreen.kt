@@ -145,26 +145,19 @@ fun MapViewScreen(
                             ),
                             1500
                         )
-                        println("MapViewScreen: Camera animated to user location successfully")
                     } catch (animationException: Exception) {
-                        println("MapViewScreen: Animation failed, using immediate move: ${animationException.message}")
                         cameraPositionState.move(
                             CameraUpdateFactory.newCameraPosition(
                                 CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                             )
                         )
-                        println("MapViewScreen: Camera moved to user location (fallback)")
                     }
                     
                     hasCameraInitializedToUserLocation = true
-                    println("MapViewScreen: Camera positioning completed successfully")
-                    
                 } else {
-                    println("MapViewScreen: No location available for camera positioning")
                     locationStatus = "Unable to get location"
                 }
             } catch (e: Exception) {
-                println("MapViewScreen: Failed to position camera: ${e.message}")
                 locationStatus = "Location error: ${e.message}"
             }
         }
@@ -191,18 +184,15 @@ fun MapViewScreen(
                             ),
                             1500
                         )
-                        println("MapViewScreen: Fallback camera animated to user location successfully")
                     } catch (animationException: Exception) {
                         cameraPositionState.move(
                             CameraUpdateFactory.newCameraPosition(
                                 CameraPosition.fromLatLngZoom(latLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                             )
                         )
-                        println("MapViewScreen: Fallback camera moved to user location (immediate)")
                     }
                     
                     hasCameraInitializedToUserLocation = true
-                    println("MapViewScreen: Fallback camera positioning completed successfully")
                 }
             } catch (e: Exception) {
                 println("MapViewScreen: Fallback camera positioning failed: ${e.message}")
@@ -227,18 +217,15 @@ fun MapViewScreen(
                         ),
                         1500
                     )
-                    println("MapViewScreen: Camera positioned to default location successfully")
                 } catch (animationException: Exception) {
                     cameraPositionState.move(
                         CameraUpdateFactory.newCameraPosition(
                             CameraPosition.fromLatLngZoom(defaultLatLng, 11.0f)
                         )
                     )
-                    println("MapViewScreen: Camera moved to default location (immediate)")
                 }
                 
                 hasCameraInitializedToUserLocation = true
-                println("MapViewScreen: Timeout fallback camera positioning completed")
             }
         }
     }
@@ -439,9 +426,6 @@ fun MapViewScreen(
                                         )
                                     }
                                     hasCameraInitializedToUserLocation = true
-                                    println("MapViewScreen: Camera reset to user location")
-                                } else {
-                                    println("MapViewScreen: No location available for camera reset")
                                 }
                             } catch (e: Exception) {
                                 println("MapViewScreen: Failed to get location for camera reset: ${e.message}")

@@ -64,10 +64,8 @@ class SavedStopsManager private constructor(context: Context) {
                 val type = object : TypeToken<List<SavedStop>>() {}.type
                 val stops: List<SavedStop> = gson.fromJson(savedStopsJson, type) ?: emptyList()
                 _savedStops.value = stops
-                Log.d("SavedStopsManager", "Loaded ${stops.size} saved stops")
             } else {
                 _savedStops.value = emptyList()
-                Log.d("SavedStopsManager", "No saved stops found")
             }
         } catch (e: Exception) {
             Log.e("SavedStopsManager", "Error loading saved stops: ${e.message}", e)
@@ -83,7 +81,6 @@ class SavedStopsManager private constructor(context: Context) {
             preferences.edit()
                 .putString(userDefaultsKey, savedStopsJson)
                 .commit()
-            Log.d("SavedStopsManager", "Saved ${_savedStops.value.size} stops to disk")
         } catch (e: Exception) {
             Log.e("SavedStopsManager", "Error saving stops to disk: ${e.message}", e)
         }
@@ -104,10 +101,8 @@ class SavedStopsManager private constructor(context: Context) {
         val existingIndex = currentStops.indexOfFirst { it.id == stopId }
         if (existingIndex != -1) {
             currentStops.removeAt(existingIndex)
-            Log.d("SavedStopsManager", "Removed stop ${stop.number} from saved stops")
         } else {
             currentStops.add(SavedStop(stopData = stop))
-            Log.d("SavedStopsManager", "Added stop ${stop.number} to saved stops")
         }
         
         _savedStops.value = currentStops

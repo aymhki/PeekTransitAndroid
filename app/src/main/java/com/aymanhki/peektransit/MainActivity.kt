@@ -1,11 +1,8 @@
 package com.aymanhki.peektransit
 
-import android.content.Context
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,17 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.Note
-import androidx.compose.material.icons.filled.BackupTable
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
@@ -48,7 +40,6 @@ import com.aymanhki.peektransit.ui.screens.AboutScreen
 import com.aymanhki.peektransit.ui.screens.CreditsScreen
 import com.aymanhki.peektransit.ui.screens.TermsAndPrivacyScreen
 import com.aymanhki.peektransit.ui.theme.PeekTransitTheme
-import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.utils.permissions.LocalPermissionManager
 import com.aymanhki.peektransit.utils.permissions.PermissionManager

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getSavedWidgetsForTargetSize
 
@@ -25,6 +26,7 @@ class PeekTransitLargeWidgetConfigurationActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         setContent {
+            enableEdgeToEdge()
             WidgetConfigurationScreen(
                 title = "Configure Large Widget",
                 widgetsToShow = getSavedWidgetsForTargetSize(this, "large"),
@@ -37,6 +39,13 @@ class PeekTransitLargeWidgetConfigurationActivity : ComponentActivity() {
 
                     PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(this, true, false)
                     setResult(RESULT_OK, resultValue)
+                    finish()
+                },
+                onCloseWidgetConfigurationScreen = {
+                    val resultValue = Intent().apply {
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    }
+                    setResult(RESULT_CANCELED, resultValue)
                     finish()
                 }
             )
