@@ -11,8 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.core.content.edit
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 
-class SavedWidgetsManager(context: Context) {
+class SavedWidgetsManager(private val context: Context) {
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
         PREFS_NAME,
         Context.MODE_PRIVATE
@@ -87,9 +88,7 @@ class SavedWidgetsManager(context: Context) {
             val json = gson.toJson(widgets)
             sharedPreferences.edit { putString(KEY_SAVED_WIDGETS, json) }
             _savedWidgets.value = widgets
-            
-            // TODO: Trigger widget update when widget functionality is implemented
-
+            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, true)
         } catch (e: Exception) {
 
         }

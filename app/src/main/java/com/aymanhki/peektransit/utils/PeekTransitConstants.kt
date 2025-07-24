@@ -15,13 +15,16 @@ import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
+import com.aymanhki.peektransit.widgets.SavedWidgetSchedulesManager
+import com.aymanhki.peektransit.widgets.WidgetSchedule
 import com.aymanhki.peektransit.widgets.WidgetUpdateManager
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
+    const val DEBUG_WIDGET_LOCATION_ACCESS = true
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 3
-    const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 1L
-    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 1L
+    const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
+    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
 
     // API Configuration
     var TRANSIT_API_KEY: String = ""
@@ -346,7 +349,7 @@ object PeekTransitConstants {
                 .metaData.getString("TRANSIT_API_KEY") ?: ""
         }
     }
-
+    
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
 
@@ -361,6 +364,20 @@ object PeekTransitConstants {
             putString(WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
             apply()
         }
+    }
+
+    fun getWidgetSchedule(context: Context, appWidgetId: String, widgetConfigId: String?): WidgetSchedule? {
+        val savedWidgetSchedulesManager = SavedWidgetSchedulesManager.getInstance(context)
+        return if (widgetConfigId == null) {
+            null
+        } else {
+            savedWidgetSchedulesManager.getWidgetSchedule(appWidgetId, widgetConfigId)
+        }
+    }
+
+    fun savedWidgetSchedule(context: Context, widgetSchedule: WidgetSchedule) {
+        val savedWidgetSchedulesManager = SavedWidgetSchedulesManager.getInstance(context)
+        savedWidgetSchedulesManager.saveWidgetSchedule(widgetSchedule)
     }
 
     fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {

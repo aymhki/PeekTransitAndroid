@@ -15,6 +15,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
         android:visibility="visible">
 
             <ImageView
@@ -32,6 +36,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
+        android:paddingHorizontal="16dp"
         android:weightSum="3">
 
         <LinearLayout
@@ -134,6 +139,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
+        android:paddingHorizontal="16dp"
         android:weightSum="3">
 
         <LinearLayout
@@ -236,6 +242,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
+        android:paddingHorizontal="16dp"
         android:weightSum="3">
 
         <LinearLayout

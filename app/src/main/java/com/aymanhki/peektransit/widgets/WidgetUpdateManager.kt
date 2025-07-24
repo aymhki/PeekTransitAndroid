@@ -2,7 +2,9 @@ package com.aymanhki.peektransit.widgets
 
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -18,6 +20,8 @@ import androidx.work.WorkerParameters
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
 import com.aymanhki.peektransit.utils.PeekTransitConstants.MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
 object WidgetUpdateManager {
@@ -64,8 +68,8 @@ object WidgetUpdateManager {
         debugIntervalMinutes: Int = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
     ) {
         val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
-        val shouldDoManualUpdates = (preferDebugMode || WidgetUpdateManager.userOptedInForManualUpdates)
-        val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || WidgetUpdateManager.userOptedInForManualUpdatesInLowPower)
+        val shouldDoManualUpdates = (debugging || userOptedInForManualUpdates)
+        val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
 
         if (shouldUseAlarmBasedWorkManager) {
             if (!checkAlarmUpdatesAreRunning(context)) {
@@ -190,6 +194,8 @@ object WidgetUpdateManager {
             intervalMillis,
             pendingIntent
         )
+
+        workToUpdateWidget(context)
     }
 
     private fun startProductionModeUpdates(context: Context) {
@@ -203,6 +209,8 @@ object WidgetUpdateManager {
             ExistingPeriodicWorkPolicy.UPDATE,
             updateRequest
         )
+
+        workToUpdateWidget(context)
     }
 
 
@@ -299,6 +307,48 @@ object WidgetUpdateManager {
     }
 
     fun workToUpdateWidget(context: Context) {
-        Log.d(TAG, "Performing common widget update work")
+        Log.d(TAG, "Doing Widget Core Update Work")
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val allAppWidgetIds = mutableListOf<Int>()
+        allAppWidgetIds.addAll( appWidgetManager.getAppWidgetIds(
+                ComponentName(context, PeekTransitLargeWidgetProvider::class.java)
+            ).toCollection(mutableListOf<Int>())
+        )
+
+        // TODO: add other app widget ids for other widget sizes
+
+        for (appWidgetId in allAppWidgetIds) {
+            val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+            if (widgetConfig == null) { continue }
+            val widgetConfigId = widgetConfig.id
+            val finalWidgetScheduleData = PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfigId) ?: WidgetSchedule(
+                widgetAppId = appWidgetId.toString(),
+                widgetConfigId = widgetConfigId,
+                userLocationLon = "",
+                userLocationLat = "",
+                lastUpdatedTime = "",
+                scheduleData = mutableMapOf<String, List<String>>()
+            )
+
+            val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
+            val lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+            val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
+
+            if (needsBackgroundLocation) {
+                val userLocationLon: Double = 0.0
+                val userLocationLat: Double = 0.0
+
+                //TODO: Fetch the user location in the background here
+
+                finalWidgetScheduleData.userLocationLon = "${userLocationLon}"
+                finalWidgetScheduleData.userLocationLat = "${userLocationLat}"
+            } else {
+                // fetch schedules manually for stops saved in the config
+            }
+
+            finalWidgetScheduleData.lastUpdatedTime = lastUpdatedTimeString
+            PeekTransitConstants.savedWidgetSchedule(context,finalWidgetScheduleData)
+        }
     }
 }
