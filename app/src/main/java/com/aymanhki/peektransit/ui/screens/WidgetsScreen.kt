@@ -274,7 +274,11 @@ fun WidgetsScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDeleteDialog = false }
+                    onClick = {
+                        showDeleteDialog = false
+                        selectedWidgets = emptySet()
+                        isEditing = false
+                    }
                 ) {
                     Text("Cancel")
                 }

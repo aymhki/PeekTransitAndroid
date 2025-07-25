@@ -51,7 +51,7 @@ fun WidgetConfigurationScreen(
                     onCloseWidgetConfigurationScreen()
                 },
                 title = { Text("No Widget Configurations") },
-                text = { Text("There are no widget configurations for this widget size $widgetSize. Go back to the app and create one then come back here to get started.") },
+                text = { Text("There are no widget configurations for this widget size ($widgetSize). Go back to the app and create one then come back here to get started.") },
                 confirmButton = {
                     Button(
                         onClick = {
