@@ -268,14 +268,6 @@ object PeekTransitConstants {
         return savedWidgetsManager.savedWidgets.value.filter { it.widgetData["size"] == targetSize }
     }
 
-    fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
-        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        with(prefs.edit()) {
-            putString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
-            apply()
-        }
-    }
-
     fun getWidgetSchedule(context: Context, appWidgetId: String, widgetConfigId: String?): WidgetSchedule? {
         val savedWidgetSchedulesManager = SavedWidgetSchedulesManager.getInstance(context)
         return if (widgetConfigId == null) {
@@ -290,11 +282,36 @@ object PeekTransitConstants {
         savedWidgetSchedulesManager.saveWidgetSchedule(widgetSchedule)
     }
 
+    fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
+        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        with(prefs.edit()) {
+            putString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
+            apply()
+        }
+    }
+
     fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {
         val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         val widgetId = prefs.getString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
         val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
+    }
+
+    fun deleteWidgetConfigurationUsingWidgetId(context: Context, appWidgetId: Int) {
+        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        with(prefs.edit()) {
+            remove(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId)
+            apply()
+        }
+    }
+
+    fun deleteWidgetScheduleUsingAppWidgetId(context: Context, appWidgetId: Int) {
+        val widgetConfig = getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+
+        if (widgetConfig != null) {
+            val savedWidgetSchedulesManager = SavedWidgetSchedulesManager.getInstance(context)
+            savedWidgetSchedulesManager.deleteWidgetSchedule(appWidgetId.toString(), widgetConfig.id)
+        }
     }
 
     fun triggerAllWidgetsLooksUpdates(context: Context) {
@@ -378,6 +395,34 @@ object PeekTransitConstants {
             return context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         }
     }
+
+    fun isThereActiveWidgetsWithLocationAccessNeeded(context: Context): Boolean {
+        val activeWidgetIds = getAllActiveWidgetIds(context)
+        var toReturn = false
+
+        activeWidgetIds.forEach { appWidgetId ->
+            val widgetConfig = getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+            if (widgetConfig != null) {
+                val widgetSchedule = getWidgetSchedule(context, appWidgetId.toString(), widgetConfig.id)
+
+                if (widgetSchedule != null && widgetConfig.widgetData["isClosestStop"] as? Boolean == true ) {
+                    toReturn = true
+                    return@forEach
+                }
+            }
+        }
+
+        return toReturn
+    }
+
+    fun removeDeletedWidgetInstancesData(context: Context, appWidgetIds: IntArray) {
+        appWidgetIds.forEach { appWidgetId ->
+            deleteWidgetScheduleUsingAppWidgetId(context, appWidgetId)
+            deleteWidgetConfigurationUsingWidgetId(context, appWidgetId)
+        }
+    }
+
+
 
     val updateActions = listOf(
         Intent.ACTION_CONFIGURATION_CHANGED,

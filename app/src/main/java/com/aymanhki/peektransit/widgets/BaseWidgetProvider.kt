@@ -38,6 +38,16 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         WidgetUpdateManager.stopUpdates(context)
     }
 
+    override fun onDeleted(context: Context?, appWidgetIds: IntArray?) {
+        super.onDeleted(context, appWidgetIds)
+        if (context == null || appWidgetIds == null) return
+        PeekTransitConstants.removeDeletedWidgetInstancesData(context, appWidgetIds)
+
+        if (!PeekTransitConstants.isThereActiveWidgetsWithLocationAccessNeeded(context) && WidgetLocationManager.isInitialized()) {
+            WidgetLocationManager.cleanup(context)
+        }
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         val action = intent.action
