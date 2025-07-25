@@ -95,7 +95,7 @@ fun LiveBusStopScreen(
         initialValue = 0.1f,
         targetValue = 4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+            animation = tween(3000, easing = EaseInOut),
             repeatMode = RepeatMode.Restart
         ),
         label = "scale"
@@ -105,7 +105,7 @@ fun LiveBusStopScreen(
         initialValue = 1f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+            animation = tween(3000, easing = EaseInOut),
             repeatMode = RepeatMode.Restart
         ),
         label = "alpha"

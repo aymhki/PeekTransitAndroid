@@ -154,7 +154,7 @@ fun StopRow(
                                         Text(
                                             text = "Effective From ${dateFormat.format(effectiveDate)}:",
                                             style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                                                fontWeight = FontWeight.Medium
                                             ),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
