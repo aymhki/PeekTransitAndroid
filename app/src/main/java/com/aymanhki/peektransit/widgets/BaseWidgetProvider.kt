@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.widgets.CentralWidgetLooksUpdateManager
 
 abstract class BaseWidgetProvider : AppWidgetProvider() {
 

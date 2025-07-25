@@ -52,11 +52,10 @@ object WidgetUpdateManager {
             registerBatteryReceiver(context)
             updateBasedOnBatteryStatusAndUserPerfrence(context)
 
-            Log.d(TAG, "Started widget updates")
-            Log.d(TAG, "manual updates: $userOptedInForManualUpdates")
-            Log.d(TAG, "manual updates in low power: $userOptedInForManualUpdatesInLowPower")
-            Log.d(TAG, "update interval: $debugUpdateIntervalMinutes minutes")
-            Log.d(TAG, "debug mode is on: $preferDebugMode")
+            Log.d(TAG, "Started widget updates, manual updates: ${userOptedInForManualUpdates}, " +
+                    "manual updates in low power: ${userOptedInForManualUpdatesInLowPower}, " +
+                    "debug interval: $debugUpdateIntervalMinutes minutes, " +
+                    "debug mode is on: $preferDebugMode")
         }
     }
 
