@@ -169,6 +169,8 @@ abstract class BaseWidgetConfigurationActivity : ComponentActivity() {
             if (hasBackgroundLocationPermission()) {
                 finalizeWidgetConfiguration(widget)
                 pendingWidget = null
+            } else {
+                showInsufficientPermissionDialog = true
             }
         }
     }
