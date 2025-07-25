@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -125,46 +126,45 @@ fun MapViewScreen(
         }
     }
 
-    LaunchedEffect(liveLocation, isMapsInitialized, showMap, isCameraPositioned) {
-        if (liveLocation != null && isMapsInitialized && showMap && !isAnimatingCamera) {
+    LaunchedEffect(liveLocation, isMapsInitialized, showMap) {
+        if (liveLocation != null && isMapsInitialized && showMap && !isAnimatingCamera && !isCameraPositioned) {
             val newLatLng = LatLng(liveLocation!!.latitude, liveLocation!!.longitude)
             userLocation = newLatLng
             locationStatus = "Location: ${"%.4f".format(liveLocation!!.latitude)}, ${"%.4f".format(liveLocation!!.longitude)}"
 
-            if (!isCameraPositioned) {
-                isAnimatingCamera = true
-
-                try {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                        ),
-                        1500
+            isAnimatingCamera = true
+            try {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                    ),
+                    1500
+                )
+                // Mark camera as positioned in viewModel after successful animation
+                viewModel.setCameraPositioned(true)
+            } catch (e: Exception) {
+                cameraPositionState.move(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                     )
-                } catch (e: Exception) {
-                    cameraPositionState.move(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
-                        )
-                    )
-                } finally {
-                    isAnimatingCamera = false
-                }
-            } else if (userLocation != newLatLng) {
-                userLocation = newLatLng
+                )
+                // Mark camera as positioned even after exception
+                viewModel.setCameraPositioned(true)
+            } finally {
+                isAnimatingCamera = false
             }
         }
     }
 
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isMapsInitialized, showMap, isCameraPositioned) {
-        if (locationPermissionsState.allPermissionsGranted && isMapsInitialized && showMap && !isCameraPositioned && !isAnimatingCamera) {
-            kotlinx.coroutines.delay(5000)
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isViewModelInitialized) {
+        if (locationPermissionsState.allPermissionsGranted && isViewModelInitialized && !isCameraPositioned) {
+            Log.d("MapViewScreen", "Fallback location fetch triggered for camera positioning")
+            val locationResult = viewModel.fetchLocationWithTimeout(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS)
 
-            if (!isCameraPositioned && !isAnimatingCamera) {
+            if (locationResult == null) {
                 val defaultLatLng = LatLng(49.8951, -97.1384)
                 locationStatus = "Using default location (Winnipeg)"
                 isAnimatingCamera = true
-
                 try {
                     cameraPositionState.animate(
                         CameraUpdateFactory.newCameraPosition(
@@ -180,7 +180,6 @@ fun MapViewScreen(
                     )
                 } finally {
                     isAnimatingCamera = false
-                    viewModel.resetCameraPosition()
                 }
             }
         }

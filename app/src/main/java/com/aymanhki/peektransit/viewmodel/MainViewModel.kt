@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     val stopsDataStore = StopsDataStore.getInstance().apply {
@@ -231,5 +232,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         stopLocationMonitoring()
         stopsDataStore.cancelAllOperations()
+    }
+
+    fun setCameraPositioned(positioned: Boolean) {
+        _isCameraPositioned.postValue(positioned)
+    }
+
+    suspend fun fetchLocationWithTimeout(timeoutMs: Long): Location? {
+        return withTimeoutOrNull(timeoutMs) {
+            locationManager.getCurrentLocation(forceRefresh = true)
+        }
     }
 }

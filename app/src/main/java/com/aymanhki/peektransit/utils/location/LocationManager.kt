@@ -20,6 +20,7 @@ class LocationManager(private val context: Context) {
     private var locationCallback: LocationCallback? = null
     private var isRequestingLocation = false
 
+
     companion object {
         private const val TAG = "LocationManager"
     }

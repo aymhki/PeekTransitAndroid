@@ -1,4 +1,4 @@
-package com.aymanhki.peektransit.widgets.helpers
+package com.aymanhki.peektransit.widgets
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

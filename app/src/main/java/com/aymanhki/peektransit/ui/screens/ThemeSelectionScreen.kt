@@ -61,7 +61,7 @@ fun ThemeSelectionScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
             
-            StopViewTheme.values().forEach { theme ->
+            StopViewTheme.entries.forEach { theme ->
                 ThemePreviewCard(
                     theme = theme,
                     isSelected = selectedTheme == theme,

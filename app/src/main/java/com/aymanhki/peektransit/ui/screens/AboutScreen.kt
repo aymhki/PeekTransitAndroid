@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.aymanhki.peektransit.R
 import android.content.pm.PackageManager
 import com.aymanhki.peektransit.ui.components.CustomTopAppBar
+import androidx.core.net.toUri
 
 data class LinkItem(
     val icon: ImageVector? = null,
@@ -203,6 +204,6 @@ fun LinkItemCard(
 }
 
 private fun openUrl(context: Context, url: String) {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
     context.startActivity(intent)
 } 
