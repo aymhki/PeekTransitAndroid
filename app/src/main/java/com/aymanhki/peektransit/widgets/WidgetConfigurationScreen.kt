@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,9 +38,33 @@ fun WidgetConfigurationScreen(
     title: String,
     widgetsToShow: List<WidgetModel>,
     onWidgetSelected: (WidgetModel) -> Unit,
-    onCloseWidgetConfigurationScreen: () -> Unit
+    onCloseWidgetConfigurationScreen: () -> Unit,
+    widgetSize: String
 ) {
     PeekTransitTheme {
+        val showNoConfigsDialog = remember { mutableStateOf(widgetsToShow.isEmpty()) }
+
+        if (showNoConfigsDialog.value) {
+            AlertDialog(
+                onDismissRequest = {
+                    showNoConfigsDialog.value = false
+                    onCloseWidgetConfigurationScreen()
+                },
+                title = { Text("No Widget Configurations") },
+                text = { Text("There are no widget configurations for this widget size $widgetSize. Go back to the app and create one then come back here to get started.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showNoConfigsDialog.value = false
+                            onCloseWidgetConfigurationScreen()
+                        }
+                    ) {
+                        Text("Okay")
+                    }
+                }
+            )
+        }
+
         Scaffold(
             modifier = Modifier.fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars),
@@ -104,3 +132,5 @@ fun WidgetConfigurationScreen(
         }
     }
 }
+
+

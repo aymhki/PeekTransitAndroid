@@ -51,7 +51,8 @@ abstract class BaseWidgetConfigurationActivity : ComponentActivity() {
                     }
                     setResult(RESULT_CANCELED, resultValue)
                     finish()
-                }
+                },
+                widgetSize = widgetSize
             )
         }
     }
