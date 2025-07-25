@@ -15,6 +15,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.PeekTransitConstants.FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
 import com.aymanhki.peektransit.utils.PeekTransitConstants.MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
@@ -302,8 +303,25 @@ object WidgetUpdateManager {
                 userLocationLon = "",
                 userLocationLat = "",
                 lastUpdatedTime = "",
-                scheduleData = mutableMapOf<String, List<String>>()
+                scheduleData = mutableMapOf<String, List<String>>(),
+                errorMsg = ""
             )
+
+            val newErrorMsg = checkForWidgetErrors(
+                context = context,
+                appWidgetId = appWidgetId.toString(),
+                widgetConfig = widgetConfig,
+                widgetScheduleData = finalWidgetScheduleData
+            )
+
+            if (newErrorMsg.isNotEmpty()) {
+                finalWidgetScheduleData.errorMsg = newErrorMsg
+                PeekTransitConstants.savedWidgetSchedule(context,finalWidgetScheduleData)
+                continue
+            } else {
+                finalWidgetScheduleData.errorMsg = ""
+            }
+
             val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
             val lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
@@ -323,5 +341,30 @@ object WidgetUpdateManager {
             finalWidgetScheduleData.lastUpdatedTime = lastUpdatedTimeString
             PeekTransitConstants.savedWidgetSchedule(context,finalWidgetScheduleData)
         }
+    }
+
+    fun checkForWidgetErrors(
+        context: Context,
+        appWidgetId: String,
+        widgetConfig: WidgetModel,
+        widgetScheduleData: WidgetSchedule
+    ): String {
+        var toReturn = ""
+
+        if (toReturn.isEmpty() && widgetConfig.widgetData == null || widgetConfig.widgetData.isEmpty()) {
+            toReturn = "Widget Configuration data seems to be empty or invalid."
+        }
+
+        if (toReturn.isEmpty() && widgetConfig.widgetData["isClosestStop"] as? Boolean == true) {
+            if (!PeekTransitConstants.hasBackgroundLocationPermission(context)) {
+                toReturn = "Location permission is required for this widget to function properly."
+            }
+        }
+
+        if (toReturn.isEmpty() && appWidgetId != widgetScheduleData.widgetAppId || widgetConfig.id != widgetScheduleData.widgetConfigId) {
+            toReturn = "Widget Schedule data seems to be corrupted or mismatched."
+        }
+
+        return toReturn
     }
 }

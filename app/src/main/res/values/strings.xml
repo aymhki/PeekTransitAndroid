@@ -33,4 +33,5 @@
     <string name="bus_stop_3_schedule_entry_2_status_text_image">Bus Stop 3 Schedule Entry 2 Status Text Image</string>
     <string name="bus_stop_3_schedule_entry_2_arrival_time_text_image">Bus Stop 3 Schedule Entry 2 Arrival Time Text Image</string>
     <string name="last_updated_status_text_image">Last Updated Status Text Image</string>
+    <string name="error_loading_widget_open_app">Error Loading Widget, Open App</string>
 </resources>

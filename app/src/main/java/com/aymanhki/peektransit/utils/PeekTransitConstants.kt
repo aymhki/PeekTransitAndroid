@@ -371,6 +371,14 @@ object PeekTransitConstants {
         }
     }
 
+    fun hasBackgroundLocationPermission(context: Context): Boolean {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            return context.checkSelfPermission(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+        } else {
+            return context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     val updateActions = listOf(
         Intent.ACTION_CONFIGURATION_CHANGED,
         Intent.ACTION_USER_PRESENT,

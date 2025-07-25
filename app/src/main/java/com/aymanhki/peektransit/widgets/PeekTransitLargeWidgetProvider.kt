@@ -6,6 +6,8 @@ class PeekTransitLargeWidgetProvider : BaseWidgetProvider() {
     override val mainLayoutResId: Int = R.layout.peek_transit_large_layout
     override val initialLayoutResId: Int = R.layout.peek_transit_large_initial_layout
     override val configureButtonResId: Int = R.id.configure_large_widget_btn
+    override val errorLayoutResId: Int = R.layout.peek_transit_large_error_layout
+    override val errorTextResId: Int = R.id.peek_transit_large_widget_error_message_text_view
     override val configurationActivityClass: Class<*> = PeekTransitLargeWidgetConfigurationActivity::class.java
     override val logTag: String = "LargeWidgetProvider"
 }

@@ -13,6 +13,8 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     protected abstract val mainLayoutResId: Int
     protected abstract val initialLayoutResId: Int
     protected abstract val configureButtonResId: Int
+    protected abstract val errorLayoutResId: Int
+    protected abstract val errorTextResId: Int
     protected abstract val configurationActivityClass: Class<*>
     protected open val logTag: String = "BaseWidgetProvider"
 
@@ -66,6 +68,8 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
             mainLayoutResId,
             initialLayoutResId,
             configureButtonResId,
+            errorLayoutResId,
+            errorTextResId,
             configurationActivityClass
         )
         appWidgetManager.updateAppWidget(appWidgetId, finalView)

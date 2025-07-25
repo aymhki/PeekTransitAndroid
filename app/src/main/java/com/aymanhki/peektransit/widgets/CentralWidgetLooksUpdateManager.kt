@@ -37,13 +37,24 @@ class CentralWidgetLooksUpdateManager
             layoutId: Int,
             initialLayoutId: Int,
             configureButtonId: Int,
+            errorLayoutId: Int,
+            errorTextId: Int,
             configureActivity: Class<*>
         ): RemoteViews {
             var views: RemoteViews
 
+
             if (widgetConfig != null) {
-                views = RemoteViews(context.packageName, layoutId)
-                views = updateWidgetLooks(context, views, appWidgetId, widgetConfig)
+                val widgetScheduleData = PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfig.id)
+                val errorMsg = widgetScheduleData?.errorMsg ?: ""
+
+                if (errorMsg.isNotEmpty()) {
+                    views = RemoteViews(context.packageName, errorLayoutId)
+                    views.setTextViewText(errorTextId, errorMsg)
+                } else {
+                    views = RemoteViews(context.packageName, layoutId)
+                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig)
+                }
             } else {
                 views = RemoteViews(context.packageName, initialLayoutId)
                 views = updateWidgetLooksIfNoConfig(

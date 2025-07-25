@@ -13,7 +13,9 @@ data class WidgetSchedule(
     var userLocationLon: String,
     var userLocationLat: String,
     var lastUpdatedTime: String,
-    var scheduleData: Map<String, List<String>>
+    var scheduleData: Map<String, List<String>>,
+    var errorMsg: String,
+
 ) {
     fun getWidgetScheduldeKey(): String {
         return "$widgetAppId-$widgetConfigId"
@@ -76,6 +78,7 @@ class WidgetScheduleTypeAdapter : JsonDeserializer<WidgetSchedule>, JsonSerializ
         val userLocationLon = jsonObject.get("userLocationLon").asString
         val userLocationLat = jsonObject.get("userLocationLat").asString
         val lastUpdatedTime = jsonObject.get("lastUpdatedTime").asString
+        val errorMsg = jsonObject.get("errorMsg")?.asString ?: ""
 
         val scheduleData = mutableMapOf<String, List<String>>()
         val scheduleDataJson = jsonObject.getAsJsonObject("scheduleData")
@@ -90,7 +93,8 @@ class WidgetScheduleTypeAdapter : JsonDeserializer<WidgetSchedule>, JsonSerializ
             userLocationLon,
             userLocationLat,
             lastUpdatedTime,
-            scheduleData
+            scheduleData,
+            errorMsg
         )
     }
 
@@ -102,6 +106,7 @@ class WidgetScheduleTypeAdapter : JsonDeserializer<WidgetSchedule>, JsonSerializ
         jsonObject.addProperty("userLocationLon", src.userLocationLon)
         jsonObject.addProperty("userLocationLat", src.userLocationLat)
         jsonObject.addProperty("lastUpdatedTime", src.lastUpdatedTime)
+        jsonObject.addProperty("errorMsg", src.errorMsg)
 
         val scheduleDataJson = JsonObject()
         for ((key, value) in src.scheduleData) {
