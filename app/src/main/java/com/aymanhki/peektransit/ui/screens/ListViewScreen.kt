@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import com.aymanhki.peektransit.ui.components.CustomPullToRefreshBox
@@ -39,7 +38,6 @@ fun ListViewScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val locationManager = remember { LocationManagerProvider.getInstance(context) }
 
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
@@ -57,14 +55,15 @@ fun ListViewScreen(
     val error by viewModel.error.observeAsState()
     val locationError by viewModel.locationError.observeAsState()
     val searchError by viewModel.searchError.observeAsState()
+    val currentLocation by viewModel.currentLocation.observeAsState()
 
     val viewModelSearchQuery by viewModel.searchQuery.observeAsState("")
     val lastSearchedQuery by viewModel.lastSearchedQuery.observeAsState("")
-    
+
     var localSearchQuery by remember { mutableStateOf("") }
     var isDebouncing by remember { mutableStateOf(false) }
     var isUserInput by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(viewModelSearchQuery) {
         if (localSearchQuery != viewModelSearchQuery) {
             isUserInput = false
@@ -80,12 +79,18 @@ fun ListViewScreen(
         }
     }
 
+    LaunchedEffect(isCurrentDestination) {
+        if (isCurrentDestination && locationPermissionsState.allPermissionsGranted && !isViewModelInitialized) {
+            viewModel.initializeGlobal()
+        }
+    }
+
     LaunchedEffect(localSearchQuery, isUserInput) {
         if (!isUserInput) {
             viewModel.updateSearchQuery(localSearchQuery)
             return@LaunchedEffect
         }
-        
+
         if (localSearchQuery.isNotEmpty()) {
             isDebouncing = true
         } else {
@@ -97,16 +102,15 @@ fun ListViewScreen(
             isUserInput = false
             return@LaunchedEffect
         }
-        
+
         delay(PeekTransitConstants.SEARCH_DEBOUNCE_DELAY_MS)
         isDebouncing = false
         viewModel.updateSearchQuery(localSearchQuery)
-        
+
         if (localSearchQuery != lastSearchedQuery) {
-            val location = locationManager.getCurrentLocation()
-            viewModel.searchForStops(localSearchQuery, location)
+            viewModel.searchForStops(localSearchQuery, currentLocation)
         }
-        
+
         isUserInput = false
     }
 
@@ -168,8 +172,7 @@ fun ListViewScreen(
                         onRefresh = {
                             if (localSearchQuery.isNotEmpty()) {
                                 scope.launch {
-                                    val location = locationManager.getCurrentLocation()
-                                    viewModel.searchForStops(localSearchQuery, location)
+                                    viewModel.searchForStops(localSearchQuery, currentLocation)
                                 }
                             } else {
                                 viewModel.retry()
@@ -190,9 +193,9 @@ fun ListViewScreen(
                                 ) {
                                     OutlinedTextField(
                                         value = localSearchQuery,
-                                        onValueChange = { 
+                                        onValueChange = {
                                             isUserInput = true
-                                            localSearchQuery = it 
+                                            localSearchQuery = it
                                         },
                                         placeholder = {
                                             Text(
@@ -209,7 +212,7 @@ fun ListViewScreen(
                                         },
                                         trailingIcon = {
                                             if (localSearchQuery.isNotEmpty()) {
-                                                IconButton(onClick = { 
+                                                IconButton(onClick = {
                                                     isUserInput = true
                                                     localSearchQuery = ""
                                                     viewModel.clearSearchQuery()
@@ -279,11 +282,11 @@ fun ListViewScreen(
                                     } else {
                                         combinedStops.filter { stop ->
                                             stop.name.contains(localSearchQuery, ignoreCase = true) ||
-                                            stop.number.toString().contains(localSearchQuery) ||
-                                            stop.variants.any { variant ->
-                                                variant.key.contains(localSearchQuery, ignoreCase = true) ||
-                                                variant.name.contains(localSearchQuery, ignoreCase = true)
-                                            }
+                                                    stop.number.toString().contains(localSearchQuery) ||
+                                                    stop.variants.any { variant ->
+                                                        variant.key.contains(localSearchQuery, ignoreCase = true) ||
+                                                                variant.name.contains(localSearchQuery, ignoreCase = true)
+                                                    }
                                         }
                                     }
 
@@ -292,11 +295,11 @@ fun ListViewScreen(
                                     } else {
                                         stops.filter { stop ->
                                             stop.name.contains(localSearchQuery, ignoreCase = true) ||
-                                            stop.number.toString().contains(localSearchQuery) ||
-                                            stop.variants.any { variant ->
-                                                variant.key.contains(localSearchQuery, ignoreCase = true) ||
-                                                variant.name.contains(localSearchQuery, ignoreCase = true)
-                                            }
+                                                    stop.number.toString().contains(localSearchQuery) ||
+                                                    stop.variants.any { variant ->
+                                                        variant.key.contains(localSearchQuery, ignoreCase = true) ||
+                                                                variant.name.contains(localSearchQuery, ignoreCase = true)
+                                                    }
                                         }
                                     }
 
@@ -315,7 +318,7 @@ fun ListViewScreen(
                                                     onNavigateToLiveStop = onNavigateToLiveStop
                                                 )
                                             }
-                                            
+
                                             if (isSearching) {
                                                 item {
                                                     Box(
@@ -342,7 +345,7 @@ fun ListViewScreen(
                                                 }
                                             }
                                         }
-                                        
+
                                         isSearchActive && !hasLocalResults && !isSearching && currentError == null -> {
                                             item {
                                                 Box(
@@ -359,7 +362,7 @@ fun ListViewScreen(
                                                 }
                                             }
                                         }
-                                        
+
                                         isSearchActive && !hasLocalResults && isSearching -> {
                                             item {
                                                 Box(
@@ -382,7 +385,7 @@ fun ListViewScreen(
                                                 }
                                             }
                                         }
-                                        
+
                                         !isSearchActive && filteredStops.isNotEmpty() -> {
                                             items(filteredStops, key = { stop ->
                                                 "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
@@ -394,7 +397,7 @@ fun ListViewScreen(
                                                 )
                                             }
                                         }
-                                        
+
                                         !isSearchActive && filteredStops.isEmpty() && currentError == null -> {
                                             item {
                                                 Box(
@@ -441,8 +444,7 @@ fun ListViewScreen(
                                 if (localSearchQuery.isNotEmpty()) {
                                     viewModel.clearSearchError()
                                     scope.launch {
-                                        val location = locationManager.getCurrentLocation()
-                                        viewModel.searchForStops(localSearchQuery, location)
+                                        viewModel.searchForStops(localSearchQuery, currentLocation)
                                     }
                                 } else {
                                     viewModel.clearError()

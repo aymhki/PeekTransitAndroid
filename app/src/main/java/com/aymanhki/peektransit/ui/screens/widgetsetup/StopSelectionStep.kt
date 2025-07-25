@@ -37,11 +37,9 @@ import com.aymanhki.peektransit.ui.components.ErrorView
 import com.aymanhki.peektransit.ui.components.MapPreview
 import com.aymanhki.peektransit.ui.components.VariantBadge
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.aymanhki.peektransit.utils.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @Composable
 fun StopSelectionStep(
@@ -53,14 +51,15 @@ fun StopSelectionStep(
     onSelectedStopsChange: (List<Stop>) -> Unit,
     preferredStops: List<Stop>,
     onPreferredStopsChange: (List<Stop>) -> Unit,
-    selectedPerferredStopsInClosestStops: Boolean,
-    onSelectedPerferredStopsInClosestStopsChange: (Boolean) -> Unit,
+    selectedPreferredStopsInClosestStops: Boolean,
+    onSelectedPreferredStopsInClosestStopsChange: (Boolean) -> Unit,
     stopsDataStore: StopsDataStore,
     mainViewModel: com.aymanhki.peektransit.viewmodel.MainViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val locationManager = remember { LocationManagerProvider.getInstance(context) }
+    val currentLocation by mainViewModel.currentLocation.observeAsState()
+
 
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
@@ -94,7 +93,7 @@ fun StopSelectionStep(
     }
 
     val maxPreferredStopsInClosestStops = PeekTransitConstants.getMaxPreferredStopsInClosestStops(widgetSize)
-    val maxStops = if (selectedPerferredStopsInClosestStops) {
+    val maxStops = if (selectedPreferredStopsInClosestStops) {
         maxPreferredStopsInClosestStops
     } else {
         if (multipleEntriesPerVariant) {
@@ -142,13 +141,13 @@ fun StopSelectionStep(
         if (!isClosestStop) {
             onSelectedStopsChange(emptyList())
         } else {
-            onSelectedPerferredStopsInClosestStopsChange(false)
+            onSelectedPreferredStopsInClosestStopsChange(false)
         }
     }
 
     fun handlePreferredToggle() {
         viewState = ViewState.TRANSITIONING
-        onSelectedPerferredStopsInClosestStopsChange(!selectedPerferredStopsInClosestStops)
+        onSelectedPreferredStopsInClosestStopsChange(!selectedPreferredStopsInClosestStops)
     }
 
     LaunchedEffect(viewState) {
@@ -330,9 +329,9 @@ fun StopSelectionStep(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = if (selectedPerferredStopsInClosestStops) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                                imageVector = if (selectedPreferredStopsInClosestStops) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                                 contentDescription = null,
-                                                tint = if (selectedPerferredStopsInClosestStops) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                                tint = if (selectedPreferredStopsInClosestStops) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column(modifier = Modifier.weight(1f)) {
@@ -354,10 +353,10 @@ fun StopSelectionStep(
                         }
                     }
 
-                    if (!isClosestStop || selectedPerferredStopsInClosestStops) {
+                    if (!isClosestStop || selectedPreferredStopsInClosestStops) {
                         item {
                             AnimatedVisibility(
-                                visible = !isClosestStop || selectedPerferredStopsInClosestStops,
+                                visible = !isClosestStop || selectedPreferredStopsInClosestStops,
                                 enter = slideInVertically() + fadeIn(),
                                 exit = slideOutVertically() + fadeOut()
                             ) {
@@ -369,7 +368,7 @@ fun StopSelectionStep(
                                 ) {
                                     Text(
                                         text = "Selected stops: ${
-                                            if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops.size else selectedStops.size
+                                            if (isClosestStop && selectedPreferredStopsInClosestStops) preferredStops.size else selectedStops.size
                                         }/$maxStops",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -535,7 +534,7 @@ fun StopSelectionStep(
                             else -> {
                                 items(currentFilteredStops) { stop ->
                                     val currentSelectedStops =
-                                        if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
+                                        if (isClosestStop && selectedPreferredStopsInClosestStops) preferredStops else selectedStops
                                     val isSelected =
                                         currentSelectedStops.any { it.number == stop.number }
                                     val canSelect =
@@ -548,7 +547,7 @@ fun StopSelectionStep(
                                             enabled = canSelect || isSelected,
                                             onClick = {
                                                 val currentList =
-                                                    if (isClosestStop && selectedPerferredStopsInClosestStops) preferredStops else selectedStops
+                                                    if (isClosestStop && selectedPreferredStopsInClosestStops) preferredStops else selectedStops
                                                 val newList = if (isSelected) {
                                                     currentList.filter { it.number != stop.number }
                                                 } else if (currentList.size < maxStops) {
@@ -559,7 +558,7 @@ fun StopSelectionStep(
 
 
 
-                                                if (isClosestStop && selectedPerferredStopsInClosestStops) {
+                                                if (isClosestStop && selectedPreferredStopsInClosestStops) {
                                                     onPreferredStopsChange(newList)
                                                 } else {
                                                     onSelectedStopsChange(newList)

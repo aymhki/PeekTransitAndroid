@@ -269,8 +269,8 @@ fun WidgetSetupView(
                     onSelectedStopsChange = { selectedStops = it },
                     preferredStops = preferredStops,
                     onPreferredStopsChange = { preferredStops = it },
-                    selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops,
-                    onSelectedPerferredStopsInClosestStopsChange = { selectedPerferredStopsInClosestStops = it },
+                    selectedPreferredStopsInClosestStops = selectedPerferredStopsInClosestStops,
+                    onSelectedPreferredStopsInClosestStopsChange = { selectedPerferredStopsInClosestStops = it },
                     stopsDataStore = stopsDataStore,
                     mainViewModel = mainViewModel
                 )
