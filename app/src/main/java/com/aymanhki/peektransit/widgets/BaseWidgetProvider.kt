@@ -43,9 +43,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         if (context == null || appWidgetIds == null) return
         PeekTransitConstants.removeDeletedWidgetInstancesData(context, appWidgetIds)
 
-        if (!PeekTransitConstants.isThereActiveWidgetsWithLocationAccessNeeded(context) && WidgetLocationManager.isInitialized()) {
-            WidgetLocationManager.cleanup(context)
-        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
