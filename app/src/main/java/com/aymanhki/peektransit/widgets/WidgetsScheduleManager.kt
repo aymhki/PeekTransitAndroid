@@ -52,6 +52,10 @@ class SavedWidgetSchedulesManager(context: Context) {
         return gson.fromJson(json, WidgetSchedule::class.java)
     }
 
+    fun deleteWidgetSchedule(widgetAppId: String, widgetConfigId: String) {
+        val key = KEY_WIDGET_SCHEDULES + "$widgetAppId-$widgetConfigId"
+        sharedPreferences.edit { remove(key) }
+    }
 
     companion object {
         private const val PREFS_NAME = "peek_transit_widget_schedules"
