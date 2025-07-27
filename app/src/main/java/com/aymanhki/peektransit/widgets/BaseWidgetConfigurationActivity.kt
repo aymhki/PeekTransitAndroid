@@ -150,6 +150,11 @@ abstract class BaseWidgetConfigurationActivity : ComponentActivity() {
     }
 
     private fun finalizeWidgetConfiguration(widget: WidgetModel) {
+        val widgetBeingReconfigured = mutableListOf<Int>()
+            .apply { add(appWidgetId) }
+            .toIntArray()
+        PeekTransitConstants.removeDeletedWidgetInstancesData(this, widgetBeingReconfigured)
+
         PeekTransitConstants.saveWidgetSelection(this, appWidgetId, widget)
         val resultValue = Intent().apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)

@@ -432,7 +432,7 @@ object PeekTransitConstants {
         val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         with(prefs.edit()) {
             remove(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId)
-            apply()
+            commit()
         }
     }
 

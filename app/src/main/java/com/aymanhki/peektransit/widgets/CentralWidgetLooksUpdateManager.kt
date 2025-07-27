@@ -332,16 +332,13 @@ class CentralWidgetLooksUpdateManager
             if (widgetScheduleData != null) {
                 val widgetSchedules = widgetScheduleData.scheduleData
 
-                // Check if we're in the special compact mode
                 val isCompactMode = widgetSize == "lockscreen" ||
                         (widgetSize == "small" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean != true)
 
                 if (isCompactMode) {
-                    // Special handling: Use first bus stop's UI components for two different stops
                     handleCompactMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
                         isNightMode, currentTheme, widgetSize)
                 } else {
-                    // Normal handling: Each stop uses its own UI components
                     handleNormalMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
                         isNightMode, currentTheme, widgetSize, widgetConfig)
                 }
@@ -360,7 +357,6 @@ class CentralWidgetLooksUpdateManager
         ) {
             val firstBusScheduleComponentResIds = busSchedulesComponentsResIds.entries.firstOrNull()
             if (firstBusScheduleComponentResIds != null) {
-                // Show the first bus stop container
                 views.setViewVisibility(firstBusScheduleComponentResIds.key, VISIBLE)
 
                 val busStopAndScheduleLayoutComponentResIds = firstBusScheduleComponentResIds.value
@@ -370,13 +366,11 @@ class CentralWidgetLooksUpdateManager
                     val stopTitleLayout = busStopLayoutComponentResIds.first
                     val stopTitleTextImage = busStopLayoutComponentResIds.second
 
-                    // Hide stop title in compact mode
                     views.setViewVisibility(stopTitleLayout, GONE)
                     views.setViewVisibility(stopTitleTextImage, GONE)
 
                     val busStopSchedules = busStopAndScheduleLayoutComponentResIds.values.firstOrNull()
                     if (busStopSchedules != null) {
-                        // Get the first two different bus stops from the schedule data
                         val stopEntries = widgetSchedules.entries.take(2).toList()
 
                         var schedulesIndex = 0
@@ -384,7 +378,6 @@ class CentralWidgetLooksUpdateManager
                             val currentScheduleLayoutResId = busStopSchedulesIndex.key
                             val currentScheduleTextImagesResIds = busStopSchedulesIndex.value
 
-                            // Use the schedule from the corresponding stop (first schedule of each stop)
                             val stopEntry = stopEntries.getOrNull(schedulesIndex)
                             val scheduleEntry = stopEntry?.value?.firstOrNull()
 
@@ -404,7 +397,6 @@ class CentralWidgetLooksUpdateManager
                                 val arrivalTimeResId = currentScheduleTextImagesResIds[3]
                                 val arrivalTime = scheduleComponents.getOrNull(3) ?: "Unknown Time"
 
-                                // Set route number
                                 views.setViewVisibility(routeNumberResId, VISIBLE)
                                 views.setImageViewBitmap(
                                     routeNumberResId, generateTextBitmap(
@@ -419,7 +411,6 @@ class CentralWidgetLooksUpdateManager
                                 )
                                 views.setContentDescription(routeNumberResId, "Route Number: $routeNumber")
 
-                                // Set route name
                                 views.setViewVisibility(routeNameResId, VISIBLE)
                                 views.setImageViewBitmap(
                                     routeNameResId, generateTextBitmap(
@@ -434,7 +425,6 @@ class CentralWidgetLooksUpdateManager
                                 )
                                 views.setContentDescription(routeNameResId, "Route Name: $routeName")
 
-                                // Set arrival status (always render for consistent spacing)
                                 views.setViewVisibility(arrivalStatusResId, VISIBLE)
                                 if (arrivalStatus == PeekTransitConstants.LATE_STATUS_TEXT ||
                                     arrivalStatus == PeekTransitConstants.EARLY_STATUS_TEXT ||
@@ -452,7 +442,6 @@ class CentralWidgetLooksUpdateManager
                                     )
                                     views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
                                 } else {
-                                    // Render empty bitmap for consistent spacing
                                     views.setImageViewBitmap(
                                         arrivalStatusResId, generateTextBitmap(
                                             context,
@@ -467,7 +456,6 @@ class CentralWidgetLooksUpdateManager
                                     views.setContentDescription(arrivalStatusResId, "")
                                 }
 
-                                // Set arrival time (hide if cancelled)
                                 if (arrivalStatus != PeekTransitConstants.CANCELLED_STATUS_TEXT) {
                                     views.setViewVisibility(arrivalTimeResId, VISIBLE)
                                     views.setImageViewBitmap(
@@ -486,17 +474,15 @@ class CentralWidgetLooksUpdateManager
                                     views.setViewVisibility(arrivalTimeResId, GONE)
                                 }
                             } else {
-                                // Hide unused schedule slots
                                 views.setViewVisibility(currentScheduleLayoutResId, GONE)
                             }
 
                             schedulesIndex++
-                            if (schedulesIndex >= 2) break // Only handle first 2 schedules in compact mode
+                            if (schedulesIndex >= 2) break
                         }
                     }
                 }
 
-                // Hide all other bus stop containers
                 busSchedulesComponentsResIds.entries.drop(1).forEach { entry ->
                     views.setViewVisibility(entry.key, GONE)
                 }
@@ -513,7 +499,6 @@ class CentralWidgetLooksUpdateManager
             widgetSize: String,
             widgetConfig: WidgetModel
         ) {
-            // This is your original logic, preserved exactly
             for ((index) in busSchedulesComponentsResIds.entries.withIndex()) {
                 val currentWidgetScheduleEntry = widgetSchedules.entries.elementAtOrNull(index)
                 val currentBusScheduleComponentResIds = busSchedulesComponentsResIds.entries.elementAtOrNull(index)
@@ -564,7 +549,7 @@ class CentralWidgetLooksUpdateManager
                                 for (busStopSchedulesIndex in busStopSchedules) {
                                     val currentWidgetScheduleEntrySchedule = currentWidgetScheduleEntry.value.elementAtOrNull(schedulesIndex)
                                     val currentScheduleLayoutResId = busStopSchedulesIndex.key
-                                    if (currentWidgetScheduleEntrySchedule != null) {
+                                    if (!currentWidgetScheduleEntrySchedule.isNullOrEmpty()) {
                                         views.setViewVisibility(currentScheduleLayoutResId, VISIBLE)
                                         val currentScheduleTextImagesResIds = busStopSchedulesIndex.value
                                         val scheduleComponents = currentWidgetScheduleEntrySchedule.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
@@ -634,7 +619,6 @@ class CentralWidgetLooksUpdateManager
                                                 )
                                                 views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
                                             } else {
-                                                // Render empty bitmap for consistent spacing
                                                 views.setImageViewBitmap(
                                                     arrivalStatusResId, generateTextBitmap(
                                                         context,
