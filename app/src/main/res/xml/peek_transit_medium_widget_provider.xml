@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="310dp"
+    android:minHeight="125dp"
+    android:maxWidth="310dp"
+    android:maxHeight="125dp"
+    android:minResizeWidth="310dp"
+    android:minResizeHeight="125dp"
+    android:maxResizeWidth="310dp"
+    android:maxResizeHeight="125dp"
+    android:targetCellWidth="5"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/peek_transit_medium_widget_initial_layout"
+    android:previewLayout="@layout/peek_transit_medium_widget_preview_layout"
+    android:configure="com.aymanhki.peektransit.widgets.PeekTransitMediumWidgetConfigurationActivity"
+    android:resizeMode="horizontal"
+    android:widgetCategory="home_screen|keyguard"
+    android:widgetFeatures="configuration_optional|reconfigurable"
+    android:description="@string/peek_transit_medium_description"
+/>
+
+

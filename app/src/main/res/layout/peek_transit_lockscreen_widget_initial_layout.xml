@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:weightSum="100"
+    android:background="@color/surface"
+    android:id="@+id/peek_transit_lockscreen_widget_initial_layout"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_weight="100"
+        android:weightSum="100"
+        android:layout_gravity="center"
+        android:paddingHorizontal="10dp"
+        >
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/peek_transit_logo"
+            android:src="@mipmap/ic_launcher_round"
+            android:layout_weight="20"
+            />
+
+        <Button
+            android:id="@+id/configure_lockscreen_widget_btn"
+            android:layout_width="64dp"
+            android:layout_height="48dp"
+            android:text="@string/configure"
+            android:textColor="@color/onPrimary"
+            android:layout_gravity="center"
+            android:textAllCaps="false"
+            android:textSize="11sp"
+            android:background="@drawable/round_corners"
+            android:backgroundTint="@color/primary"
+            />
+
+    </LinearLayout>
+</LinearLayout>

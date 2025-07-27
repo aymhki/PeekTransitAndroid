@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:weightSum="100"
+    android:background="@color/surface"
+    android:id="@+id/peek_transit_small_widget_initial_layout"
+    >
+
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/peek_transit_logo"
+        android:src="@mipmap/ic_launcher_round"
+        android:layout_weight="10"
+        />
+
+    <Button
+        android:id="@+id/configure_small_widget_btn"
+        android:layout_width="64dp"
+        android:layout_height="48dp"
+        android:text="@string/configure"
+        android:textColor="@color/onPrimary"
+        android:layout_gravity="center"
+        android:textAllCaps="false"
+        android:textSize="11sp"
+        android:background="@drawable/round_corners"
+        android:backgroundTint="@color/primary"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/select_a_widget_configuration_to_get_started"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:textAlignment="center"
+        android:textColor="@color/onBackground"
+        android:layout_weight="10"
+        android:paddingHorizontal="10dp"
+    />
+
+
+</LinearLayout>

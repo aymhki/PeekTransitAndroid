@@ -6,8 +6,8 @@
     android:gravity="center"
     android:weightSum="100"
     android:background="@color/surface"
-    android:id="@+id/peek_transit_large_initial_layout"
->
+    android:id="@+id/peek_transit_medium_widget_initial_layout"
+    >
 
     <ImageView
         android:layout_width="wrap_content"
@@ -15,11 +15,11 @@
         android:layout_gravity="center"
         android:contentDescription="@string/peek_transit_logo"
         android:src="@mipmap/ic_launcher_round"
-        android:layout_weight="20"
-    />
+        android:layout_weight="10"
+        />
 
     <Button
-        android:id="@+id/configure_large_widget_btn"
+        android:id="@+id/configure_medium_widget_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/configure"
@@ -40,8 +40,8 @@
         android:layout_gravity="center"
         android:textAlignment="center"
         android:textColor="@color/onBackground"
-        android:layout_weight="20"
-        android:paddingHorizontal="50dp"
+        android:layout_weight="10"
+        android:paddingHorizontal="30dp"
     />
 
 

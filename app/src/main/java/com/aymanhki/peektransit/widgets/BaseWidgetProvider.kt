@@ -11,12 +11,18 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 abstract class BaseWidgetProvider : AppWidgetProvider() {
 
     protected abstract val mainLayoutResId: Int
+    protected abstract val mainLayoutContainerResId: Int
+    protected abstract val locationCoordinatesLayoutResId: Int
+    protected abstract val locationCoordinatesTextImagedResId: Int
+    protected abstract val lastUpdatedLayoutResId: Int
+    protected abstract val lastUpdatedTextImageResId: Int
     protected abstract val initialLayoutResId: Int
     protected abstract val configureButtonResId: Int
     protected abstract val errorLayoutResId: Int
     protected abstract val errorTextResId: Int
     protected abstract val configurationActivityClass: Class<*>
     protected open val logTag: String = "BaseWidgetProvider"
+    protected abstract val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         Log.d(logTag, "onUpdate called for ${this.javaClass.simpleName}")
@@ -73,11 +79,17 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
             widgetConfig,
             appWidgetId,
             mainLayoutResId,
+            mainLayoutContainerResId,
             initialLayoutResId,
             configureButtonResId,
             errorLayoutResId,
             errorTextResId,
-            configurationActivityClass
+            configurationActivityClass,
+            busSchedulesComponentsResIds,
+            locationCoordinatesLayoutResId,
+            locationCoordinatesTextImagedResId,
+            lastUpdatedLayoutResId,
+            lastUpdatedTextImageResId
         )
         appWidgetManager.updateAppWidget(appWidgetId, finalView)
     }

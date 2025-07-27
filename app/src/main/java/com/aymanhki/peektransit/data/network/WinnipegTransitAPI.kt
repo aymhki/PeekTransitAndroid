@@ -248,78 +248,99 @@ class WinnipegTransitAPI private constructor() {
             }
         }
     }
-    
+
     fun cleanStopSchedule(schedule: JsonObject, timeFormat: TimeFormat): List<String> {
         val busScheduleList = mutableListOf<String>()
         val currentDate = Date()
         val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        
+
         try {
             val stopSchedule = schedule.getAsJsonObject("stop-schedule")
             val routeSchedules = stopSchedule.getAsJsonArray("route-schedules")
-            
+
             for (routeScheduleElement in routeSchedules) {
                 val routeSchedule = routeScheduleElement.asJsonObject
                 val scheduledStops = routeSchedule.getAsJsonArray("scheduled-stops")
-                
+
                 for (stopElement in scheduledStops) {
                     val stop = stopElement.asJsonObject
                     val variant = stop.getAsJsonObject("variant")
                     var variantKey = variant.get("key")?.asString ?: continue
                     val variantName = variant.get("name")?.asString ?: continue
-                    val cancelled = stop.get("cancelled")?.asString == "true"
+                    val cancelled = stop.get("cancelled")?.asString
                     val times = stop.getAsJsonObject("times")
                     val arrival = times.getAsJsonObject("departure")
-                    
+
                     val estimatedTime = arrival.get("estimated")?.asString
                     val scheduledTime = arrival.get("scheduled")?.asString
-
                     var finalArrivalText = ""
-                    
+                    var arrivalState = PeekTransitConstants.OK_STATUS_TEXT
+
                     if (estimatedTime != null && scheduledTime != null) {
                         try {
+                            val estimatedTimeParsedDateAndTime = estimatedTime.split("T")
+                            val scheduledTimeParsedDateAndTime = scheduledTime.split("T")
+                            val estimatedTimeParsedDate = estimatedTimeParsedDateAndTime[0].split("-")
+                            val estimatedTimeParsedTime = estimatedTimeParsedDateAndTime[1].split(":")
+                            val scheduledTimeParsedDate = scheduledTimeParsedDateAndTime[0].split("-")
+                            val scheduledTimeParsedTime = scheduledTimeParsedDateAndTime[1].split(":")
+
+                            val estimatedTotalMinutes = (estimatedTimeParsedDate[0].toInt() * 525600) +
+                                    (estimatedTimeParsedDate[1].toInt() * 43800) +
+                                    (estimatedTimeParsedDate[2].toInt() * 1440) +
+                                    (estimatedTimeParsedTime[0].toInt() * 60) +
+                                    estimatedTimeParsedTime[1].toInt()
+
+                            val scheduledTotalMinutes = (scheduledTimeParsedDate[0].toInt() * 525600) +
+                                    (scheduledTimeParsedDate[1].toInt() * 43800) +
+                                    (scheduledTimeParsedDate[2].toInt() * 1440) +
+                                    (scheduledTimeParsedTime[0].toInt() * 60) +
+                                    scheduledTimeParsedTime[1].toInt()
+
+                            val calendar = Calendar.getInstance()
+                            calendar.time = currentDate
+                            val currentTotalMinutes = (calendar.get(Calendar.YEAR) * 525600) +
+                                    (calendar.get(Calendar.MONTH) * 43800) +
+                                    (calendar.get(Calendar.DAY_OF_MONTH) * 1440) +
+                                    (calendar.get(Calendar.HOUR_OF_DAY) * 60) +
+                                    calendar.get(Calendar.MINUTE)
+
                             val estimatedDate = dateFormatter.parse(estimatedTime) ?: continue
                             val scheduledDate = dateFormatter.parse(scheduledTime) ?: continue
-                            
-                            val timeDifferenceMs = estimatedDate.time - currentDate.time
-                            val timeDifference = (timeDifferenceMs / 60000).toInt()
-                            val delay = ((estimatedDate.time - scheduledDate.time) / 60000).toInt()
-                            
+
+                            val timeDifferenceSeconds = estimatedDate.time - currentDate.time
+                            val timeDifference = kotlin.math.ceil(timeDifferenceSeconds / 60000.0).toInt()
+                            val delay = kotlin.math.ceil((estimatedDate.time - scheduledDate.time) / 60000.0).toInt()
+
                             if (timeDifference < -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
                                 continue
                             }
-                            
 
-                            var arrivalState = PeekTransitConstants.OK_STATUS_TEXT
-                            
-                            if (cancelled) {
+                            if (cancelled == "true") {
                                 arrivalState = PeekTransitConstants.CANCELLED_STATUS_TEXT
                                 finalArrivalText = ""
                             } else {
-                                when {
-                                    timeDifference < 0 && timeFormat != TimeFormat.CLOCK_TIME -> {
-                                        finalArrivalText = "${-timeDifference} ${PeekTransitConstants.MINUTES_PASSED_TEXT}"
+                                if (timeDifference < 0 && timeFormat != TimeFormat.CLOCK_TIME) {
+                                    finalArrivalText = "${-timeDifference} ${PeekTransitConstants.MINUTES_PASSED_TEXT}"
+                                } else if (timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES && timeFormat != TimeFormat.CLOCK_TIME) {
+                                    finalArrivalText = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
+                                } else {
+                                    var finalHour = estimatedTimeParsedTime[0].toInt()
+                                    val am = finalHour < 12
+
+                                    when {
+                                        finalHour == 0 -> finalHour = 12
+                                        finalHour > 12 -> finalHour -= 12
                                     }
-                                    timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES && timeFormat != TimeFormat.CLOCK_TIME -> {
-                                        finalArrivalText = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
-                                    }
-                                    else -> {
-                                        val calendar = Calendar.getInstance()
-                                        calendar.time = estimatedDate
-                                        var hour = calendar.get(Calendar.HOUR_OF_DAY)
-                                        val minute = calendar.get(Calendar.MINUTE)
-                                        val am = hour < 12
-                                        
-                                        when {
-                                            hour == 0 -> hour = 12
-                                            hour > 12 -> hour -= 12
-                                        }
-                                        
-                                        val minuteStr = if (minute < 10) "0$minute" else minute.toString()
-                                        finalArrivalText = "$hour:$minuteStr ${if (am) PeekTransitConstants.GLOBAL_AM_TEXT else PeekTransitConstants.GLOBAL_PM_TEXT}"
+
+                                    finalArrivalText = "$finalHour:${estimatedTimeParsedTime[1]}"
+                                    if (am) {
+                                        finalArrivalText += " ${PeekTransitConstants.GLOBAL_AM_TEXT}"
+                                    } else {
+                                        finalArrivalText += " ${PeekTransitConstants.GLOBAL_PM_TEXT}"
                                     }
                                 }
-                                
+
                                 when {
                                     delay > 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES && timeFormat != TimeFormat.CLOCK_TIME -> {
                                         arrivalState = PeekTransitConstants.LATE_STATUS_TEXT
@@ -333,70 +354,79 @@ class WinnipegTransitAPI private constructor() {
                                         arrivalState = PeekTransitConstants.OK_STATUS_TEXT
                                     }
                                 }
-                                
+
                                 if (timeDifference <= 0 && timeDifference >= -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
                                     finalArrivalText = PeekTransitConstants.DUE_STATUS_TEXT
                                 }
                             }
-                            
-                            variantKey = variantKey.split("-").firstOrNull() ?: variantKey
-                            if (variantKey.contains("BLUE")) {
-                                variantKey = "B"
-                            }
-                            
-                            busScheduleList.add("$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$arrivalState${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$finalArrivalText")
                         } catch (e: Exception) {
                             continue
                         }
                     } else {
                         finalArrivalText = "Time Unavailable"
-                        busScheduleList.add("$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}${PeekTransitConstants.OK_STATUS_TEXT}${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$finalArrivalText")
                     }
+
+                    // Clean up variant key
+                    variantKey = variantKey.split("-").firstOrNull() ?: variantKey
+
+                    if (variantKey.contains("BLUE")) {
+                        variantKey = "B"
+                    }
+
+                    busScheduleList.add(
+                        "$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$arrivalState${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$finalArrivalText"
+                    )
                 }
             }
         } catch (e: Exception) {
             return emptyList()
         }
-        
+
+        // Sort the bus schedule list
         return busScheduleList.sortedWith { str1, str2 ->
             val componentsA = str1.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
             val componentsB = str2.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-            
-            if (componentsA.size < 4 || componentsB.size < 4) return@sortedWith 0
-            
+
             val timeA = componentsA[3]
             val timeB = componentsB[3]
-            val statusA = if (componentsA.size > 2) componentsA[2] else PeekTransitConstants.OK_STATUS_TEXT
-            val statusB = if (componentsB.size > 2) componentsB[2] else PeekTransitConstants.OK_STATUS_TEXT
-            
+
+            // Handle "Due" status - should appear first
             when {
+                timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB != PeekTransitConstants.DUE_STATUS_TEXT -> -1
+                timeB == PeekTransitConstants.DUE_STATUS_TEXT && timeA != PeekTransitConstants.DUE_STATUS_TEXT -> 1
                 timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB == PeekTransitConstants.DUE_STATUS_TEXT -> 0
-                timeA == PeekTransitConstants.DUE_STATUS_TEXT -> -1
-                timeB == PeekTransitConstants.DUE_STATUS_TEXT -> 1
                 else -> {
                     val isMinutesA = timeA.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
                     val isMinutesB = timeB.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
-                    
+
                     when {
+                        // Both are minute-based times
                         isMinutesA && isMinutesB -> {
-                            val minutesA = timeA.split(" ")[0].toIntOrNull() ?: 999
-                            val minutesB = timeB.split(" ")[0].toIntOrNull() ?: 999
-                            
-                            if (minutesA == minutesB) {
-                                compareByStatus(statusA, statusB)
-                            } else {
+                            val minutesA = timeA.split(" ")[0].toIntOrNull() ?: 0
+                            val minutesB = timeB.split(" ")[0].toIntOrNull() ?: 0
+
+                            if (minutesA != minutesB) {
                                 minutesA.compareTo(minutesB)
+                            } else {
+                                // Same minutes, compare by status
+                                val stateA = componentsA[2]
+                                val stateB = componentsB[2]
+
+                                compareByStatus(stateA, stateB)
                             }
                         }
-
+                        // Minutes-based time comes before clock time
                         isMinutesA -> -1
                         isMinutesB -> 1
+                        // Both are clock times
                         else -> {
-                            val timeCompare = compareClockTimes(timeA, timeB, currentDate)
-                            if (timeCompare == 0) {
-                                compareByStatus(statusA, statusB)
+                            val timeComponentsA = timeA.split(" ")
+                            val timeComponentsB = timeB.split(" ")
+
+                            if (timeComponentsA.size == 2 && timeComponentsB.size == 2) {
+                                compareClockTimes(timeA, timeB, currentDate)
                             } else {
-                                timeCompare
+                                0
                             }
                         }
                     }
@@ -631,69 +661,187 @@ class WinnipegTransitAPI private constructor() {
     }
 
     suspend fun cleanScheduleMixedTimeFormat(
-        scheduleData: List<String>
+        schedule: JsonObject
     ): List<String> = withContext(Dispatchers.IO) {
-        val cleanedSchedule = mutableListOf<String>()
-        
+        val busScheduleList = mutableListOf<String>()
+        val currentDate = Date()
+        val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val variantMinutesAdded = mutableMapOf<String, Boolean>()
+        val tempScheduleEntries = mutableListOf<ScheduleEntry>()
+
         try {
-            val currentDate = Date()
-            val calendar = Calendar.getInstance()
-            calendar.time = currentDate
-            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-            val currentMinute = calendar.get(Calendar.MINUTE)
-            val currentTotalMinutes = currentHour * 60 + currentMinute
-            
-            for (schedule in scheduleData) {
-                val components = schedule.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-                if (components.size >= 4) {
-                    val variantKey = components[0]
-                    val variantName = components[1]
-                    val status = components[2]
-                    val time = components[3]
-                    
-                    var finalTime = time
-                    
-                    when {
-                        time == PeekTransitConstants.DUE_STATUS_TEXT -> {
-                            finalTime = time
-                        }
-                        time.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT) -> {
-                            val minutes = time.split(" ")[0].toIntOrNull() ?: 0
-                            if (minutes <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES) {
-                                finalTime = time
-                            } else {
-                                calendar.time = currentDate
-                                calendar.add(Calendar.MINUTE, minutes)
-                                val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                                val minute = calendar.get(Calendar.MINUTE)
-                                var displayHour = hour
-                                val am = hour < 12
-                                
-                                when {
-                                    hour == 0 -> displayHour = 12
-                                    hour > 12 -> displayHour -= 12
-                                }
-                                
-                                val minuteStr = if (minute < 10) "0$minute" else minute.toString()
-                                finalTime = "$displayHour:$minuteStr ${if (am) PeekTransitConstants.GLOBAL_AM_TEXT else PeekTransitConstants.GLOBAL_PM_TEXT}"
+            val stopSchedule = schedule.getAsJsonObject("stop-schedule")
+            val routeSchedules = stopSchedule.getAsJsonArray("route-schedules")
+
+            for (routeScheduleElement in routeSchedules) {
+                val routeSchedule = routeScheduleElement.asJsonObject
+                val scheduledStops = routeSchedule.getAsJsonArray("scheduled-stops")
+
+                for (stopElement in scheduledStops) {
+                    val stop = stopElement.asJsonObject
+                    val variant = stop.getAsJsonObject("variant")
+                    var variantKey = variant.get("key")?.asString ?: continue
+                    val variantName = variant.get("name")?.asString ?: continue
+                    val cancelled = stop.get("cancelled")?.asString == "true"
+                    val times = stop.getAsJsonObject("times")
+                    val arrival = times.getAsJsonObject("departure")
+
+                    val estimatedTime = arrival.get("estimated")?.asString
+                    val scheduledTime = arrival.get("scheduled")?.asString
+                    var finalArrivalText = ""
+                    var arrivalState = PeekTransitConstants.OK_STATUS_TEXT
+                    var sortValue = 0
+
+                    if (estimatedTime != null && scheduledTime != null) {
+                        try {
+                            val estimatedTimeParsedDateAndTime = estimatedTime.split("T")
+                            val scheduledTimeParsedDateAndTime = scheduledTime.split("T")
+                            val estimatedTimeParsedDate = estimatedTimeParsedDateAndTime[0].split("-")
+                            val estimatedTimeParsedTime = estimatedTimeParsedDateAndTime[1].split(":")
+                            val scheduledTimeParsedDate = scheduledTimeParsedDateAndTime[0].split("-")
+                            val scheduledTimeParsedTime = scheduledTimeParsedDateAndTime[1].split(":")
+
+                            val estimatedTotalMinutes = (estimatedTimeParsedDate[0].toInt() * 525600) +
+                                    (estimatedTimeParsedDate[1].toInt() * 43800) +
+                                    (estimatedTimeParsedDate[2].toInt() * 1440) +
+                                    (estimatedTimeParsedTime[0].toInt() * 60) +
+                                    estimatedTimeParsedTime[1].toInt()
+
+                            val scheduledTotalMinutes = (scheduledTimeParsedDate[0].toInt() * 525600) +
+                                    (scheduledTimeParsedDate[1].toInt() * 43800) +
+                                    (scheduledTimeParsedDate[2].toInt() * 1440) +
+                                    (scheduledTimeParsedTime[0].toInt() * 60) +
+                                    scheduledTimeParsedTime[1].toInt()
+
+                            val calendar = Calendar.getInstance()
+                            calendar.time = currentDate
+                            val currentTotalMinutes = (calendar.get(Calendar.YEAR) * 525600) +
+                                    (calendar.get(Calendar.MONTH) * 43800) +
+                                    (calendar.get(Calendar.DAY_OF_MONTH) * 1440) +
+                                    (calendar.get(Calendar.HOUR_OF_DAY) * 60) +
+                                    calendar.get(Calendar.MINUTE)
+
+                            val estimatedDate = dateFormatter.parse(estimatedTime) ?: continue
+                            val scheduledDate = dateFormatter.parse(scheduledTime) ?: continue
+
+                            val timeDifferenceSeconds = estimatedDate.time - currentDate.time
+                            val timeDifference = kotlin.math.ceil(timeDifferenceSeconds / 60000.0).toInt()
+                            val delay = kotlin.math.round((estimatedDate.time - scheduledDate.time) / 60000.0).toInt()
+
+                            if (timeDifference < -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
+                                continue
                             }
+
+                            if (cancelled) {
+                                arrivalState = PeekTransitConstants.CANCELLED_STATUS_TEXT
+                                finalArrivalText = ""
+                                sortValue = Int.MAX_VALUE
+                            } else {
+                                var timeIn12HourFormat = ""
+                                var timeInMinutes = ""
+                                var finalHour = estimatedTimeParsedTime[0].toInt()
+                                val am = finalHour < 12
+
+                                when {
+                                    finalHour == 0 -> finalHour = 12
+                                    finalHour > 12 -> finalHour -= 12
+                                }
+
+                                timeIn12HourFormat = "$finalHour:${estimatedTimeParsedTime[1]} ${if (am) PeekTransitConstants.GLOBAL_AM_TEXT else PeekTransitConstants.GLOBAL_PM_TEXT}"
+
+                                if (timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES) {
+                                    timeInMinutes = "$timeDifference ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
+                                }
+
+                                when {
+                                    delay > 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES -> {
+                                        arrivalState = PeekTransitConstants.LATE_STATUS_TEXT
+                                    }
+                                    delay < 0 && timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES -> {
+                                        arrivalState = PeekTransitConstants.EARLY_STATUS_TEXT
+                                    }
+                                    else -> {
+                                        arrivalState = PeekTransitConstants.OK_STATUS_TEXT
+                                    }
+                                }
+
+                                sortValue = if (timeDifference < 0 && timeDifference >= -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
+                                    timeInMinutes = PeekTransitConstants.DUE_STATUS_TEXT
+                                    -1
+                                } else {
+                                    timeDifference
+                                }
+
+                                variantKey = variantKey.split("-").firstOrNull() ?: variantKey
+                                if (variantKey.contains("BLUE")) {
+                                    variantKey = "B"
+                                }
+
+                                val variantIdentifier = "$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName"
+
+                                finalArrivalText = if (!variantMinutesAdded.getOrDefault(variantIdentifier, false) &&
+                                    timeDifference <= PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES) {
+                                    variantMinutesAdded[variantIdentifier] = true
+                                    timeInMinutes
+                                } else {
+                                    timeIn12HourFormat
+                                }
+                            }
+                        } catch (e: Exception) {
+                            continue
                         }
-                        time.endsWith(PeekTransitConstants.MINUTES_PASSED_TEXT) -> {
-                            finalTime = PeekTransitConstants.DUE_STATUS_TEXT
-                        }
+                    } else {
+                        finalArrivalText = "Time Unavailable"
+                        sortValue = Int.MAX_VALUE
                     }
-                    
-                    cleanedSchedule.add("$variantKey${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$variantName${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$status${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}$finalTime")
-                } else {
-                    cleanedSchedule.add(schedule)
+
+                    tempScheduleEntries.add(
+                        ScheduleEntry(
+                            key = variantKey,
+                            name = variantName,
+                            state = arrivalState,
+                            time = finalArrivalText,
+                            sortValue = sortValue
+                        )
+                    )
                 }
             }
         } catch (e: Exception) {
-            return@withContext scheduleData
+            return@withContext emptyList()
         }
-        
-        return@withContext cleanedSchedule
+
+        val sortedEntries = tempScheduleEntries.sortedWith { entry1, entry2 ->
+            when {
+                entry1.time == PeekTransitConstants.DUE_STATUS_TEXT -> -1
+                entry2.time == PeekTransitConstants.DUE_STATUS_TEXT -> 1
+                entry1.sortValue != entry2.sortValue -> entry1.sortValue.compareTo(entry2.sortValue)
+                else -> {
+                    val route1 = entry1.key.toIntOrNull()
+                    val route2 = entry2.key.toIntOrNull()
+                    when {
+                        route1 != null && route2 != null -> route1.compareTo(route2)
+                        else -> entry1.key.compareTo(entry2.key)
+                    }
+                }
+            }
+        }
+
+        busScheduleList.addAll(
+            sortedEntries.map { entry ->
+                "${entry.key}${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}${entry.name}${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}${entry.state}${PeekTransitConstants.SCHEDULE_STRING_SEPARATOR}${entry.time}"
+            }
+        )
+
+        return@withContext busScheduleList
     }
+
+    private data class ScheduleEntry(
+        val key: String,
+        val name: String,
+        val state: String,
+        val time: String,
+        val sortValue: Int
+    )
     
     suspend fun getVariantsForStops(
         stops: List<Stop>,
@@ -763,7 +911,7 @@ class WinnipegTransitAPI private constructor() {
                         validPrefix && validEffectiveDate
                     }
                     
-                    return@withContext filteredVariants.distinctBy { "${it.key}-${it.name}" }
+                    return@withContext filteredVariants.distinctBy { "${it.key}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${it.name}" }
                 } else {
                     return@withContext emptyList()
                 }

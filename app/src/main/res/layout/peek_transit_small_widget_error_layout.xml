@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="@color/surface"
+    android:id="@+id/peek_transit_small_widget_error_layout"
+    >
+
+    <TextView
+        android:id="@+id/peek_transit_small_widget_error_message_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/error_loading_widget_open_app"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textColor="@color/onBackground"
+        android:lineHeight="20sp"
+        android:paddingHorizontal="10dp"
+        />
+
+</LinearLayout>
+

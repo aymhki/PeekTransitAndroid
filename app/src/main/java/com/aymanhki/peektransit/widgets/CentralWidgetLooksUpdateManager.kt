@@ -18,7 +18,6 @@ import androidx.annotation.ColorInt
 import androidx.annotation.FontRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
-import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
@@ -35,14 +34,19 @@ class CentralWidgetLooksUpdateManager
             widgetConfig: WidgetModel?,
             appWidgetId: Int,
             layoutId: Int,
+            mainLayoutContainerResId: Int,
             initialLayoutId: Int,
             configureButtonId: Int,
             errorLayoutId: Int,
             errorTextId: Int,
-            configureActivity: Class<*>
+            configureActivity: Class<*>,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            locationCoordinatesLayoutResId: Int,
+            locationCoordinatesTextImagedResId: Int,
+            lastUpdatedLayoutResId: Int,
+            lastUpdatedTextImageResId: Int
         ): RemoteViews {
             var views: RemoteViews
-
 
             if (widgetConfig != null) {
                 val widgetScheduleData = PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfig.id)
@@ -53,7 +57,7 @@ class CentralWidgetLooksUpdateManager
                     views.setTextViewText(errorTextId, errorMsg)
                 } else {
                     views = RemoteViews(context.packageName, layoutId)
-                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig)
+                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData)
                 }
             } else {
                 views = RemoteViews(context.packageName, initialLayoutId)
@@ -73,18 +77,48 @@ class CentralWidgetLooksUpdateManager
             context: Context,
             views: RemoteViews,
             appWidgetId: Int,
-            widgetConfig: WidgetModel
+            widgetConfig: WidgetModel,
+            layoutId: Int,
+            mainLayoutContainerResId: Int,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            locationCoordinatesLayoutResId: Int,
+            locationCoordinatesTextImagedResId: Int,
+            lastUpdatedLayoutResId: Int,
+            lastUpdatedTextImageResId: Int,
+            widgetScheduleData: WidgetSchedule?
         ): RemoteViews {
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val showLastUpdatedStatus = widgetConfig.widgetData["showLastUpdatedStatus"] as? Boolean ?: false
-            val widgetScheduleData = PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfig.id)
             val lastUpdatedTimeString = widgetScheduleData?.lastUpdatedTime ?: ""
             val locationCoordsString = "${widgetScheduleData?.userLocationLat ?: ""}, ${widgetScheduleData?.userLocationLon ?: ""}"
             val settingsManager = SettingsManager.getInstance(context)
             val currentTheme = settingsManager.stopViewTheme
             val isNightMode = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
-            updateBackgroundColor(views, currentTheme, isNightMode)
+            updateBackgroundColor(views, currentTheme, isNightMode, mainLayoutContainerResId)
+
+            updateLocationCoordinates(
+                context,
+                views,
+                widgetSize,
+                isNightMode,
+                currentTheme,
+                locationCoordsString,
+                locationCoordinatesLayoutResId,
+                locationCoordinatesTextImagedResId,
+                widgetConfig
+            )
+
+            updateWidgetSchedules(
+                context,
+                views,
+                widgetConfig,
+                widgetScheduleData,
+                busSchedulesComponentsResIds,
+                isNightMode,
+                currentTheme,
+                widgetSize
+            )
 
             updateWidgetLastUpdated(
                 context,
@@ -93,16 +127,9 @@ class CentralWidgetLooksUpdateManager
                 isNightMode,
                 currentTheme,
                 lastUpdatedTimeString,
-                showLastUpdatedStatus
-            )
-
-            updateLocationCoordinates(
-                context,
-                views,
-                widgetSize,
-                isNightMode,
-                currentTheme,
-                locationCoordsString
+                showLastUpdatedStatus,
+                lastUpdatedLayoutResId,
+                lastUpdatedTextImageResId
             )
 
             return views
@@ -134,9 +161,10 @@ class CentralWidgetLooksUpdateManager
         fun updateBackgroundColor(
             views: RemoteViews,
             currentTheme: StopViewTheme,
-            isNightMode: Boolean
+            isNightMode: Boolean,
+            layoutId: Int
         ): RemoteViews {
-            views.setInt(R.id.peek_transit_large_layout, "setBackgroundColor", getWidgetBackgroundColor(currentTheme, isNightMode))
+            views.setInt(layoutId, "setBackgroundColor", getWidgetBackgroundColor(currentTheme, isNightMode))
 
             return views
         }
@@ -148,7 +176,9 @@ class CentralWidgetLooksUpdateManager
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
             lastUpdatedTimeString: String,
-            shouldShowLastUpdatedTextImage: Boolean
+            shouldShowLastUpdatedTextImage: Boolean,
+            lastUpdatedLayoutResId: Int,
+            lastUpdatedTextImageResId: Int
         ): RemoteViews {
             return if (shouldShowLastUpdatedTextImage) {
                 updateWidgetLastUpdatedTextImage(
@@ -157,33 +187,24 @@ class CentralWidgetLooksUpdateManager
                     widgetSize,
                     isNightMode,
                     currentTheme,
-                    lastUpdatedTimeString
+                    lastUpdatedTimeString,
+                    lastUpdatedLayoutResId,
+                    lastUpdatedTextImageResId
                 )
             } else {
-                resetLastUpdatedTextImage(views)
+                resetLastUpdatedTextImage(views, lastUpdatedLayoutResId, lastUpdatedTextImageResId)
             }
         }
 
 
         fun resetLastUpdatedTextImage(
             views: RemoteViews,
+            lastUpdatedLayoutResId: Int,
+            lastUpdatedTextImageResId: Int
         ): RemoteViews {
-
-
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_last_updated_status_layout, GONE
-            )
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_last_updated_status_text_image, GONE
-            )
-
-            views.setContentDescription(
-                R.id.peek_transit_large_widget_last_updated_status_text_image,
-                "Last updated status text image"
-            )
-
+            views.setViewVisibility(lastUpdatedLayoutResId, GONE)
+            views.setViewVisibility(lastUpdatedTextImageResId, GONE)
+            views.setContentDescription(lastUpdatedLayoutResId, "Last updated status text image")
             return views
         }
 
@@ -193,35 +214,36 @@ class CentralWidgetLooksUpdateManager
             widgetSize: String,
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
-            lastUpdatedTimeString: String
+            lastUpdatedTimeString: String,
+            lastUpdatedLayoutResId: Int,
+            lastUpdatedTextImageResId: Int
         ): RemoteViews {
+            views.setViewVisibility(lastUpdatedLayoutResId, VISIBLE)
+            views.setViewVisibility(lastUpdatedTextImageResId, VISIBLE)
 
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_last_updated_status_layout, VISIBLE
-            )
+            var lastUpdatedString: String
 
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_last_updated_status_text_image, VISIBLE
-            )
+            if (widgetSize == "lockscreen" || widgetSize == "small") {
+                lastUpdatedString = "Updated: $lastUpdatedTimeString"
+            } else {
+                lastUpdatedString = "Last updated: $lastUpdatedTimeString"
+            }
 
-            val lastUpdatedString = "Last updated: $lastUpdatedTimeString"
+
 
             views.setImageViewBitmap(
-                R.id.peek_transit_large_widget_last_updated_status_text_image, generateTextBitmap(
+                lastUpdatedTextImageResId, generateTextBitmap(
                     context,
                     getWidgetTextFont(currentTheme),
                     null,
                     1,
-                    PeekTransitConstants.getLastSeenFontSizeForWidgetSize(widgetSize),
+                    PeekTransitConstants.getLastSeenFontSizeForWidget(widgetSize),
                     getWidgetTextColor(currentTheme, isNightMode),
                     lastUpdatedString
                 )
             )
 
-            views.setContentDescription(
-                R.id.peek_transit_large_widget_last_updated_status_text_image,
-                lastUpdatedString
-            )
+            views.setContentDescription(lastUpdatedTextImageResId, lastUpdatedString)
 
             return views
         }
@@ -232,39 +254,35 @@ class CentralWidgetLooksUpdateManager
             widgetSize: String,
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
-            locationCoordsString: String
+            locationCoordsString: String,
+            locationCoordinatesLayoutResId: Int,
+            locationCoordinatesTextImagedResId: Int,
+            widgetConfig: WidgetModel
         ): RemoteViews {
-            return if (PeekTransitConstants.DEBUG_WIDGET_LOCATION_ACCESS) {
+            return if (PeekTransitConstants.DEBUG_WIDGET_LOCATION_ACCESS && widgetSize != "lockscreen" && widgetSize != "small" && widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false) {
                 updateLocationCoordinatesTextImage(
                     context,
                     views,
                     widgetSize,
                     isNightMode,
                     currentTheme,
-                    locationCoordsString
+                    locationCoordsString,
+                    locationCoordinatesLayoutResId,
+                    locationCoordinatesTextImagedResId
                 )
             } else {
-                resetLocationCoordinatesTextImage(views)
+                resetLocationCoordinatesTextImage(views, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId)
             }
         }
 
         fun resetLocationCoordinatesTextImage(
             views: RemoteViews,
+            locationCoordinatesLayoutResId: Int,
+            locationCoordinatesTextImagedResId: Int,
         ): RemoteViews {
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_user_location_coordinates_layout, GONE
-            )
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_user_location_coordinates_text_image, GONE
-            )
-
-            views.setContentDescription(
-                R.id.peek_transit_large_widget_user_location_coordinates_text_image,
-                "User location coordinates text image"
-            )
-
+            views.setViewVisibility(locationCoordinatesLayoutResId, GONE)
+            views.setViewVisibility(locationCoordinatesTextImagedResId, GONE)
+            views.setContentDescription(locationCoordinatesTextImagedResId, "User location coordinates text image")
             return views
         }
 
@@ -274,35 +292,395 @@ class CentralWidgetLooksUpdateManager
             widgetSize: String,
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
-            locationCoordsString: String
+            locationCoordsString: String,
+            locationCoordinatesLayoutResId: Int,
+            locationCoordinatesTextImagedResId: Int,
         ): RemoteViews {
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_user_location_coordinates_layout, VISIBLE
-            )
-
-            views.setViewVisibility(
-                R.id.peek_transit_large_widget_user_location_coordinates_text_image, VISIBLE
-            )
+            views.setViewVisibility(locationCoordinatesLayoutResId, VISIBLE)
+            views.setViewVisibility(locationCoordinatesTextImagedResId, VISIBLE)
 
             views.setImageViewBitmap(
-                R.id.peek_transit_large_widget_user_location_coordinates_text_image, generateTextBitmap(
+                locationCoordinatesTextImagedResId, generateTextBitmap(
                     context,
                     getWidgetTextFont(currentTheme),
                     null,
                     1,
-                    12f,
+                    PeekTransitConstants.getLocationCoordinatesTextSizeForWidget(widgetSize),
                     getWidgetTextColor(currentTheme, isNightMode),
                     locationCoordsString
                 )
             )
 
             views.setContentDescription(
-                R.id.peek_transit_large_widget_user_location_coordinates_text_image,
+                locationCoordinatesTextImagedResId,
                 locationCoordsString
             )
 
             return views
+        }
+
+        fun updateWidgetSchedules(
+            context: Context,
+            views: RemoteViews,
+            widgetConfig: WidgetModel,
+            widgetScheduleData: WidgetSchedule?,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            isNightMode: Boolean,
+            currentTheme: StopViewTheme,
+            widgetSize: String
+        ): RemoteViews {
+            if (widgetScheduleData != null) {
+                val widgetSchedules = widgetScheduleData.scheduleData
+
+                // Check if we're in the special compact mode
+                val isCompactMode = widgetSize == "lockscreen" ||
+                        (widgetSize == "small" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean != true)
+
+                if (isCompactMode) {
+                    // Special handling: Use first bus stop's UI components for two different stops
+                    handleCompactMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
+                        isNightMode, currentTheme, widgetSize)
+                } else {
+                    // Normal handling: Each stop uses its own UI components
+                    handleNormalMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
+                        isNightMode, currentTheme, widgetSize, widgetConfig)
+                }
+            }
+            return views
+        }
+
+        private fun handleCompactMode(
+            context: Context,
+            views: RemoteViews,
+            widgetSchedules: Map<String, List<String>>,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            isNightMode: Boolean,
+            currentTheme: StopViewTheme,
+            widgetSize: String
+        ) {
+            val firstBusScheduleComponentResIds = busSchedulesComponentsResIds.entries.firstOrNull()
+            if (firstBusScheduleComponentResIds != null) {
+                // Show the first bus stop container
+                views.setViewVisibility(firstBusScheduleComponentResIds.key, VISIBLE)
+
+                val busStopAndScheduleLayoutComponentResIds = firstBusScheduleComponentResIds.value
+                val busStopLayoutComponentResIds = busStopAndScheduleLayoutComponentResIds.keys.firstOrNull()
+
+                if (busStopLayoutComponentResIds != null) {
+                    val stopTitleLayout = busStopLayoutComponentResIds.first
+                    val stopTitleTextImage = busStopLayoutComponentResIds.second
+
+                    // Hide stop title in compact mode
+                    views.setViewVisibility(stopTitleLayout, GONE)
+                    views.setViewVisibility(stopTitleTextImage, GONE)
+
+                    val busStopSchedules = busStopAndScheduleLayoutComponentResIds.values.firstOrNull()
+                    if (busStopSchedules != null) {
+                        // Get the first two different bus stops from the schedule data
+                        val stopEntries = widgetSchedules.entries.take(2).toList()
+
+                        var schedulesIndex = 0
+                        for (busStopSchedulesIndex in busStopSchedules) {
+                            val currentScheduleLayoutResId = busStopSchedulesIndex.key
+                            val currentScheduleTextImagesResIds = busStopSchedulesIndex.value
+
+                            // Use the schedule from the corresponding stop (first schedule of each stop)
+                            val stopEntry = stopEntries.getOrNull(schedulesIndex)
+                            val scheduleEntry = stopEntry?.value?.firstOrNull()
+
+                            if (scheduleEntry != null && currentScheduleTextImagesResIds != null) {
+                                views.setViewVisibility(currentScheduleLayoutResId, VISIBLE)
+
+                                val scheduleComponents = scheduleEntry.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
+
+                                val routeNumberResId = currentScheduleTextImagesResIds[0]
+                                val routeNumber = scheduleComponents.getOrNull(0) ?: "Unknown Route"
+                                val routeNameResId = currentScheduleTextImagesResIds[1]
+                                val routeName = scheduleComponents.getOrNull(1) ?: "Unknown Route Name"
+                                val finalRouteName = routeName.take(1) + "."
+                                val arrivalStatusResId = currentScheduleTextImagesResIds[2]
+                                val arrivalStatus = scheduleComponents.getOrNull(2) ?: "Unknown Status"
+                                val finalArrivalStatus = arrivalStatus.take(1) + "."
+                                val arrivalTimeResId = currentScheduleTextImagesResIds[3]
+                                val arrivalTime = scheduleComponents.getOrNull(3) ?: "Unknown Time"
+
+                                // Set route number
+                                views.setViewVisibility(routeNumberResId, VISIBLE)
+                                views.setImageViewBitmap(
+                                    routeNumberResId, generateTextBitmap(
+                                        context,
+                                        getWidgetTextFont(currentTheme),
+                                        PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
+                                        1,
+                                        PeekTransitConstants.getRouteNumberTextSizeForWidget(widgetSize),
+                                        getWidgetTextColor(currentTheme, isNightMode),
+                                        routeNumber
+                                    )
+                                )
+                                views.setContentDescription(routeNumberResId, "Route Number: $routeNumber")
+
+                                // Set route name
+                                views.setViewVisibility(routeNameResId, VISIBLE)
+                                views.setImageViewBitmap(
+                                    routeNameResId, generateTextBitmap(
+                                        context,
+                                        getWidgetTextFont(currentTheme),
+                                        PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
+                                        1,
+                                        PeekTransitConstants.getRouteNameTextSizeForWidget(widgetSize),
+                                        getWidgetTextColor(currentTheme, isNightMode),
+                                        finalRouteName
+                                    )
+                                )
+                                views.setContentDescription(routeNameResId, "Route Name: $routeName")
+
+                                // Set arrival status (always render for consistent spacing)
+                                views.setViewVisibility(arrivalStatusResId, VISIBLE)
+                                if (arrivalStatus == PeekTransitConstants.LATE_STATUS_TEXT ||
+                                    arrivalStatus == PeekTransitConstants.EARLY_STATUS_TEXT ||
+                                    arrivalStatus == PeekTransitConstants.CANCELLED_STATUS_TEXT) {
+                                    views.setImageViewBitmap(
+                                        arrivalStatusResId, generateTextBitmap(
+                                            context,
+                                            getWidgetTextFont(currentTheme),
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                            1,
+                                            PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                            PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
+                                            finalArrivalStatus
+                                        )
+                                    )
+                                    views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
+                                } else {
+                                    // Render empty bitmap for consistent spacing
+                                    views.setImageViewBitmap(
+                                        arrivalStatusResId, generateTextBitmap(
+                                            context,
+                                            getWidgetTextFont(currentTheme),
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                            1,
+                                            PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                            getWidgetTextColor(currentTheme, isNightMode),
+                                            ""
+                                        )
+                                    )
+                                    views.setContentDescription(arrivalStatusResId, "")
+                                }
+
+                                // Set arrival time (hide if cancelled)
+                                if (arrivalStatus != PeekTransitConstants.CANCELLED_STATUS_TEXT) {
+                                    views.setViewVisibility(arrivalTimeResId, VISIBLE)
+                                    views.setImageViewBitmap(
+                                        arrivalTimeResId, generateTextBitmap(
+                                            context,
+                                            getWidgetTextFont(currentTheme),
+                                            PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
+                                            1,
+                                            PeekTransitConstants.getArrivalTimeTextSizeForWidget(widgetSize),
+                                            getWidgetTextColor(currentTheme, isNightMode),
+                                            arrivalTime
+                                        )
+                                    )
+                                    views.setContentDescription(arrivalTimeResId, "Arrival Time: $arrivalTime")
+                                } else {
+                                    views.setViewVisibility(arrivalTimeResId, GONE)
+                                }
+                            } else {
+                                // Hide unused schedule slots
+                                views.setViewVisibility(currentScheduleLayoutResId, GONE)
+                            }
+
+                            schedulesIndex++
+                            if (schedulesIndex >= 2) break // Only handle first 2 schedules in compact mode
+                        }
+                    }
+                }
+
+                // Hide all other bus stop containers
+                busSchedulesComponentsResIds.entries.drop(1).forEach { entry ->
+                    views.setViewVisibility(entry.key, GONE)
+                }
+            }
+        }
+
+        private fun handleNormalMode(
+            context: Context,
+            views: RemoteViews,
+            widgetSchedules: Map<String, List<String>>,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            isNightMode: Boolean,
+            currentTheme: StopViewTheme,
+            widgetSize: String,
+            widgetConfig: WidgetModel
+        ) {
+            // This is your original logic, preserved exactly
+            for ((index) in busSchedulesComponentsResIds.entries.withIndex()) {
+                val currentWidgetScheduleEntry = widgetSchedules.entries.elementAtOrNull(index)
+                val currentBusScheduleComponentResIds = busSchedulesComponentsResIds.entries.elementAtOrNull(index)
+                if (currentWidgetScheduleEntry != null && currentBusScheduleComponentResIds != null) {
+                    if (currentWidgetScheduleEntry != null) {
+                        views.setViewVisibility(currentBusScheduleComponentResIds.key, VISIBLE)
+                        val busStopKey = currentWidgetScheduleEntry.key.split(PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES)
+                        var busStopTitle = busStopKey.getOrNull(0) ?: "Unknown Stop"
+                        val busStopNumber = busStopKey.getOrNull(1) ?: "Unknown Number"
+                        busStopTitle = if (busStopTitle.length > PeekTransitConstants.STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET) {
+                            busStopTitle.substring(0, PeekTransitConstants.STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET)+"..."
+                        } else {
+                            busStopTitle
+                        }
+                        val busStopText = "${busStopTitle} - ${busStopNumber}"
+                        val busStopAndScheduleLayoutComponentResIds = currentBusScheduleComponentResIds.value
+                        val busStopLayoutComponentResIds = busStopAndScheduleLayoutComponentResIds.keys.elementAtOrNull(0)
+                        if (busStopLayoutComponentResIds != null) {
+                            val stopTitleLayout = busStopLayoutComponentResIds.first
+                            val stopTitleTextImage = busStopLayoutComponentResIds.second
+                            if ( (widgetSize != "lockscreen" && widgetSize != "small") || (widgetSize == "small" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean == true) ) {
+                                views.setViewVisibility(stopTitleLayout, VISIBLE)
+                                views.setViewVisibility(stopTitleTextImage, VISIBLE)
+                                views.setImageViewBitmap(
+                                    stopTitleTextImage, generateTextBitmap(
+                                        context,
+                                        getWidgetTextFont(currentTheme),
+                                        PeekTransitConstants.getStopTitleWidthForWidget(widgetSize),
+                                        if (widgetSize == "small") 2 else 1,
+                                        PeekTransitConstants.getStopTitleTextSizeForWidget(
+                                            widgetSize
+                                        ),
+                                        getWidgetTextColor(currentTheme, isNightMode),
+                                        busStopText
+                                    )
+                                )
+                                views.setContentDescription(
+                                    stopTitleTextImage,
+                                    currentWidgetScheduleEntry.key
+                                )
+                            } else {
+                                views.setViewVisibility(stopTitleLayout, GONE)
+                                views.setViewVisibility(stopTitleTextImage, GONE)
+                            }
+                            val busStopSchedules = busStopAndScheduleLayoutComponentResIds.values.elementAtOrNull(0)
+                            if (busStopSchedules != null) {
+                                var schedulesIndex = 0
+                                for (busStopSchedulesIndex in busStopSchedules) {
+                                    val currentWidgetScheduleEntrySchedule = currentWidgetScheduleEntry.value.elementAtOrNull(schedulesIndex)
+                                    val currentScheduleLayoutResId = busStopSchedulesIndex.key
+                                    if (currentWidgetScheduleEntrySchedule != null) {
+                                        views.setViewVisibility(currentScheduleLayoutResId, VISIBLE)
+                                        val currentScheduleTextImagesResIds = busStopSchedulesIndex.value
+                                        val scheduleComponents = currentWidgetScheduleEntrySchedule.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
+                                        if (currentScheduleTextImagesResIds != null) {
+                                            val routeNumberResId = currentScheduleTextImagesResIds[0]
+                                            val routeNumber = scheduleComponents.getOrNull(0) ?: "Unknown Route"
+                                            val routeNameResId = currentScheduleTextImagesResIds[1]
+                                            val routeName = scheduleComponents.getOrNull(1) ?: "Unknown Route Name"
+                                            val finalRouteName = if (widgetSize == "lockscreen" || widgetSize == "small") {
+                                                routeName.take(1) + "."
+                                            } else {
+                                                routeName
+                                            }
+                                            val arrivalStatusResId = currentScheduleTextImagesResIds[2]
+                                            val arrivalStatus = scheduleComponents.getOrNull(2) ?: "Unknown Status"
+                                            val finalArrivalStatus = if (widgetSize == "lockscreen" || widgetSize == "small") {
+                                                arrivalStatus.take(1) + "."
+                                            } else {
+                                                arrivalStatus
+                                            }
+                                            val arrivalTimeResId = currentScheduleTextImagesResIds[3]
+                                            val arrivalTime = scheduleComponents.getOrNull(3) ?: "Unknown Time"
+                                            views.setViewVisibility(routeNumberResId, VISIBLE)
+                                            views.setViewVisibility(routeNameResId, VISIBLE)
+                                            views.setViewVisibility(arrivalStatusResId, VISIBLE)
+                                            views.setImageViewBitmap(
+                                                routeNumberResId, generateTextBitmap(
+                                                    context,
+                                                    getWidgetTextFont(currentTheme),
+                                                    PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
+                                                    1,
+                                                    PeekTransitConstants.getRouteNumberTextSizeForWidget(widgetSize),
+                                                    getWidgetTextColor(currentTheme, isNightMode),
+                                                    routeNumber
+                                                )
+                                            )
+                                            views.setContentDescription(
+                                                routeNumberResId,
+                                                "Route Number: $routeNumber"
+                                            )
+                                            views.setImageViewBitmap(
+                                                routeNameResId, generateTextBitmap(
+                                                    context,
+                                                    getWidgetTextFont(currentTheme),
+                                                    PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
+                                                    1,
+                                                    PeekTransitConstants.getRouteNameTextSizeForWidget(widgetSize),
+                                                    getWidgetTextColor(currentTheme, isNightMode),
+                                                    finalRouteName
+                                                )
+                                            )
+                                            views.setContentDescription(
+                                                routeNameResId,
+                                                "Route Name: $routeName"
+                                            )
+                                            if (arrivalStatus == PeekTransitConstants.LATE_STATUS_TEXT || arrivalStatus == PeekTransitConstants.EARLY_STATUS_TEXT || arrivalStatus == PeekTransitConstants.CANCELLED_STATUS_TEXT) {
+                                                views.setImageViewBitmap(
+                                                    arrivalStatusResId, generateTextBitmap(
+                                                        context,
+                                                        getWidgetTextFont(currentTheme),
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                                        1,
+                                                        PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                                        PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
+                                                        finalArrivalStatus
+                                                    )
+                                                )
+                                                views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
+                                            } else {
+                                                // Render empty bitmap for consistent spacing
+                                                views.setImageViewBitmap(
+                                                    arrivalStatusResId, generateTextBitmap(
+                                                        context,
+                                                        getWidgetTextFont(currentTheme),
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                                        1,
+                                                        PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                                        getWidgetTextColor(currentTheme, isNightMode),
+                                                        ""
+                                                    )
+                                                )
+                                                views.setContentDescription(arrivalStatusResId, "")
+                                            }
+                                            if (arrivalStatus != PeekTransitConstants.CANCELLED_STATUS_TEXT) {
+                                                views.setViewVisibility(arrivalTimeResId, VISIBLE)
+                                                views.setImageViewBitmap(
+                                                    arrivalTimeResId, generateTextBitmap(
+                                                        context,
+                                                        getWidgetTextFont(currentTheme),
+                                                        PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
+                                                        1,
+                                                        PeekTransitConstants.getArrivalTimeTextSizeForWidget(widgetSize),
+                                                        getWidgetTextColor(currentTheme, isNightMode),
+                                                        arrivalTime
+                                                    )
+                                                )
+                                                views.setContentDescription(
+                                                    arrivalTimeResId,
+                                                    "Arrival Time: $arrivalTime"
+                                                )
+                                            } else {
+                                                views.setViewVisibility(arrivalTimeResId, GONE)
+                                            }
+                                        }
+                                    } else {
+                                        views.setViewVisibility(currentScheduleLayoutResId, GONE)
+                                    }
+                                    schedulesIndex++
+                                }
+                            }
+                        }
+                    } else {
+                        views.setViewVisibility(currentBusScheduleComponentResIds.key, GONE)
+                    }
+                }
+            }
         }
 
     }

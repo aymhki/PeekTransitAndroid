@@ -15,6 +15,9 @@ import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.widgets.PeekTransitLargeWidgetProvider
+import com.aymanhki.peektransit.widgets.PeekTransitLockScreenWidgetProvider
+import com.aymanhki.peektransit.widgets.PeekTransitMediumWidgetProvider
+import com.aymanhki.peektransit.widgets.PeekTransitSmallWidgetProvider
 import com.aymanhki.peektransit.widgets.SavedWidgetSchedulesManager
 import com.aymanhki.peektransit.widgets.WidgetSchedule
 import com.aymanhki.peektransit.widgets.WidgetUpdateManager
@@ -23,7 +26,7 @@ import kotlin.math.roundToInt
 object PeekTransitConstants {
     const val DEBUG_MODE = false
     const val DEBUG_WIDGET_LOCATION_ACCESS = true
-    const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 3
+    const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
     const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
     var TRANSIT_API_KEY: String = ""
@@ -150,7 +153,7 @@ object PeekTransitConstants {
         }
     }
     
-    fun getStopNameFontSizeForWidgetSize(widgetSize: String): Float {
+    fun getStopNameFontSizeForWidgetPreview(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
             "small" -> 9f
             "medium" -> 11f
@@ -160,10 +163,23 @@ object PeekTransitConstants {
         }
     }
     
-    fun getLastSeenFontSizeForWidgetSize(widgetSize: String): Float {
+    fun getLastSeenFontSizeForWidgetPreview(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small", "medium", "large", "lockscreen" -> 14f
+            "small" -> 12f
+            "medium" -> 14f
+            "large" -> 14f
+            "lockscreen" -> 12f
             else -> 14f
+        }
+    }
+
+    fun getLocationCoordinatesTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 12f
+            "medium" -> 12f
+            "large" -> 12f
+            "lockscreen" -> 12f
+            else -> 12f
         }
     }
 
@@ -199,7 +215,7 @@ object PeekTransitConstants {
         }
     }
     
-    fun getRouteNumberWidth(widgetSize: String): Int {
+    fun getRouteNumberWidthForWidgetPreview(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 40
             "medium" -> 50
@@ -209,13 +225,125 @@ object PeekTransitConstants {
         }
     }
     
-    fun getRouteNameWidth(widgetSize: String): Int {
+    fun getRouteNameWidthForWidgetPreview(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 30
             "medium" -> 100
             "large" -> 100
             "lockscreen" -> 30
             else -> 100
+        }
+    }
+
+    fun getLastSeenFontSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 12f
+            "medium" -> 12f
+            "large" -> 12f
+            "lockscreen" -> 12f
+            else -> 14f
+        }
+    }
+
+
+    fun getStopTitleWidthForWidget(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small" -> 200
+            "medium" -> 400
+            "large" -> 400
+            "lockscreen" -> 200
+            else -> 100
+        }
+    }
+
+    fun getStopTitleTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 14f
+            else -> 14f
+        }
+    }
+
+    fun getRouteNumberWidthForWidget(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small" -> 50
+            "medium" -> 50
+            "large" -> 50
+            "lockscreen" -> 50
+            else -> 50
+        }
+    }
+
+    fun getRouteNumberTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 14f
+            "medium" -> 14f
+            "large" -> 14f
+            "lockscreen" -> 14f
+            else -> 12f
+        }
+    }
+
+    fun getRouteNameWidthForWidget(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small" -> 30
+            "medium" -> 120
+            "large" -> 120
+            "lockscreen" -> 30
+            else -> 100
+        }
+    }
+
+
+    fun getRouteNameTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 14f
+            "medium" -> 14f
+            "large" -> 14f
+            "lockscreen" -> 14f
+            else -> 12f
+        }
+    }
+
+    fun getArrivalStatusWidthForWidget(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small" -> 30
+            "medium" -> 60
+            "large" -> 60
+            "lockscreen" -> 30
+            else -> 60
+        }
+    }
+
+    fun getArrivalStatusTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 14f
+            "medium" -> 14f
+            "large" -> 14f
+            "lockscreen" -> 14f
+            else -> 12f
+        }
+    }
+
+    fun getArrivalTimeWidthForWidget(widgetSize: String): Int {
+        return when (widgetSize.lowercase()) {
+            "small" -> 60
+            "medium" -> 80
+            "large" -> 80
+            "lockscreen" -> 60
+            else -> 80
+        }
+    }
+
+    fun getArrivalTimeTextSizeForWidget(widgetSize: String): Float {
+        return when (widgetSize.lowercase()) {
+            "small" -> 14f
+            "medium" -> 14f
+            "large" -> 14f
+            "lockscreen" -> 14f
+            else -> 12f
         }
     }
 
@@ -241,10 +369,13 @@ object PeekTransitConstants {
     }
 
     fun getWidgetStatusTextColor(status: String, stopViewTheme: StopViewTheme): Int {
-        return when (status.lowercase()) {
-            LATE_STATUS_TEXT, CANCELLED_STATUS_TEXT -> LATE_OR_CANCELLED_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
-            EARLY_STATUS_TEXT, DUE_STATUS_TEXT -> EARLY_OR_DUE_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
-            else -> CLASSIC_THEM_TEXT_COLOR.toArgb()
+        return when (stopViewTheme) {
+            StopViewTheme.MODERN -> when (status) {
+                LATE_STATUS_TEXT, CANCELLED_STATUS_TEXT -> LATE_OR_CANCELLED_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
+                EARLY_STATUS_TEXT, DUE_STATUS_TEXT -> EARLY_OR_DUE_TEXT_COLOR_IN_MODERN_THEME_ALWAYS.toArgb()
+                else -> TEXT_COLOR_IN_MODERN_THEME_DAY.toArgb()
+            }
+            StopViewTheme.CLASSIC -> CLASSIC_THEM_TEXT_COLOR.toArgb()
         }
     }
     
@@ -487,7 +618,21 @@ enum class StopViewTheme(val displayName: String, val description: String) {
 enum class TimeFormat {
     MINUTES_ONLY,
     CLOCK_TIME,
-    MIXED
+    MIXED;
+
+     companion object {
+         val DEFAULT = MINUTES_ONLY
+
+         fun fromString(value: String): TimeFormat {
+
+             return when (value) {
+                 "minutes" -> MINUTES_ONLY
+                 "clock" -> CLOCK_TIME
+                 "mixed", "default" -> MIXED
+                 else -> MIXED
+             }
+         }
+     }
 }
 
 object SharedPrefrencesKeys {
@@ -502,6 +647,9 @@ object SharedPrefrencesKeys {
 }
 
 val allWidgetProviders = listOf(
-    PeekTransitLargeWidgetProvider::class.java
+    PeekTransitSmallWidgetProvider::class.java,
+    PeekTransitMediumWidgetProvider::class.java,
+    PeekTransitLargeWidgetProvider::class.java,
+    PeekTransitLockScreenWidgetProvider::class.java
 )
 

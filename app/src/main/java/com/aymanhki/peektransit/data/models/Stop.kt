@@ -23,7 +23,7 @@ data class Stop(
     val centre: Centre = Centre(),
     val distances: DistanceInfo = DistanceInfo(),
     var variants: List<Variant> = emptyList(),
-    val selectedVariants: List<Variant> = emptyList()
+    var selectedVariants: List<Variant> = emptyList()
 ) {
 
     fun getDistance(): Double {

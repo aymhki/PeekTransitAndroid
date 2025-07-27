@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Peek Transit</string>
+
+    <string name="peek_transit_small_description">Show up to 2 bus stops with 1 bus arrival times each</string>
+    <string name="peek_transit_medium_description">Show up to 2 bus stops with 2 bus arrival times each</string>
     <string name="peek_transit_large_description">Show up to 3 bus stops with 2 bus arrival times each</string>
+    <string name="peek_transit_lockscreen_description">Show up to 2 bus stops with 1 bus arrival times each</string>
     <string name="select_a_widget_configuration_to_get_started">Select a widget configuration to get started</string>
     <string name="configure">Configure</string>
     <string name="peek_transit_logo">Peek Transit Logo</string>

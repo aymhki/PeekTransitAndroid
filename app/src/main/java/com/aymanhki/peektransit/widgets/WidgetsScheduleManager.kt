@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.google.gson.*
 import java.lang.reflect.Type
 import androidx.core.content.edit
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 
 
 data class WidgetSchedule(
@@ -18,7 +19,31 @@ data class WidgetSchedule(
 
 ) {
     fun getWidgetScheduldeKey(): String {
-        return "$widgetAppId-$widgetConfigId"
+        return "${widgetAppId}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${widgetConfigId}"
+    }
+
+    companion object {
+        fun theTwoHaveDifferentSchedules(
+            first: WidgetSchedule?,
+            second: WidgetSchedule?
+        ): Boolean {
+            if (first == null && second == null) return false
+            if (first == null || second == null) return true
+
+            for ((key, value) in first.scheduleData) {
+                if (second.scheduleData[key] != value && value.contains(PeekTransitConstants.MINUTES_REMAINING_TEXT)) {
+                    return true
+                }
+            }
+
+            for ((key, value) in second.scheduleData) {
+                if (first.scheduleData[key] != value && value.contains(PeekTransitConstants.MINUTES_REMAINING_TEXT)) {
+                    return true
+                }
+            }
+
+            return true
+        }
     }
 }
 
@@ -42,7 +67,7 @@ class SavedWidgetSchedulesManager(context: Context) {
     }
 
     fun getWidgetSchedule(widgetAppId: String, widgetConfigId: String): WidgetSchedule? {
-        val key = KEY_WIDGET_SCHEDULES + "$widgetAppId-$widgetConfigId"
+        val key = KEY_WIDGET_SCHEDULES + "${widgetAppId}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${widgetConfigId}"
         val json = sharedPreferences.getString(key, null) ?: return null
 
         val gson = GsonBuilder()
@@ -53,7 +78,7 @@ class SavedWidgetSchedulesManager(context: Context) {
     }
 
     fun deleteWidgetSchedule(widgetAppId: String, widgetConfigId: String) {
-        val key = KEY_WIDGET_SCHEDULES + "$widgetAppId-$widgetConfigId"
+        val key = KEY_WIDGET_SCHEDULES + "${widgetAppId}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${widgetConfigId}"
         sharedPreferences.edit { remove(key) }
     }
 
