@@ -538,7 +538,6 @@ class CentralWidgetLooksUpdateManager
                                     stopTitleTextImage,
                                     currentWidgetScheduleEntry.key
                                 )
-
                             } else {
                                 views.setViewVisibility(stopTitleLayout, GONE)
                                 views.setViewVisibility(stopTitleTextImage, GONE)
