@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -25,6 +26,8 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetBackgroundCo
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextFont
 import com.aymanhki.peektransit.utils.StopViewTheme
+import androidx.core.graphics.withTranslation
+
 class CentralWidgetLooksUpdateManager
 {
 
@@ -712,3 +715,4 @@ fun generateTextBitmap(
 
     return bitmap
 }
+

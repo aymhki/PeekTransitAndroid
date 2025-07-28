@@ -269,8 +269,8 @@ object PeekTransitConstants {
     fun getRouteNumberWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 50
-            "medium" -> 50
-            "large" -> 50
+            "medium" -> 30
+            "large" -> 30
             "lockscreen" -> 50
             else -> 50
         }
@@ -289,8 +289,8 @@ object PeekTransitConstants {
     fun getRouteNameWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 30
-            "medium" -> 120
-            "large" -> 120
+            "medium" -> 180
+            "large" -> 180
             "lockscreen" -> 30
             else -> 100
         }
