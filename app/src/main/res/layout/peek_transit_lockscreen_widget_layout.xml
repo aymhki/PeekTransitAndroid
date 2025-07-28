@@ -69,14 +69,14 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_route_number_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="12"
+                android:layout_weight="20"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_route_name_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="43"
+                android:layout_weight="20"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_name_text_image" />
 
             <ImageView
@@ -90,7 +90,7 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_arrival_time_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="25"
+                android:layout_weight="40"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_arrival_time_text_image" />
         </LinearLayout>
 
@@ -107,14 +107,14 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_route_number_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="12"
+                android:layout_weight="20"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_route_name_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="43"
+                android:layout_weight="20"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_name_text_image" />
 
             <ImageView
@@ -128,7 +128,7 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_arrival_time_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="25"
+                android:layout_weight="40"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_arrival_time_text_image" />
         </LinearLayout>
     </LinearLayout>

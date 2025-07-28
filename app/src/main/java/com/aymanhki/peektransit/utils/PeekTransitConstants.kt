@@ -110,7 +110,7 @@ object PeekTransitConstants {
     fun getMaxStopsAllowed(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 2
-            "medium" -> 3
+            "medium" -> 2
             "large" -> 3
             "lockscreen" -> 2
             else -> 1
@@ -237,10 +237,10 @@ object PeekTransitConstants {
 
     fun getLastSeenFontSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 12f
-            "medium" -> 12f
-            "large" -> 12f
-            "lockscreen" -> 12f
+            "small" -> 13f
+            "medium" -> 13f
+            "large" -> 13f
+            "lockscreen" -> 13f
             else -> 14f
         }
     }
@@ -278,10 +278,10 @@ object PeekTransitConstants {
 
     fun getRouteNumberTextSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 14f
-            "medium" -> 14f
-            "large" -> 14f
-            "lockscreen" -> 14f
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 16f
             else -> 12f
         }
     }
@@ -299,11 +299,11 @@ object PeekTransitConstants {
 
     fun getRouteNameTextSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 14f
-            "medium" -> 14f
-            "large" -> 14f
-            "lockscreen" -> 14f
-            else -> 12f
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 16f
+            else -> 16f
         }
     }
 
@@ -319,31 +319,31 @@ object PeekTransitConstants {
 
     fun getArrivalStatusTextSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 14f
-            "medium" -> 14f
-            "large" -> 14f
-            "lockscreen" -> 14f
-            else -> 12f
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 16f
+            else -> 16f
         }
     }
 
     fun getArrivalTimeWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 60
+            "small" -> 65
             "medium" -> 80
             "large" -> 80
-            "lockscreen" -> 60
+            "lockscreen" -> 65
             else -> 80
         }
     }
 
     fun getArrivalTimeTextSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 14f
-            "medium" -> 14f
-            "large" -> 14f
-            "lockscreen" -> 14f
-            else -> 12f
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 16f
+            else -> 16f
         }
     }
 

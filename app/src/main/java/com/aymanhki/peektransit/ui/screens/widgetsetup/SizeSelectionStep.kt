@@ -234,7 +234,7 @@ fun SizeSelectionStep(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "X(X) Minutes remaining when the bus is within 15 minutes with Late (L.) and Early (E.) prefix",
+                        text = "X(X) Minutes remaining when the bus is within ${PeekTransitConstants.PERIOD_BEFORE_SHOWING_MINUTES_UNTIL_NEXT_BUS_IN_MINUTES} minutes with Late (L.) and Early (E.) prefix",
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (!multipleEntriesPerVariant) 
                             MaterialTheme.colorScheme.onSurface 
