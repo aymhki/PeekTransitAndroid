@@ -14,10 +14,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
-        android:paddingStart="16dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp"
+        android:padding="@dimen/location_coordinates_layout_padding"
         android:visibility="visible">
 
         <ImageView
@@ -35,11 +32,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
-        android:paddingStart="8dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="0dp"
-        android:paddingEnd="8dp"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_small_and_lockscreen_widgets"
+        android:paddingTop="@dimen/first_stop_entry_layout_top_padding_in_small_and_lockscreen_widgets"
     >
 
         <LinearLayout
@@ -47,7 +41,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+        >
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_title_text_image"
@@ -66,34 +61,35 @@
             android:orientation="horizontal"
             android:weightSum="100"
             android:paddingTop="30dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+        >
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_route_number_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="25"
+                android:layout_weight="@integer/route_number_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="15"
+                android:layout_weight="@integer/route_name_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="15"
+                android:layout_weight="@integer/arrival_status_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="45"
+                android:layout_weight="@integer/arrival_time_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_arrival_time_text_image" />
         </LinearLayout>
 
@@ -111,28 +107,28 @@
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_route_number_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="25"
+                android:layout_weight="@integer/route_number_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="15"
+                android:layout_weight="@integer/route_name_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="15"
+                android:layout_weight="@integer/arrival_status_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="45"
+                android:layout_weight="@integer/arrival_time_layout_weight_in_small_and_lockscreen_widgets"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_arrival_time_text_image" />
         </LinearLayout>
     </LinearLayout>

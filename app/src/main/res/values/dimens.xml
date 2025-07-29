@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="min_for_height_cell_1">42dp</dimen>
+    <dimen name="max_for_height_cell_1">105dp</dimen>
+
+    <dimen name="min_for_width_cell_2">146dp</dimen>
+    <dimen name="max_for_width_cell_2">365dp</dimen>
+
+    <dimen name="min_for_height_cell_2">116dp</dimen>
+    <dimen name="max_for_height_cell_2">273dp</dimen>
+
+    <dimen name="min_for_width_cell_4">292dp</dimen>
+    <dimen name="max_for_width_cell_4">730dp</dimen>
+
+    <dimen name="min_for_height_cell_4">243dp</dimen>
+    <dimen name="max_for_height_cell_4">730dp</dimen>
+
+    <item name="route_number_layout_weight_in_small_and_lockscreen_widgets" type="integer">25</item>
+    <item name="route_name_layout_weight_in_small_and_lockscreen_widgets" type="integer">15</item>
+    <item name="arrival_status_layout_weight_in_small_and_lockscreen_widgets" type="integer">15</item>
+    <item name="arrival_time_layout_weight_in_small_and_lockscreen_widgets" type="integer">45</item>
+
+    <item name="route_number_layout_weight_in_medium_and_large_widgets" type="integer">12</item>
+    <item name="route_name_layout_weight_in_medium_and_large_widgets" type="integer">38</item>
+    <item name="arrival_status_layout_weight_in_medium_and_large_widgets" type="integer">25</item>
+    <item name="arrival_time_layout_weight_in_medium_and_large_widgets" type="integer">25</item>
+
+    <dimen name="stop_entry_layout_horizontal_padding_in_medium_and_large_widgets">16dp</dimen>
+    <dimen name="stop_entry_layout_horizontal_padding_in_small_and_lockscreen_widgets">8dp</dimen>
+
+    <dimen name="first_stop_entry_layout_top_padding_in_medium_and_large_widgets">16dp</dimen>
+    <dimen name="first_stop_entry_layout_top_padding_in_small_and_lockscreen_widgets">18dp</dimen>
+
+    <dimen name="location_coordinates_layout_padding">16dp</dimen>
+
+</resources>

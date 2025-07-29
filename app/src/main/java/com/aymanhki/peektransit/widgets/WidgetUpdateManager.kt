@@ -567,7 +567,7 @@ object WidgetUpdateManager {
 
                 val difference = maxVariants - finalSchedulesForThisStop.size
 
-                for (i in 0 until difference) {
+                for (i in 0 .. difference) {
                     for (variant in missingVariantEntries) {
                         finalSchedulesForThisStop = finalSchedulesForThisStop.plus(
                             variant.key +
@@ -578,6 +578,20 @@ object WidgetUpdateManager {
                                     PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS + "hrs+"
                         )
                     }
+                }
+            }
+
+            if (finalSchedulesForThisStop.size == 0 || finalSchedulesForThisStop.isEmpty()) {
+                for (i in 0..maxVariants) {
+                    finalSchedulesForThisStop = finalSchedulesForThisStop.plus(
+                        PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER +
+                                PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
+                                PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER +
+                                PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
+                                PeekTransitConstants.OK_STATUS_TEXT +
+                                PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
+                                PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS + "hrs+"
+                    )
                 }
             }
 

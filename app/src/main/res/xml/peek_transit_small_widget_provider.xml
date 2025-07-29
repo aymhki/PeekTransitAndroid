@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="155dp"
-    android:minHeight="125dp"
-    android:maxWidth="155dp"
-    android:maxHeight="125dp"
-    android:minResizeWidth="155dp"
-    android:minResizeHeight="125dp"
-    android:maxResizeWidth="155dp"
-    android:maxResizeHeight="125dp"
-    android:targetCellWidth="3"
+    android:targetCellWidth="2"
     android:targetCellHeight="2"
+
+    android:minWidth="@dimen/min_for_width_cell_2"
+    android:minHeight="@dimen/min_for_height_cell_2"
+
+    android:maxWidth="@dimen/max_for_width_cell_2"
+    android:maxHeight="@dimen/max_for_height_cell_2"
+
+    android:minResizeWidth="@dimen/min_for_width_cell_2"
+    android:minResizeHeight="@dimen/min_for_height_cell_2"
+
+    android:maxResizeWidth="@dimen/max_for_width_cell_2"
+    android:maxResizeHeight="@dimen/max_for_height_cell_2"
+
     android:updatePeriodMillis="1800000"
+    android:orientation="vertical"
     android:initialLayout="@layout/peek_transit_small_widget_initial_layout"
     android:previewLayout="@layout/peek_transit_small_widget_preview_layout"
     android:configure="com.aymanhki.peektransit.widgets.PeekTransitSmallWidgetConfigurationActivity"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen|keyguard"
     android:widgetFeatures="configuration_optional|reconfigurable"
     android:description="@string/peek_transit_small_description"
