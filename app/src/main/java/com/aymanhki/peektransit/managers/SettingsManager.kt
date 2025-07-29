@@ -43,7 +43,7 @@ class SettingsManager private constructor(private val context: Context) {
                 putString(SharedPrefrencesKeys.SHARED_STOP_VIEW_THEME, value.displayName)
             }
 
-            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
+            triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, true)
         }
 
     var userOptedInForManualWidgetUpdates: Boolean

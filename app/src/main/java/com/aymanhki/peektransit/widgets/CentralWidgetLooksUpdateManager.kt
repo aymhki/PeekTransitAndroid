@@ -446,7 +446,7 @@ class CentralWidgetLooksUpdateManager
                                         arrivalStatusResId, generateTextBitmap(
                                             context,
                                             getWidgetTextFont(currentTheme),
-                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize)/2,
                                             1,
                                             PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                             getWidgetTextColor(currentTheme, isNightMode),
