@@ -237,10 +237,10 @@ object PeekTransitConstants {
 
     fun getLastUpdatedFontSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 16f
+            "small" -> 14f
             "medium" -> 16f
             "large" -> 16f
-            "lockscreen" -> 16f
+            "lockscreen" -> 14f
             else -> 14f
         }
     }
@@ -329,7 +329,7 @@ object PeekTransitConstants {
                 "small" -> 18f
                 "medium" -> 18f
                 "large" -> 18f
-                "lockscreen" -> 18f
+                "lockscreen" -> 17f
                 else -> 10f
             }
         }

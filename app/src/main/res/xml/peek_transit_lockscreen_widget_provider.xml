@@ -8,7 +8,7 @@
     android:minResizeHeight="52dp"
     android:maxResizeWidth="155dp"
     android:maxResizeHeight="52dp"
-    android:targetCellWidth="3"
+    android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/peek_transit_lockscreen_widget_initial_layout"
