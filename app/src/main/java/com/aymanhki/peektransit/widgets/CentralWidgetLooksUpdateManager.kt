@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Rect
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -26,7 +25,6 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetBackgroundCo
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextColor
 import com.aymanhki.peektransit.utils.PeekTransitConstants.getWidgetTextFont
 import com.aymanhki.peektransit.utils.StopViewTheme
-import androidx.core.graphics.withTranslation
 
 class CentralWidgetLooksUpdateManager
 {
@@ -240,7 +238,7 @@ class CentralWidgetLooksUpdateManager
                     getWidgetTextFont(currentTheme),
                     null,
                     1,
-                    PeekTransitConstants.getLastSeenFontSizeForWidget(widgetSize),
+                    PeekTransitConstants.getLastUpdatedFontSizeForWidget(widgetSize),
                     getWidgetTextColor(currentTheme, isNightMode),
                     lastUpdatedString
                 )
@@ -406,7 +404,7 @@ class CentralWidgetLooksUpdateManager
                                         getWidgetTextFont(currentTheme),
                                         PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
                                         1,
-                                        PeekTransitConstants.getRouteNumberTextSizeForWidget(widgetSize),
+                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         routeNumber
                                     )
@@ -420,7 +418,7 @@ class CentralWidgetLooksUpdateManager
                                         getWidgetTextFont(currentTheme),
                                         PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
                                         1,
-                                        PeekTransitConstants.getRouteNameTextSizeForWidget(widgetSize),
+                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         finalRouteName
                                     )
@@ -437,7 +435,7 @@ class CentralWidgetLooksUpdateManager
                                             getWidgetTextFont(currentTheme),
                                             PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
                                             1,
-                                            PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                             PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
                                             finalArrivalStatus
                                         )
@@ -450,7 +448,7 @@ class CentralWidgetLooksUpdateManager
                                             getWidgetTextFont(currentTheme),
                                             PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
                                             1,
-                                            PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                             getWidgetTextColor(currentTheme, isNightMode),
                                             ""
                                         )
@@ -466,7 +464,7 @@ class CentralWidgetLooksUpdateManager
                                             getWidgetTextFont(currentTheme),
                                             PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
                                             1,
-                                            PeekTransitConstants.getArrivalTimeTextSizeForWidget(widgetSize),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                             getWidgetTextColor(currentTheme, isNightMode),
                                             arrivalTime
                                         )
@@ -531,7 +529,7 @@ class CentralWidgetLooksUpdateManager
                                         PeekTransitConstants.getStopTitleWidthForWidget(widgetSize),
                                         if (widgetSize == "small") 2 else 1,
                                         PeekTransitConstants.getStopTitleTextSizeForWidget(
-                                            widgetSize
+                                            widgetSize, currentTheme
                                         ),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         busStopText
@@ -583,7 +581,7 @@ class CentralWidgetLooksUpdateManager
                                                     getWidgetTextFont(currentTheme),
                                                     PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
                                                     1,
-                                                    PeekTransitConstants.getRouteNumberTextSizeForWidget(widgetSize),
+                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                                     getWidgetTextColor(currentTheme, isNightMode),
                                                     routeNumber
                                                 )
@@ -598,7 +596,7 @@ class CentralWidgetLooksUpdateManager
                                                     getWidgetTextFont(currentTheme),
                                                     PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
                                                     1,
-                                                    PeekTransitConstants.getRouteNameTextSizeForWidget(widgetSize),
+                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                                     getWidgetTextColor(currentTheme, isNightMode),
                                                     finalRouteName
                                                 )
@@ -614,20 +612,33 @@ class CentralWidgetLooksUpdateManager
                                                         getWidgetTextFont(currentTheme),
                                                         PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
                                                         1,
-                                                        PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                                         PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
                                                         finalArrivalStatus
                                                     )
                                                 )
                                                 views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
-                                            } else {
+                                            } else if (widgetSize != "lockscreen" && widgetSize != "small") {
                                                 views.setImageViewBitmap(
                                                     arrivalStatusResId, generateTextBitmap(
                                                         context,
                                                         getWidgetTextFont(currentTheme),
                                                         PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
                                                         1,
-                                                        PeekTransitConstants.getArrivalStatusTextSizeForWidget(widgetSize),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                        getWidgetTextColor(currentTheme, isNightMode),
+                                                        ""
+                                                    )
+                                                )
+                                                views.setContentDescription(arrivalStatusResId, "")
+                                            } else {
+                                                views.setImageViewBitmap(
+                                                    arrivalStatusResId, generateTextBitmap(
+                                                        context,
+                                                        getWidgetTextFont(currentTheme),
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize)/2,
+                                                        1,
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                                         getWidgetTextColor(currentTheme, isNightMode),
                                                         ""
                                                     )
@@ -642,7 +653,7 @@ class CentralWidgetLooksUpdateManager
                                                         getWidgetTextFont(currentTheme),
                                                         PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
                                                         1,
-                                                        PeekTransitConstants.getArrivalTimeTextSizeForWidget(widgetSize),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
                                                         getWidgetTextColor(currentTheme, isNightMode),
                                                         arrivalTime
                                                     )

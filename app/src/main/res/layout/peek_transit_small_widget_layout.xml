@@ -35,10 +35,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
-        android:paddingStart="16dp"
+        android:paddingStart="8dp"
         android:paddingTop="16dp"
         android:paddingBottom="0dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="8dp"
         android:paddingHorizontal="16dp"
     >
 
@@ -72,28 +72,28 @@
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_route_number_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_1_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="40"
+                android:layout_weight="45"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_arrival_time_text_image" />
         </LinearLayout>
 
@@ -109,30 +109,30 @@
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_route_number_text_image"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_small_widget_bus_stop_1_schedule_entry_2_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="40"
+                android:layout_weight="45"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_arrival_time_text_image" />
         </LinearLayout>
     </LinearLayout>

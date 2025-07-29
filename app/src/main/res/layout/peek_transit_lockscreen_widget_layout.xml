@@ -35,8 +35,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_weight="1"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="12dp"
+        android:paddingHorizontal="8dp"
+        android:paddingTop="18dp"
         android:paddingBottom="0dp"
     >
 
@@ -52,7 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/bus_stop_1_title_text_image"
-                />
+            />
 
         </LinearLayout>
 
@@ -69,28 +69,28 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_route_number_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_1_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="40"
+                android:layout_weight="45"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_1_arrival_time_text_image" />
         </LinearLayout>
 
@@ -107,28 +107,28 @@
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_route_number_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_number_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_route_name_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_route_name_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_status_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="15"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_status_text_image" />
 
             <ImageView
                 android:id="@+id/peek_transit_lockscreen_widget_bus_stop_1_schedule_entry_2_arrival_time_text_image"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="40"
+                android:layout_weight="45"
                 android:contentDescription="@string/bus_stop_1_schedule_entry_2_arrival_time_text_image" />
         </LinearLayout>
     </LinearLayout>

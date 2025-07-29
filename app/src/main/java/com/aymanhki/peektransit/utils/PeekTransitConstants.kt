@@ -235,12 +235,12 @@ object PeekTransitConstants {
         }
     }
 
-    fun getLastSeenFontSizeForWidget(widgetSize: String): Float {
+    fun getLastUpdatedFontSizeForWidget(widgetSize: String): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 13f
-            "medium" -> 13f
-            "large" -> 13f
-            "lockscreen" -> 13f
+            "small" -> 16f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 16f
             else -> 14f
         }
     }
@@ -248,102 +248,90 @@ object PeekTransitConstants {
 
     fun getStopTitleWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 200
-            "medium" -> 400
-            "large" -> 400
-            "lockscreen" -> 200
+            "small" -> 180
+            "medium" -> 380
+            "large" -> 380
+            "lockscreen" -> 180
             else -> 100
         }
     }
 
-    fun getStopTitleTextSizeForWidget(widgetSize: String): Float {
-        return when (widgetSize.lowercase()) {
-            "small" -> 16f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 14f
-            else -> 14f
-        }
-    }
 
     fun getRouteNumberWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 50
-            "medium" -> 30
-            "large" -> 30
-            "lockscreen" -> 50
+            "small" -> 40
+            "medium" -> 50
+            "large" -> 50
+            "lockscreen" -> 40
             else -> 50
-        }
-    }
-
-    fun getRouteNumberTextSizeForWidget(widgetSize: String): Float {
-        return when (widgetSize.lowercase()) {
-            "small" -> 16f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 16f
-            else -> 12f
         }
     }
 
     fun getRouteNameWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 30
-            "medium" -> 180
-            "large" -> 180
-            "lockscreen" -> 30
+            "small" -> 25
+            "medium" -> 150
+            "large" -> 150
+            "lockscreen" -> 25
             else -> 100
-        }
-    }
-
-
-    fun getRouteNameTextSizeForWidget(widgetSize: String): Float {
-        return when (widgetSize.lowercase()) {
-            "small" -> 16f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 16f
-            else -> 16f
         }
     }
 
     fun getArrivalStatusWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 30
+            "small" -> 25
             "medium" -> 60
             "large" -> 60
-            "lockscreen" -> 30
+            "lockscreen" -> 25
             else -> 60
-        }
-    }
-
-    fun getArrivalStatusTextSizeForWidget(widgetSize: String): Float {
-        return when (widgetSize.lowercase()) {
-            "small" -> 16f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 16f
-            else -> 16f
         }
     }
 
     fun getArrivalTimeWidthForWidget(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 65
-            "medium" -> 80
-            "large" -> 80
-            "lockscreen" -> 65
+            "small" -> 90
+            "medium" -> 100
+            "large" -> 100
+            "lockscreen" -> 90
             else -> 80
         }
     }
 
-    fun getArrivalTimeTextSizeForWidget(widgetSize: String): Float {
-        return when (widgetSize.lowercase()) {
-            "small" -> 16f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 16f
-            else -> 16f
+    fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme): Float {
+        return when (currentTheme) {
+            StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
+                "small" -> 16f
+                "medium" -> 14f
+                "large" -> 16f
+                "lockscreen" -> 14f
+                else -> 14f
+            }
+            StopViewTheme.CLASSIC -> when (widgetSize.lowercase()) {
+                "small" -> 16f
+                "medium" -> 13f
+                "large" -> 16f
+                "lockscreen" -> 14f
+                else -> 14f
+            }
+        }
+    }
+
+    fun getScheduleEntryFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme): Float {
+        return when (currentTheme) {
+            StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
+                "small" -> 18f
+                "medium" -> 20f
+                "large" -> 20f
+                "lockscreen" -> 18f
+                else -> 10f
+            }
+            StopViewTheme.CLASSIC -> when (widgetSize.lowercase()) {
+                "small" -> 18f
+                "medium" -> 18f
+                "large" -> 18f
+                "lockscreen" -> 18f
+                else -> 10f
+            }
         }
     }
 
