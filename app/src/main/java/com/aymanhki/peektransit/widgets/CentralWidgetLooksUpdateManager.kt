@@ -45,7 +45,9 @@ class CentralWidgetLooksUpdateManager
             locationCoordinatesLayoutResId: Int,
             locationCoordinatesTextImagedResId: Int,
             lastUpdatedLayoutResId: Int,
-            lastUpdatedTextImageResId: Int
+            lastUpdatedTextImageResId: Int,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
             var views: RemoteViews
 
@@ -58,7 +60,7 @@ class CentralWidgetLooksUpdateManager
                     views.setTextViewText(errorTextId, errorMsg)
                 } else {
                     views = RemoteViews(context.packageName, layoutId)
-                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData)
+                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData, maxWidgetWidth, maxWidgetHeight)
                 }
             } else {
                 views = RemoteViews(context.packageName, initialLayoutId)
@@ -86,7 +88,9 @@ class CentralWidgetLooksUpdateManager
             locationCoordinatesTextImagedResId: Int,
             lastUpdatedLayoutResId: Int,
             lastUpdatedTextImageResId: Int,
-            widgetScheduleData: WidgetSchedule?
+            widgetScheduleData: WidgetSchedule?,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val showLastUpdatedStatus = widgetConfig.widgetData["showLastUpdatedStatus"] as? Boolean ?: false
@@ -118,7 +122,9 @@ class CentralWidgetLooksUpdateManager
                 busSchedulesComponentsResIds,
                 isNightMode,
                 currentTheme,
-                widgetSize
+                widgetSize,
+                maxWidgetWidth,
+                maxWidgetHeight
             )
 
             updateWidgetLastUpdated(
@@ -328,7 +334,9 @@ class CentralWidgetLooksUpdateManager
             busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
-            widgetSize: String
+            widgetSize: String,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
             if (widgetScheduleData != null) {
                 val widgetSchedules = widgetScheduleData.scheduleData
@@ -337,10 +345,10 @@ class CentralWidgetLooksUpdateManager
 
                 if (isCompactMode) {
                     handleCompactMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
-                        isNightMode, currentTheme, widgetSize)
+                        isNightMode, currentTheme, widgetSize, maxWidgetWidth, maxWidgetHeight)
                 } else {
                     handleNormalMode(context, views, widgetSchedules, busSchedulesComponentsResIds,
-                        isNightMode, currentTheme, widgetSize, widgetConfig)
+                        isNightMode, currentTheme, widgetSize, widgetConfig, maxWidgetWidth, maxWidgetHeight)
                 }
             }
             return views
@@ -353,7 +361,9 @@ class CentralWidgetLooksUpdateManager
             busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
-            widgetSize: String
+            widgetSize: String,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ) {
             val firstBusScheduleComponentResIds = busSchedulesComponentsResIds.entries.firstOrNull()
             if (firstBusScheduleComponentResIds != null) {
@@ -402,9 +412,9 @@ class CentralWidgetLooksUpdateManager
                                     routeNumberResId, generateTextBitmap(
                                         context,
                                         getWidgetTextFont(currentTheme),
-                                        PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
+                                        PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         1,
-                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         routeNumber
                                     )
@@ -416,9 +426,9 @@ class CentralWidgetLooksUpdateManager
                                     routeNameResId, generateTextBitmap(
                                         context,
                                         getWidgetTextFont(currentTheme),
-                                        PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
+                                        PeekTransitConstants.getRouteNameWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         1,
-                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         finalRouteName
                                     )
@@ -433,22 +443,35 @@ class CentralWidgetLooksUpdateManager
                                         arrivalStatusResId, generateTextBitmap(
                                             context,
                                             getWidgetTextFont(currentTheme),
-                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                             1,
-                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                             PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
                                             finalArrivalStatus
                                         )
                                     )
                                     views.setContentDescription(arrivalStatusResId, "Arrival Status: $arrivalStatus")
+                                } else if (widgetSize != "lockscreen" && widgetSize != "small") {
+                                    views.setImageViewBitmap(
+                                        arrivalStatusResId, generateTextBitmap(
+                                            context,
+                                            getWidgetTextFont(currentTheme),
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
+                                            1,
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
+                                            getWidgetTextColor(currentTheme, isNightMode),
+                                            ""
+                                        )
+                                    )
+                                    views.setContentDescription(arrivalStatusResId, "")
                                 } else {
                                     views.setImageViewBitmap(
                                         arrivalStatusResId, generateTextBitmap(
                                             context,
                                             getWidgetTextFont(currentTheme),
-                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize)/2,
+                                            PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight) / 2,
                                             1,
-                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                             getWidgetTextColor(currentTheme, isNightMode),
                                             ""
                                         )
@@ -462,9 +485,9 @@ class CentralWidgetLooksUpdateManager
                                         arrivalTimeResId, generateTextBitmap(
                                             context,
                                             getWidgetTextFont(currentTheme),
-                                            PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
+                                            PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                             1,
-                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                            PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                             getWidgetTextColor(currentTheme, isNightMode),
                                             arrivalTime
                                         )
@@ -497,7 +520,9 @@ class CentralWidgetLooksUpdateManager
             isNightMode: Boolean,
             currentTheme: StopViewTheme,
             widgetSize: String,
-            widgetConfig: WidgetModel
+            widgetConfig: WidgetModel,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ) {
             for ((index) in busSchedulesComponentsResIds.entries.withIndex()) {
                 val currentWidgetScheduleEntry = widgetSchedules.entries.elementAtOrNull(index)
@@ -579,9 +604,9 @@ class CentralWidgetLooksUpdateManager
                                                 routeNumberResId, generateTextBitmap(
                                                     context,
                                                     getWidgetTextFont(currentTheme),
-                                                    PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize),
+                                                    PeekTransitConstants.getRouteNumberWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                     1,
-                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                     getWidgetTextColor(currentTheme, isNightMode),
                                                     routeNumber
                                                 )
@@ -594,9 +619,9 @@ class CentralWidgetLooksUpdateManager
                                                 routeNameResId, generateTextBitmap(
                                                     context,
                                                     getWidgetTextFont(currentTheme),
-                                                    PeekTransitConstants.getRouteNameWidthForWidget(widgetSize),
+                                                    PeekTransitConstants.getRouteNameWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                     1,
-                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                    PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                     getWidgetTextColor(currentTheme, isNightMode),
                                                     finalRouteName
                                                 )
@@ -610,9 +635,9 @@ class CentralWidgetLooksUpdateManager
                                                     arrivalStatusResId, generateTextBitmap(
                                                         context,
                                                         getWidgetTextFont(currentTheme),
-                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         1,
-                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         PeekTransitConstants.getWidgetStatusTextColor(arrivalStatus, currentTheme),
                                                         finalArrivalStatus
                                                     )
@@ -623,9 +648,9 @@ class CentralWidgetLooksUpdateManager
                                                     arrivalStatusResId, generateTextBitmap(
                                                         context,
                                                         getWidgetTextFont(currentTheme),
-                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize),
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         1,
-                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         getWidgetTextColor(currentTheme, isNightMode),
                                                         ""
                                                     )
@@ -636,9 +661,9 @@ class CentralWidgetLooksUpdateManager
                                                     arrivalStatusResId, generateTextBitmap(
                                                         context,
                                                         getWidgetTextFont(currentTheme),
-                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize)/2,
+                                                        PeekTransitConstants.getArrivalStatusWidthForWidget(widgetSize,  currentTheme, maxWidgetWidth, maxWidgetHeight)/2,
                                                         1,
-                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         getWidgetTextColor(currentTheme, isNightMode),
                                                         ""
                                                     )
@@ -651,9 +676,9 @@ class CentralWidgetLooksUpdateManager
                                                     arrivalTimeResId, generateTextBitmap(
                                                         context,
                                                         getWidgetTextFont(currentTheme),
-                                                        PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize),
+                                                        PeekTransitConstants.getArrivalTimeWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         1,
-                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme),
+                                                        PeekTransitConstants.getScheduleEntryFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                                         getWidgetTextColor(currentTheme, isNightMode),
                                                         arrivalTime
                                                     )

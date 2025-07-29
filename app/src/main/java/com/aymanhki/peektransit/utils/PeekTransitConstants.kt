@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
+import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.managers.SettingsManager
@@ -257,7 +258,7 @@ object PeekTransitConstants {
     }
 
 
-    fun getRouteNumberWidthForWidget(widgetSize: String): Int {
+    fun getRouteNumberWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 40
             "medium" -> 50
@@ -267,7 +268,7 @@ object PeekTransitConstants {
         }
     }
 
-    fun getRouteNameWidthForWidget(widgetSize: String): Int {
+    fun getRouteNameWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 25
             "medium" -> 150
@@ -277,7 +278,7 @@ object PeekTransitConstants {
         }
     }
 
-    fun getArrivalStatusWidthForWidget(widgetSize: String): Int {
+    fun getArrivalStatusWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 25
             "medium" -> 60
@@ -287,12 +288,12 @@ object PeekTransitConstants {
         }
     }
 
-    fun getArrivalTimeWidthForWidget(widgetSize: String): Int {
+    fun getArrivalTimeWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
         return when (widgetSize.lowercase()) {
-            "small" -> 90
+            "small" -> 80
             "medium" -> 100
             "large" -> 100
-            "lockscreen" -> 90
+            "lockscreen" -> 80
             else -> 80
         }
     }
@@ -316,17 +317,17 @@ object PeekTransitConstants {
         }
     }
 
-    fun getScheduleEntryFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme): Float {
+    fun getScheduleEntryFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (currentTheme) {
             StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
-                "small" -> 18f
+                "small" -> 17f
                 "medium" -> 20f
                 "large" -> 20f
-                "lockscreen" -> 18f
+                "lockscreen" -> 17f
                 else -> 10f
             }
             StopViewTheme.CLASSIC -> when (widgetSize.lowercase()) {
-                "small" -> 18f
+                "small" -> 17f
                 "medium" -> 18f
                 "large" -> 18f
                 "lockscreen" -> 17f

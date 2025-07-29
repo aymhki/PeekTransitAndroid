@@ -72,8 +72,16 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         updateAppWidget(context, appWidgetManager, appWidgetId)
     }
 
+
     fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+
+        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val dimensions = getWidgetDimensions(options)
+
+        Log.d(logTag, "Widget $appWidgetId dimensions: ${dimensions.first}dp x ${dimensions.second}dp")
+
+
         val finalView = CentralWidgetLooksUpdateManager.getFinalWidgetLook(
             context,
             widgetConfig,
@@ -89,8 +97,24 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
             locationCoordinatesLayoutResId,
             locationCoordinatesTextImagedResId,
             lastUpdatedLayoutResId,
-            lastUpdatedTextImageResId
+            lastUpdatedTextImageResId,
+            dimensions.first,
+            dimensions.second
         )
         appWidgetManager.updateAppWidget(appWidgetId, finalView)
+    }
+
+    private fun getWidgetDimensions(options: Bundle): Pair<Int, Int> {
+        val portraitWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+        val portraitHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+        val landscapeWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
+        val landscapeHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+
+        val maxWidth = maxOf(portraitWidth, landscapeWidth)
+        val maxHeight = maxOf(portraitHeight, landscapeHeight)
+
+        Log.d(logTag, "Widget dimensions - Portrait: ${portraitWidth}x${portraitHeight}dp, " + "Landscape: ${landscapeWidth}x${landscapeHeight}dp, " + "Max: ${maxWidth}x${maxHeight}dp")
+
+        return Pair(portraitWidth, portraitHeight)
     }
 }
