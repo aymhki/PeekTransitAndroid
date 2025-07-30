@@ -1,10 +1,14 @@
 package com.aymanhki.peektransit.ui.screens
 
 import android.Manifest
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
@@ -16,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.aymanhki.peektransit.data.models.Stop
@@ -64,6 +69,8 @@ fun ListViewScreen(
     var isDebouncing by remember { mutableStateOf(false) }
     var isUserInput by remember { mutableStateOf(false) }
 
+
+
     LaunchedEffect(viewModelSearchQuery) {
         if (localSearchQuery.trim() != viewModelSearchQuery.trim()) {
             isUserInput = false
@@ -97,7 +104,7 @@ fun ListViewScreen(
             isDebouncing = false
             viewModel.updateSearchQuery("")
             if (lastSearchedQuery.isNotEmpty()) {
-                viewModel.searchForStops("", null)
+                viewModel.searchForStops("")
             }
             isUserInput = false
             return@LaunchedEffect
@@ -105,13 +112,17 @@ fun ListViewScreen(
 
         delay(PeekTransitConstants.SEARCH_DEBOUNCE_DELAY_MS)
         isDebouncing = false
-        viewModel.updateSearchQuery(localSearchQuery)
+        viewModel.updateSearchQuery(localSearchQuery.trim())
 
-        if (localSearchQuery != lastSearchedQuery) {
-            viewModel.searchForStops(localSearchQuery, currentLocation)
+        if (localSearchQuery.trim() != lastSearchedQuery.trim()) {
+            viewModel.searchForStops(localSearchQuery.trim())
         }
 
         isUserInput = false
+    }
+
+    val isSearchReady by remember(isViewModelInitialized) {
+        mutableStateOf(isViewModelInitialized)
     }
 
     Scaffold(
@@ -172,7 +183,7 @@ fun ListViewScreen(
                         onRefresh = {
                             if (localSearchQuery.isNotEmpty()) {
                                 scope.launch {
-                                    viewModel.searchForStops(localSearchQuery, currentLocation)
+                                    viewModel.searchForStops(localSearchQuery)
                                 }
                             } else {
                                 viewModel.retry()
@@ -184,57 +195,63 @@ fun ListViewScreen(
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
                             item {
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                    shape = RoundedCornerShape(28.dp)
+                                AnimatedVisibility(
+                                    visible = isSearchReady,
+                                    enter = fadeIn() + expandVertically()
                                 ) {
-                                    OutlinedTextField(
-                                        value = localSearchQuery,
-                                        onValueChange = {
-                                            isUserInput = true
-                                            localSearchQuery = it
-                                        },
-                                        placeholder = {
-                                            Text(
-                                                "Search stops, routes...",
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Default.Search,
-                                                contentDescription = "Search",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            if (localSearchQuery.isNotEmpty()) {
-                                                IconButton(onClick = {
-                                                    isUserInput = true
-                                                    localSearchQuery = ""
-                                                    viewModel.clearSearchQuery()
-                                                }) {
-                                                    Icon(
-                                                        Icons.Default.Clear,
-                                                        contentDescription = "Clear search",
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        shape = RoundedCornerShape(28.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = localSearchQuery,
+                                            onValueChange = {
+                                                isUserInput = true
+                                                localSearchQuery = it
+                                            },
+                                            placeholder = {
+                                                Text(
+                                                    "Search stops, routes...",
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Search,
+                                                    contentDescription = "Search",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            },
+                                            trailingIcon = {
+                                                if (localSearchQuery.isNotEmpty()) {
+                                                    IconButton(onClick = {
+                                                        isUserInput = true
+                                                        localSearchQuery = ""
+                                                        viewModel.clearSearchQuery()
+                                                    }) {
+                                                        Icon(
+                                                            Icons.Default.Clear,
+                                                            contentDescription = "Clear search",
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true,
-                                        shape = RoundedCornerShape(28.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                            unfocusedBorderColor = Color.Transparent,
-                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(28.dp),
+                                            keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = false),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedBorderColor = Color.Transparent,
+                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
                             when {
@@ -281,72 +298,21 @@ fun ListViewScreen(
                                         combinedStops
                                     } else {
                                         combinedStops.filter { stop ->
-                                            stop.name.contains(localSearchQuery, ignoreCase = true) ||
-                                                    stop.number.toString().contains(localSearchQuery) ||
+                                            stop.name.contains(localSearchQuery.trim(), ignoreCase = true) ||
+                                                    stop.number.toString().contains(localSearchQuery.trim()) ||
                                                     stop.variants.any { variant ->
-                                                        variant.key.contains(localSearchQuery, ignoreCase = true) ||
-                                                                variant.name.contains(localSearchQuery, ignoreCase = true)
+                                                        variant.key.contains(localSearchQuery.trim(), ignoreCase = true) ||
+                                                                variant.name.contains(localSearchQuery.trim(), ignoreCase = true)
                                                     }
                                         }
                                     }
 
-                                    val localFilteredStops = if (localSearchQuery.isEmpty()) {
-                                        stops
-                                    } else {
-                                        stops.filter { stop ->
-                                            stop.name.contains(localSearchQuery, ignoreCase = true) ||
-                                                    stop.number.toString().contains(localSearchQuery) ||
-                                                    stop.variants.any { variant ->
-                                                        variant.key.contains(localSearchQuery, ignoreCase = true) ||
-                                                                variant.name.contains(localSearchQuery, ignoreCase = true)
-                                                    }
-                                        }
-                                    }
 
-                                    val currentError = if (localSearchQuery.isNotEmpty()) searchError else (error ?: locationError)
-                                    val hasLocalResults = localFilteredStops.isNotEmpty()
-                                    val isSearchActive = localSearchQuery.isNotEmpty()
+                                    val currentError = if (localSearchQuery.isNotEmpty() ) searchError else (error ?: locationError)
+
 
                                     when {
-                                        isSearchActive && hasLocalResults -> {
-                                            items(filteredStops, key = { stop ->
-                                                "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
-                                            }) { stop ->
-                                                StopRow(
-                                                    stop = stop,
-                                                    distance = stop.getDistance(),
-                                                    onNavigateToLiveStop = onNavigateToLiveStop
-                                                )
-                                            }
-
-                                            if (isSearching) {
-                                                item {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(16.dp),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Row(
-                                                            verticalAlignment = Alignment.CenterVertically,
-                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                        ) {
-                                                            CircularProgressIndicator(
-                                                                modifier = Modifier.size(16.dp),
-                                                                strokeWidth = 2.dp
-                                                            )
-                                                            Text(
-                                                                "Finding more stops...",
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        isSearchActive && !hasLocalResults && !isSearching && currentError == null -> {
+                                        !currentError?.message.isNullOrEmpty() || filteredStops.isEmpty()  -> {
                                             item {
                                                 Box(
                                                     modifier = Modifier
@@ -355,38 +321,17 @@ fun ListViewScreen(
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     Text(
-                                                        text = "No stops found for \"$localSearchQuery\"",
+                                                        text = currentError?.message ?: "No stops found.",
                                                         style = MaterialTheme.typography.bodyLarge,
-                                                        textAlign = TextAlign.Center
+                                                        textAlign = TextAlign.Center,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(16.dp)
                                                     )
                                                 }
                                             }
                                         }
 
-                                        isSearchActive && !hasLocalResults && isSearching -> {
-                                            item {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .fillParentMaxHeight(),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Column(
-                                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                                        modifier = Modifier.padding(16.dp)
-                                                    ) {
-                                                        CircularProgressIndicator()
-                                                        Spacer(modifier = Modifier.height(16.dp))
-                                                        Text(
-                                                            text = "Searching...",
-                                                            style = MaterialTheme.typography.bodyMedium
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        !isSearchActive && filteredStops.isNotEmpty() -> {
+                                        else -> {
                                             items(filteredStops, key = { stop ->
                                                 "${stop.number}_${stop.variants.size}_${stop.variants.hashCode()}"
                                             }) { stop ->
@@ -395,39 +340,6 @@ fun ListViewScreen(
                                                     distance = stop.getDistance(),
                                                     onNavigateToLiveStop = onNavigateToLiveStop
                                                 )
-                                            }
-                                        }
-
-                                        !isSearchActive && filteredStops.isEmpty() && currentError == null -> {
-                                            item {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .fillParentMaxHeight(),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Column(
-                                                        modifier = Modifier.padding(16.dp),
-                                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                                        verticalArrangement = Arrangement.Center
-                                                    ) {
-                                                        Text(
-                                                            text = "No nearby stops found",
-                                                            style = MaterialTheme.typography.bodyLarge,
-                                                            textAlign = TextAlign.Center
-                                                        )
-
-                                                        Spacer(modifier = Modifier.height(16.dp))
-
-                                                        Button(
-                                                            onClick = {
-                                                                viewModel.retry()
-                                                            }
-                                                        ) {
-                                                            Text("Retry")
-                                                        }
-                                                    }
-                                                }
                                             }
                                         }
                                     }
@@ -444,7 +356,7 @@ fun ListViewScreen(
                                 if (localSearchQuery.isNotEmpty()) {
                                     viewModel.clearSearchError()
                                     scope.launch {
-                                        viewModel.searchForStops(localSearchQuery, currentLocation)
+                                        viewModel.searchForStops(localSearchQuery)
                                     }
                                 } else {
                                     viewModel.clearError()

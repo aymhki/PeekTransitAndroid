@@ -266,7 +266,7 @@ class StopsDataStore private constructor() {
         }
     }
 
-    suspend fun searchForStops(query: String, userLocation: Location? = null) {
+    suspend fun searchForStops(query: String) {
         searchJob?.cancel()
         
         if (query.isEmpty()) {
@@ -283,7 +283,7 @@ class StopsDataStore private constructor() {
                 
                 delay(PeekTransitConstants.SEARCH_DEBOUNCE_DELAY_MS)
                 
-                val searchedStops = api.searchStops(query, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
+                val searchedStops = api.searchStops(query.trim(), PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
                 _searchResults.postValue(searchedStops)
                 
                 launch {

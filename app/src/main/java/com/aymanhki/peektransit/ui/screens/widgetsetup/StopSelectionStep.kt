@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckBox
@@ -92,6 +93,10 @@ fun StopSelectionStep(
         }
     }
 
+    val isSearchReady by remember(isViewModelInitialized) {
+        mutableStateOf(isViewModelInitialized)
+    }
+
     val maxPreferredStopsInClosestStops = PeekTransitConstants.getMaxPreferredStopsInClosestStops(widgetSize)
     val maxStops = if (selectedPreferredStopsInClosestStops) {
         maxPreferredStopsInClosestStops
@@ -125,10 +130,10 @@ fun StopSelectionStep(
             stopsToFilter
         } else {
             stopsToFilter.filter { stop ->
-                stop.name.contains(searchQuery, ignoreCase = true) ||
-                        stop.number.toString().contains(searchQuery) ||
+                stop.name.contains(searchQuery.trim(), ignoreCase = true) ||
+                        stop.number.toString().contains(searchQuery.trim()) ||
                         stop.variants.any { variant ->
-                            variant.key.contains(searchQuery, ignoreCase = true)
+                            variant.key.contains(searchQuery.trim(), ignoreCase = true)
                         }
             }
         }
@@ -210,7 +215,7 @@ fun StopSelectionStep(
                 onRefresh = {
                     if (searchQuery.isNotEmpty()) {
                         scope.launch {
-                            stopsDataStore.searchForStops(searchQuery)
+                            stopsDataStore.searchForStops(searchQuery.trim())
                         }
                     } else {
                         stopsDataStore.clearError()
@@ -354,9 +359,11 @@ fun StopSelectionStep(
                     }
 
                     if (!isClosestStop || selectedPreferredStopsInClosestStops) {
+
+
                         item {
                             AnimatedVisibility(
-                                visible = !isClosestStop || selectedPreferredStopsInClosestStops,
+                                visible = (!isClosestStop || selectedPreferredStopsInClosestStops)  && isSearchReady,
                                 enter = slideInVertically() + fadeIn(),
                                 exit = slideOutVertically() + fadeOut()
                             ) {
@@ -384,7 +391,7 @@ fun StopSelectionStep(
                                             onValueChange = { query ->
                                                 searchQuery = query
                                                 scope.launch {
-                                                    stopsDataStore.searchForStops(query)
+                                                    stopsDataStore.searchForStops(query.trim())
                                                 }
                                             },
                                             placeholder = {
@@ -419,6 +426,7 @@ fun StopSelectionStep(
                                             modifier = Modifier.fillMaxWidth(),
                                             singleLine = true,
                                             shape = RoundedCornerShape(28.dp),
+                                            keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = false),
                                             colors = OutlinedTextFieldDefaults.colors(
                                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                                 unfocusedBorderColor = Color.Transparent,
@@ -430,6 +438,7 @@ fun StopSelectionStep(
                                 }
                             }
                         }
+
 
                         when {
                             isLoadingStops || isLoadingLocation || isLoading -> {
@@ -455,7 +464,7 @@ fun StopSelectionStep(
                                 }
                             }
 
-                            error != null || locationError != null -> {
+                            (error != null || locationError != null) && !isSearching -> {
                                 item {
                                     val currentError = error ?: locationError
                                     if (currentError != null) {
@@ -608,6 +617,133 @@ private enum class ViewState {
     LOADING, READY, TRANSITIONING
 }
 
+//@Composable
+//private fun SelectableStopRow(
+//    stop: Stop,
+//    isSelected: Boolean,
+//    enabled: Boolean,
+//    onClick: () -> Unit
+//) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 8.dp, vertical = 4.dp)
+//            .clickable(enabled = enabled) { onClick() }
+//            .alpha(if (enabled) 1f else 0.5f),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surface
+//        )
+//    ) {
+//        Row(
+//            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            CircularCheckbox(
+//                checked = isSelected,
+//                onCheckedChange = { if (enabled) onClick() },
+//                enabled = enabled
+//            )
+//            Spacer(modifier = Modifier.width(12.dp))
+//
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .weight(1f),
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                MapPreview(
+//                    latitude = stop.centre.geographic.latitude,
+//                    longitude = stop.centre.geographic.longitude,
+//                    direction = stop.direction,
+//                    modifier = Modifier
+//                       .size(width = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP.dp, height = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP.dp)
+//                        .clip(RoundedCornerShape(8.dp))
+//                )
+//
+//                Spacer(modifier = Modifier.width(12.dp))
+//
+//                Column(
+//                    modifier = Modifier.weight(1f),
+//                    verticalArrangement = Arrangement.spacedBy(16.dp),
+//                ) {
+//                    Text(
+//                        text = "${stop.name}",
+//                        style = MaterialTheme.typography.bodyLarge.copy(
+//                            fontWeight = FontWeight.Medium
+//                        ),
+//                        maxLines = 2,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+//
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Text(
+//                            text = "#${stop.number}",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                            maxLines = 1,
+//                            overflow = TextOverflow.Ellipsis
+//                        )
+//
+//                        val distance = if (stop.distances.direct != Double.POSITIVE_INFINITY) stop.distances.direct else null
+//                        if (distance != null && distance.isFinite()) {
+//                            Text(
+//                                text = " ● ${PeekTransitConstants.formatDistance(distance)}",
+//                                style = MaterialTheme.typography.bodySmall,
+//                                color = MaterialTheme.colorScheme.onSurfaceVariant
+//                            )
+//                        }
+//                    }
+//
+//                    if (stop.variants.isNotEmpty()) {
+//
+//                        Column(
+//                            verticalArrangement = Arrangement.spacedBy(8.dp)
+//                        ) {
+//                            val currentDate = java.util.Date()
+//                            val currentVariants = stop.variants.filter { variant ->
+//                                val effectiveFrom = variant.getEffectiveFromDate()
+//                                val effectiveTo = variant.getEffectiveToDate()
+//                                (effectiveFrom == null || currentDate >= effectiveFrom) &&
+//                                        (effectiveTo == null || currentDate <= effectiveTo)
+//                            }.distinctBy { it.key.split("-")[0] }
+//
+//                            if (currentVariants.isNotEmpty()) {
+//                                val chunkedCurrentVariants = currentVariants.chunked(5)
+//                                chunkedCurrentVariants.forEach { rowVariants ->
+//                                    Row(
+//                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                                    ) {
+//                                        rowVariants.forEach { variant ->
+//                                            VariantBadge(variant = variant)
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                val context = LocalContext.current
+//                val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
+//                val isStopSaved = savedStopsManager.isStopSaved(stop)
+//
+//                if (isStopSaved) {
+//                    Icon(
+//                        imageVector = Icons.Default.Bookmark,
+//                        contentDescription = "Saved stop",
+//                        tint = MaterialTheme.colorScheme.primary,
+//                        modifier = Modifier.size(24.dp)
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+
+
 @Composable
 private fun SelectableStopRow(
     stop: Stop,
@@ -636,7 +772,7 @@ private fun SelectableStopRow(
                 enabled = enabled
             )
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -648,12 +784,12 @@ private fun SelectableStopRow(
                     longitude = stop.centre.geographic.longitude,
                     direction = stop.direction,
                     modifier = Modifier
-                       .size(width = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP.dp, height = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP.dp)
+                        .size(width = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP.dp, height = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP.dp)
                         .clip(RoundedCornerShape(8.dp))
                 )
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -666,7 +802,7 @@ private fun SelectableStopRow(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -687,35 +823,42 @@ private fun SelectableStopRow(
                             )
                         }
                     }
-                    
+
                     if (stop.variants.isNotEmpty()) {
-                        val currentDate = java.util.Date()
-                        val currentVariants = stop.variants.filter { variant ->
-                            val effectiveFrom = variant.getEffectiveFromDate()
-                            val effectiveTo = variant.getEffectiveToDate()
-                            (effectiveFrom == null || currentDate >= effectiveFrom) &&
-                                    (effectiveTo == null || currentDate <= effectiveTo)
-                        }.distinctBy { it.key.split("-")[0] }
-                        
-                        if (currentVariants.isNotEmpty()) {
-                            val chunkedCurrentVariants = currentVariants.chunked(4)
-                            chunkedCurrentVariants.forEach { rowVariants ->
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val currentDate = java.util.Date()
+                            val currentVariants = stop.variants.filter { variant ->
+                                val effectiveFrom = variant.getEffectiveFromDate()
+                                val effectiveTo = variant.getEffectiveToDate()
+                                (effectiveFrom == null || currentDate >= effectiveFrom) &&
+                                        (effectiveTo == null || currentDate <= effectiveTo)
+                            }.distinctBy { it.key.split("-")[0] }
+
+                            if (currentVariants.isNotEmpty()) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    maxItemsInEachRow = 4
                                 ) {
-                                    rowVariants.forEach { variant ->
-                                        VariantBadge(variant = variant)
+                                    currentVariants.forEach { variant ->
+                                        VariantBadge(
+                                            variant = variant,
+                                            modifier = Modifier
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
-                
+
                 val context = LocalContext.current
                 val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
                 val isStopSaved = savedStopsManager.isStopSaved(stop)
-                
+
                 if (isStopSaved) {
                     Icon(
                         imageVector = Icons.Default.Bookmark,

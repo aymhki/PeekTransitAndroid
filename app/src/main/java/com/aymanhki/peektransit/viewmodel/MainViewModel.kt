@@ -206,9 +206,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _lastSearchedQuery.postValue("")
     }
 
-    fun searchForStops(query: String, userLocation: Location? = null) {
+    fun searchForStops(query: String) {
         viewModelScope.launch {
-            stopsDataStore.searchForStops(query.trim(), userLocation)
+            stopsDataStore.searchForStops(query.trim())
             _lastSearchedQuery.postValue(query.trim())
         }
     }
