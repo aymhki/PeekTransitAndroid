@@ -136,7 +136,9 @@ class CentralWidgetLooksUpdateManager
                 lastUpdatedTimeString,
                 showLastUpdatedStatus,
                 lastUpdatedLayoutResId,
-                lastUpdatedTextImageResId
+                lastUpdatedTextImageResId,
+                maxWidgetWidth,
+                maxWidgetHeight
             )
 
             return views
@@ -185,7 +187,9 @@ class CentralWidgetLooksUpdateManager
             lastUpdatedTimeString: String,
             shouldShowLastUpdatedTextImage: Boolean,
             lastUpdatedLayoutResId: Int,
-            lastUpdatedTextImageResId: Int
+            lastUpdatedTextImageResId: Int,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
             return if (shouldShowLastUpdatedTextImage) {
                 updateWidgetLastUpdatedTextImage(
@@ -196,7 +200,9 @@ class CentralWidgetLooksUpdateManager
                     currentTheme,
                     lastUpdatedTimeString,
                     lastUpdatedLayoutResId,
-                    lastUpdatedTextImageResId
+                    lastUpdatedTextImageResId,
+                    maxWidgetWidth,
+                    maxWidgetHeight
                 )
             } else {
                 resetLastUpdatedTextImage(views, lastUpdatedLayoutResId, lastUpdatedTextImageResId)
@@ -223,7 +229,9 @@ class CentralWidgetLooksUpdateManager
             currentTheme: StopViewTheme,
             lastUpdatedTimeString: String,
             lastUpdatedLayoutResId: Int,
-            lastUpdatedTextImageResId: Int
+            lastUpdatedTextImageResId: Int,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
             views.setViewVisibility(lastUpdatedLayoutResId, VISIBLE)
             views.setViewVisibility(lastUpdatedTextImageResId, VISIBLE)
@@ -244,7 +252,7 @@ class CentralWidgetLooksUpdateManager
                     getWidgetTextFont(currentTheme),
                     null,
                     1,
-                    PeekTransitConstants.getLastUpdatedFontSizeForWidget(widgetSize),
+                    PeekTransitConstants.getLastUpdatedFontSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight ),
                     getWidgetTextColor(currentTheme, isNightMode),
                     lastUpdatedString
                 )
@@ -551,11 +559,9 @@ class CentralWidgetLooksUpdateManager
                                     stopTitleTextImage, generateTextBitmap(
                                         context,
                                         getWidgetTextFont(currentTheme),
-                                        PeekTransitConstants.getStopTitleWidthForWidget(widgetSize),
+                                        PeekTransitConstants.getStopTitleWidthForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         if (widgetSize == "small") 2 else 1,
-                                        PeekTransitConstants.getStopTitleTextSizeForWidget(
-                                            widgetSize, currentTheme
-                                        ),
+                                        PeekTransitConstants.getStopTitleTextSizeForWidget(widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight),
                                         getWidgetTextColor(currentTheme, isNightMode),
                                         busStopText
                                     )

@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
 
 object PeekTransitConstants {
     const val DEBUG_MODE = false
-    const val DEBUG_WIDGET_LOCATION_ACCESS = true
+    const val DEBUG_WIDGET_LOCATION_ACCESS = false
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
     const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
@@ -236,18 +236,18 @@ object PeekTransitConstants {
         }
     }
 
-    fun getLastUpdatedFontSizeForWidget(widgetSize: String): Float {
+    fun getLastUpdatedFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 14f
-            "medium" -> 16f
-            "large" -> 16f
-            "lockscreen" -> 14f
+            "small" -> 15f
+            "medium" -> 15f
+            "large" -> 15f
+            "lockscreen" -> 15f
             else -> 14f
         }
     }
 
 
-    fun getStopTitleWidthForWidget(widgetSize: String): Int {
+    fun getStopTitleWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
         return when (widgetSize.lowercase()) {
             "small" -> 180
             "medium" -> 380
@@ -298,7 +298,7 @@ object PeekTransitConstants {
         }
     }
 
-    fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme): Float {
+    fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (currentTheme) {
             StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
                 "small" -> 16f

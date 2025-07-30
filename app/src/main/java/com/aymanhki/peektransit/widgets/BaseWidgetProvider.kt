@@ -25,7 +25,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     protected abstract val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        Log.d(logTag, "onUpdate called for ${this.javaClass.simpleName}")
 
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
@@ -54,7 +53,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         val action = intent.action
-        Log.d(logTag, "Received action: $action")
 
         if (action in PeekTransitConstants.updateActions) {
             PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
@@ -78,9 +76,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
 
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
         val dimensions = getWidgetDimensions(options)
-
-        Log.d(logTag, "Widget $appWidgetId dimensions: ${dimensions.first}dp x ${dimensions.second}dp")
-
 
         val finalView = CentralWidgetLooksUpdateManager.getFinalWidgetLook(
             context,
@@ -113,7 +108,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val maxWidth = maxOf(portraitWidth, landscapeWidth)
         val maxHeight = maxOf(portraitHeight, landscapeHeight)
 
-        Log.d(logTag, "Widget dimensions - Portrait: ${portraitWidth}x${portraitHeight}dp, " + "Landscape: ${landscapeWidth}x${landscapeHeight}dp, " + "Max: ${maxWidth}x${maxHeight}dp")
 
         return Pair(portraitWidth, portraitHeight)
     }

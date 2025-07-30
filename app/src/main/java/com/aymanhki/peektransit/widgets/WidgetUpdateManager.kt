@@ -28,7 +28,6 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import android.location.Location
 import kotlinx.coroutines.*
-import androidx.lifecycle.lifecycleScope
 
 object WidgetUpdateManager {
     private const val TAG = "WidgetUpdateManager"
@@ -78,13 +77,14 @@ object WidgetUpdateManager {
         val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
         val shouldDoManualUpdates = (debugging || userOptedInForManualUpdates)
         val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
-        this.debugUpdateIntervalMinutes = debugIntervalMinutes
+
 
         if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
             PeekTransitConstants.initAPIKey(context)
 
             if (shouldUseAlarmBasedWorkManager) {
-                if (!checkAlarmUpdatesAreRunning(context)) {
+                if (!checkAlarmUpdatesAreRunning(context) || this.debugUpdateIntervalMinutes != debugIntervalMinutes) {
+                    this.debugUpdateIntervalMinutes = debugIntervalMinutes
                     stopProductionModeUpdates(context)
                     startDebugModeUpdates(context)
                 }
@@ -133,11 +133,9 @@ object WidgetUpdateManager {
 
         if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
             if (shouldUseAlarmBasedWorkManager) {
-                Log.d(TAG, "Using manual mode updates")
                 stopProductionModeUpdates(context)
                 startDebugModeUpdates(context)
             } else {
-                Log.d(TAG, "Using auto mode updates")
                 stopAlarmUpdates(context)
                 startProductionModeUpdates(context)
             }
@@ -315,7 +313,6 @@ object WidgetUpdateManager {
     }
 
     suspend fun workToUpdateWidgetCoreData(context: Context) {
-        Log.d(TAG, "Doing Widget Core Update Work")
         val allAppWidgetIds = PeekTransitConstants.getAllActiveWidgetIds(context)
 
         for (appWidgetId in allAppWidgetIds) {
@@ -354,17 +351,22 @@ object WidgetUpdateManager {
 
             try {
                 if (needsBackgroundLocation) {
-                    //TODO: Fetch the user location in the background here
-                    val userLocation = Location("fused")
-                    finalWidgetScheduleData.userLocationLon = "${userLocation.latitude}"
-                    finalWidgetScheduleData.userLocationLat = "${ userLocation.longitude}"
-                    val nearbyStops = api.getNearbyStops(
-                        userLocation,
-                        PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE
-                    )
-                    val filteredStops = getFilteredStopsForWidget(nearbyStops, widgetConfig)
-                    finalWidgetScheduleData.scheduleData =
-                        getStopsScheduleData(filteredStops, widgetConfig)
+                    val (userLocation, locationError) = WidgetLocationManager.getCurrentLocation(context)
+
+                    if (userLocation != null) {
+                        finalWidgetScheduleData.userLocationLon = "${userLocation.latitude}"
+                        finalWidgetScheduleData.userLocationLat = "${userLocation.longitude}"
+                        val nearbyStops = api.getNearbyStops(
+                            userLocation,
+                            PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE
+                        )
+                        val filteredStops = getFilteredStopsForWidget(nearbyStops, widgetConfig)
+                        finalWidgetScheduleData.scheduleData =
+                            getStopsScheduleData(filteredStops, widgetConfig)
+
+                    } else {
+                        finalWidgetScheduleData.errorMsg = "Unable to fetch user location. Please check your location settings."
+                    }
                 } else {
                     val selectedStops =
                         widgetConfig.widgetData["stops"] as? List<Stop> ?: emptyList()
@@ -379,7 +381,7 @@ object WidgetUpdateManager {
                     var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection"
 
                     if (needsBackgroundLocation) {
-                        finalErrorMsg + ". And make sure location services are enabled for this widget."
+                        finalErrorMsg += ". And make sure location services are enabled for this widget."
                     } else {
                         finalErrorMsg += "."
                     }
@@ -567,7 +569,7 @@ object WidgetUpdateManager {
 
                 val difference = maxVariants - finalSchedulesForThisStop.size
 
-                for (i in 0 .. difference) {
+                for (i in 0 until difference) {
                     for (variant in missingVariantEntries) {
                         finalSchedulesForThisStop = finalSchedulesForThisStop.plus(
                             variant.key +
@@ -582,7 +584,7 @@ object WidgetUpdateManager {
             }
 
             if (finalSchedulesForThisStop.size == 0 || finalSchedulesForThisStop.isEmpty()) {
-                for (i in 0..maxVariants) {
+                for (i in 0 until maxVariants) {
                     finalSchedulesForThisStop = finalSchedulesForThisStop.plus(
                         PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER +
                                 PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
@@ -684,7 +686,7 @@ object WidgetUpdateManager {
             }
         }
 
-        if (filteredStops.size < maxStops && preferredVariants.isEmpty()) {
+        if (filteredStops.size < maxStops && preferredVariants.isNotEmpty()) {
             val processedStopNumbers = mutableSetOf<Int>()
 
             for (filteredStop in filteredStops) {
@@ -733,9 +735,11 @@ object WidgetUpdateManager {
                         filteredStops = filteredStops.plus(updatedStop)
                         seenVariants.addAll(stopVariants)
 
-                        if (filteredStops.size >= maxStops) {
-                            break
-                        }
+
+                    }
+
+                    if (filteredStops.size >= maxStops) {
+                        break
                     }
 
                 } catch (e: Exception) {
