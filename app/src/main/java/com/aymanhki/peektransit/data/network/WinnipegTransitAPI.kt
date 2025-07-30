@@ -366,7 +366,6 @@ class WinnipegTransitAPI private constructor() {
                         finalArrivalText = "Time Unavailable"
                     }
 
-                    // Clean up variant key
                     variantKey = variantKey.split("-").firstOrNull() ?: variantKey
 
                     if (variantKey.contains("BLUE")) {
@@ -382,7 +381,6 @@ class WinnipegTransitAPI private constructor() {
             return emptyList()
         }
 
-        // Sort the bus schedule list
         return busScheduleList.sortedWith { str1, str2 ->
             val componentsA = str1.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
             val componentsB = str2.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
@@ -390,7 +388,6 @@ class WinnipegTransitAPI private constructor() {
             val timeA = componentsA[3]
             val timeB = componentsB[3]
 
-            // Handle "Due" status - should appear first
             when {
                 timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB != PeekTransitConstants.DUE_STATUS_TEXT -> -1
                 timeB == PeekTransitConstants.DUE_STATUS_TEXT && timeA != PeekTransitConstants.DUE_STATUS_TEXT -> 1
@@ -400,7 +397,6 @@ class WinnipegTransitAPI private constructor() {
                     val isMinutesB = timeB.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
 
                     when {
-                        // Both are minute-based times
                         isMinutesA && isMinutesB -> {
                             val minutesA = timeA.split(" ")[0].toIntOrNull() ?: 0
                             val minutesB = timeB.split(" ")[0].toIntOrNull() ?: 0
@@ -408,17 +404,14 @@ class WinnipegTransitAPI private constructor() {
                             if (minutesA != minutesB) {
                                 minutesA.compareTo(minutesB)
                             } else {
-                                // Same minutes, compare by status
                                 val stateA = componentsA[2]
                                 val stateB = componentsB[2]
 
                                 compareByStatus(stateA, stateB)
                             }
                         }
-                        // Minutes-based time comes before clock time
                         isMinutesA -> -1
                         isMinutesB -> 1
-                        // Both are clock times
                         else -> {
                             val timeComponentsA = timeA.split(" ")
                             val timeComponentsB = timeB.split(" ")

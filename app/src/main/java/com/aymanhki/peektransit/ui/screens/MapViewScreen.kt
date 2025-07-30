@@ -140,7 +140,6 @@ fun MapViewScreen(
                     ),
                     1500
                 )
-                // Mark camera as positioned in viewModel after successful animation
                 viewModel.setCameraPositioned(true)
             } catch (e: Exception) {
                 cameraPositionState.move(
@@ -148,7 +147,6 @@ fun MapViewScreen(
                         CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
                     )
                 )
-                // Mark camera as positioned even after exception
                 viewModel.setCameraPositioned(true)
             } finally {
                 isAnimatingCamera = false
