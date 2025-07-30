@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
         MapSnapshotCache.initialize(applicationContext)
 
 
-        val stopNumber = -1
+        val stopNumber = intent.getIntExtra("STOP_NUMBER", -1)
 
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)

@@ -115,6 +115,6 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val maxHeight = maxOf(portraitHeight, landscapeHeight)
 
 
-        return Pair(portraitWidth, portraitHeight)
+        return Pair(maxWidth, maxHeight)
     }
 }

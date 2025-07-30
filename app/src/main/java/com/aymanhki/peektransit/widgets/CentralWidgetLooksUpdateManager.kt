@@ -18,6 +18,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.FontRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
+import com.aymanhki.peektransit.MainActivity
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
@@ -126,6 +127,16 @@ class CentralWidgetLooksUpdateManager
                 maxWidgetWidth,
                 maxWidgetHeight
             )
+
+            if (widgetScheduleData != null) {
+                addBusStopClickHandlers(
+                    context,
+                    views,
+                    widgetScheduleData.scheduleData,
+                    busSchedulesComponentsResIds,
+                    appWidgetId
+                )
+            }
 
             updateWidgetLastUpdated(
                 context,
@@ -332,6 +343,45 @@ class CentralWidgetLooksUpdateManager
             )
 
             return views
+        }
+
+        private fun addBusStopClickHandlers(
+            context: Context,
+            views: RemoteViews,
+            widgetSchedules: Map<String, List<String>>,
+            busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>,
+            appWidgetId: Int
+        ) {
+            for ((index, entry) in busSchedulesComponentsResIds.entries.withIndex()) {
+                val widgetScheduleEntry = widgetSchedules.entries.elementAtOrNull(index)
+
+                if (widgetScheduleEntry != null) {
+                    val busStopKey = widgetScheduleEntry.key.split(PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES)
+                    val busStopNumber = busStopKey.getOrNull(1)?.toIntOrNull()
+
+                    if (busStopNumber != null) {
+                        val mainLayoutId = entry.key
+                        val intent = Intent(context, MainActivity::class.java).apply {
+                            putExtra("STOP_NUMBER", busStopNumber)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        }
+
+                        val pendingIntent = PendingIntent.getActivity(
+                            context,
+                            busStopNumber,
+                            intent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+
+                        views.setOnClickPendingIntent(mainLayoutId, pendingIntent)
+
+                        val busStopAndScheduleLayoutComponentResIds = entry.value
+                        busStopAndScheduleLayoutComponentResIds.values.firstOrNull()?.keys?.forEach { scheduleLayoutId ->
+                            views.setOnClickPendingIntent(scheduleLayoutId, pendingIntent)
+                        }
+                    }
+                }
+            }
         }
 
         fun updateWidgetSchedules(
