@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -13,9 +14,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 object WidgetLocationManager {
-    private const val LOCATION_TIMEOUT_MS = 30000L
-    private const val LOCATION_UPDATE_INTERVAL_MS = 10000L
-    private const val FASTEST_INTERVAL_MS = 5000L
+    private const val LOCATION_TIMEOUT_MS = PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS
+    private const val LOCATION_UPDATE_INTERVAL_MS = PeekTransitConstants.LOCATION_UPDATE_INTERVAL_MS
+    private const val FASTEST_INTERVAL_MS = PeekTransitConstants.LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS
     private const val MAX_RETRY_ATTEMPTS = 3
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
@@ -167,7 +168,7 @@ object WidgetLocationManager {
     private suspend fun getLastKnownLocation(context: Context): Location? {
         val client = fusedLocationClient ?: return null
 
-        return withTimeoutOrNull(10000L) {
+        return withTimeoutOrNull(LOCATION_TIMEOUT_MS) {
             suspendCancellableCoroutine { continuation ->
                 try {
                     client.lastLocation.addOnSuccessListener { location ->
