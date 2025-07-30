@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aymanhki.peektransit.ui.components.CircularCheckbox
@@ -361,12 +362,16 @@ private fun SizeOption(
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
+        val words = label.split(" ")
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
             else MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            // Only allow wrapping if there are multiple words
+            maxLines = if (words.size > 1) 2 else 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
