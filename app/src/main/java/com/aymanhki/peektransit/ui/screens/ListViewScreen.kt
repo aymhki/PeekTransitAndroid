@@ -65,9 +65,9 @@ fun ListViewScreen(
     var isUserInput by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModelSearchQuery) {
-        if (localSearchQuery != viewModelSearchQuery) {
+        if (localSearchQuery.trim() != viewModelSearchQuery.trim()) {
             isUserInput = false
-            localSearchQuery = viewModelSearchQuery
+            localSearchQuery = viewModelSearchQuery.trim()
         }
     }
 

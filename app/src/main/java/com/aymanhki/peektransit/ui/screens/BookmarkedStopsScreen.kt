@@ -40,11 +40,11 @@ fun BookmarkedStopsScreen(
     } else {
         savedStops.filter { savedStop ->
             val stop = savedStop.stopData
-            stop.name.contains(searchQuery, ignoreCase = true) ||
-            stop.number.toString().contains(searchQuery) ||
-            stop.street.name.contains(searchQuery, ignoreCase = true) ||
+            stop.name.contains(searchQuery.trim(), ignoreCase = true) ||
+            stop.number.toString().contains(searchQuery.trim()) ||
+            stop.street.name.contains(searchQuery.trim(), ignoreCase = true) ||
             stop.variants.any { variant ->
-                variant.key.contains(searchQuery, ignoreCase = true)
+                variant.key.contains(searchQuery.trim(), ignoreCase = true)
             }
         }.map { it.stopData }
     }

@@ -173,7 +173,7 @@ class WinnipegTransitAPI private constructor() {
         rateLimiter.waitIfNeeded()
         
         try {
-            val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+            val encodedQuery = java.net.URLEncoder.encode(query.trim(), "UTF-8")
             val usage = if (forShort) "short" else "long"
             val fullUrl = "${PeekTransitConstants.BASE_URL}stops:${encodedQuery}.json?usage=${usage}&api-key=${PeekTransitConstants.TRANSIT_API_KEY}"
             

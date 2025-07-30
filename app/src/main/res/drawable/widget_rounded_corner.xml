@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <corners  android:radius="8dp"/>
+    <solid android:color="@color/surface" />
+    <corners android:radius="@dimen/widgets_round_corners_radius"/>
 </shape>

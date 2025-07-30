@@ -5,6 +5,8 @@ import com.aymanhki.peektransit.R
 
 
 class PeekTransitSmallWidgetProvider : BaseWidgetProvider() {
+    override val mainLayoutFrameResId: Int = R.id.peek_transit_small_layout_frame
+    override val backgroundImageResId: Int = R.id.peek_transit_small_widget_background_image
     override val mainLayoutResId: Int = R.layout.peek_transit_small_widget_layout
     override val mainLayoutContainerResId: Int = R.id.peek_transit_small_widget_layout
     override val locationCoordinatesLayoutResId: Int = R.id.peek_transit_small_widget_user_location_coordinates_layout
@@ -39,6 +41,8 @@ class PeekTransitSmallWidgetProvider : BaseWidgetProvider() {
 }
 
 class PeekTransitMediumWidgetProvider : BaseWidgetProvider() {
+    override val mainLayoutFrameResId: Int = R.id.peek_transit_medium_layout_frame
+    override val backgroundImageResId: Int = R.id.peek_transit_medium_widget_background_image
     override val mainLayoutResId: Int = R.layout.peek_transit_medium_widget_layout
     override val mainLayoutContainerResId: Int = R.id.peek_transit_medium_widget_layout
     override val locationCoordinatesLayoutResId: Int = R.id.peek_transit_medium_widget_user_location_coordinates_layout
@@ -88,6 +92,8 @@ class PeekTransitMediumWidgetProvider : BaseWidgetProvider() {
 }
 
 class PeekTransitLargeWidgetProvider : BaseWidgetProvider() {
+    override val mainLayoutFrameResId: Int = R.id.peek_transit_large_layout_frame
+    override val backgroundImageResId: Int = R.id.peek_transit_large_widget_background_image
     override val mainLayoutResId: Int = R.layout.peek_transit_large_widget_layout
     override val mainLayoutContainerResId: Int = R.id.peek_transit_large_widget_layout
     override val locationCoordinatesLayoutResId: Int = R.id.peek_transit_large_widget_user_location_coordinates_layout
@@ -153,6 +159,8 @@ class PeekTransitLargeWidgetProvider : BaseWidgetProvider() {
 }
 
 class PeekTransitLockScreenWidgetProvider : BaseWidgetProvider() {
+    override val mainLayoutFrameResId: Int = R.id.peek_transit_lockscreen_layout_frame
+    override val backgroundImageResId: Int = R.id.peek_transit_lockscreen_widget_background_image
     override val mainLayoutResId: Int = R.layout.peek_transit_lockscreen_widget_layout
     override val mainLayoutContainerResId: Int = R.id.peek_transit_lockscreen_widget_layout
     override val locationCoordinatesLayoutResId: Int = R.id.peek_transit_lockscreen_widget_user_location_coordinates_layout

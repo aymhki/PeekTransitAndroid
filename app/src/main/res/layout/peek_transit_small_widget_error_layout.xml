@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    android:background="@color/surface"
+    android:background="@drawable/widget_rounded_corner"
     android:id="@+id/peek_transit_small_widget_error_layout"
     >
 

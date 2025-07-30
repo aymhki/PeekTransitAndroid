@@ -7,18 +7,26 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
+import android.util.Log
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.RemoteViews
 import androidx.annotation.ColorInt
 import androidx.annotation.FontRes
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
 import com.aymanhki.peektransit.MainActivity
+import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
@@ -48,7 +56,9 @@ class CentralWidgetLooksUpdateManager
             lastUpdatedLayoutResId: Int,
             lastUpdatedTextImageResId: Int,
             maxWidgetWidth: Int,
-            maxWidgetHeight: Int
+            maxWidgetHeight: Int,
+            mainLayoutFrameResId: Int,
+            backgroundImageResId: Int
         ): RemoteViews {
             var views: RemoteViews
 
@@ -61,7 +71,7 @@ class CentralWidgetLooksUpdateManager
                     views.setTextViewText(errorTextId, errorMsg)
                 } else {
                     views = RemoteViews(context.packageName, layoutId)
-                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData, maxWidgetWidth, maxWidgetHeight)
+                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData, maxWidgetWidth, maxWidgetHeight,  mainLayoutFrameResId, backgroundImageResId)
                 }
             } else {
                 views = RemoteViews(context.packageName, initialLayoutId)
@@ -91,7 +101,9 @@ class CentralWidgetLooksUpdateManager
             lastUpdatedTextImageResId: Int,
             widgetScheduleData: WidgetSchedule?,
             maxWidgetWidth: Int,
-            maxWidgetHeight: Int
+            maxWidgetHeight: Int,
+            mainLayoutFrameResId: Int,
+            backgroundImageResId: Int
         ): RemoteViews {
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val showLastUpdatedStatus = widgetConfig.widgetData["showLastUpdatedStatus"] as? Boolean ?: false
@@ -101,7 +113,7 @@ class CentralWidgetLooksUpdateManager
             val currentTheme = settingsManager.stopViewTheme
             val isNightMode = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
-            updateBackgroundColor(views, currentTheme, isNightMode, mainLayoutContainerResId)
+            updateBackgroundColor(context, views, currentTheme, isNightMode, mainLayoutContainerResId, mainLayoutFrameResId, backgroundImageResId, maxWidgetWidth, maxWidgetHeight)
 
             updateLocationCoordinates(
                 context,
@@ -179,14 +191,41 @@ class CentralWidgetLooksUpdateManager
         }
 
         fun updateBackgroundColor(
+            context: Context,
             views: RemoteViews,
             currentTheme: StopViewTheme,
             isNightMode: Boolean,
-            layoutId: Int
+            layoutId: Int,
+            mainLayoutFrameResId: Int,
+            backgroundImageResId: Int,
+            maxWidgetWidth: Int,
+            maxWidgetHeight: Int
         ): RemoteViews {
-            views.setInt(layoutId, "setBackgroundColor", getWidgetBackgroundColor(currentTheme, isNightMode))
+             views.setInt(layoutId, "setBackgroundColor", 0x00000000)
+            val dimensionInPixels = context.resources.getDimensionPixelSize(R.dimen.widgets_round_corners_radius).toFloat()
+            val bitmap = createRoundedRectangleBitmap(getWidgetBackgroundColor(currentTheme, isNightMode), dimensionInPixels, maxWidgetWidth, maxWidgetHeight)
+            views.setImageViewBitmap(backgroundImageResId, bitmap)
 
             return views
+        }
+
+        private fun createRoundedRectangleBitmap(
+            @ColorInt color: Int,
+            cornerRadius: Float,
+            width: Int,
+            height: Int
+        ): Bitmap {
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val paint = Paint().apply {
+                this.color = color
+                isAntiAlias = true
+            }
+
+            val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+
+            return bitmap
         }
 
         fun updateWidgetLastUpdated(

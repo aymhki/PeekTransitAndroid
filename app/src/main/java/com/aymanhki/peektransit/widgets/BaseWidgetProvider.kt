@@ -10,6 +10,8 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 
 abstract class BaseWidgetProvider : AppWidgetProvider() {
 
+    protected abstract val mainLayoutFrameResId: Int
+    protected abstract val backgroundImageResId: Int
     protected abstract val mainLayoutResId: Int
     protected abstract val mainLayoutContainerResId: Int
     protected abstract val locationCoordinatesLayoutResId: Int
@@ -61,7 +63,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val action = intent.action
 
         if (action in PeekTransitConstants.updateActions) {
-            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
+            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, true)
         }
     }
 
@@ -100,7 +102,9 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
             lastUpdatedLayoutResId,
             lastUpdatedTextImageResId,
             dimensions.first,
-            dimensions.second
+            dimensions.second,
+            mainLayoutFrameResId,
+            backgroundImageResId
         )
         appWidgetManager.updateAppWidget(appWidgetId, finalView)
     }

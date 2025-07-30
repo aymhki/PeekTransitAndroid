@@ -410,7 +410,13 @@ object WidgetUpdateManager {
                     finalWidgetScheduleData.userLocationLat = "${userLocation.longitude}"
                     val nearbyStops = api.getNearbyStops(userLocation, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
                     val filteredStops = getFilteredStopsForWidget(nearbyStops, widgetConfig)
-                    finalWidgetScheduleData.scheduleData = getStopsScheduleData(filteredStops, widgetConfig)
+
+                    if (filteredStops.isEmpty() && thisIsTheFirstUpdateForTheWidget) {
+                        finalWidgetScheduleData.errorMsg = "No nearby bus stops were found near your location. Are you sure you are in winnipeg?"
+
+                    } else {
+                        finalWidgetScheduleData.scheduleData = getStopsScheduleData(filteredStops, widgetConfig)
+                    }
                 } else {
                     if (finalWidgetScheduleData.scheduleData.isEmpty() || thisIsTheFirstUpdateForTheWidget) {
                         finalWidgetScheduleData.errorMsg = "Unable to fetch user location. Please check your location settings."

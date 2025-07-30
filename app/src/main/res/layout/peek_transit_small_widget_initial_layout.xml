@@ -5,9 +5,9 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:weightSum="100"
-    android:background="@color/surface"
+    android:background="@drawable/widget_rounded_corner"
     android:id="@+id/peek_transit_small_widget_initial_layout"
-    >
+>
 
     <ImageView
         android:layout_width="48dp"

@@ -238,10 +238,10 @@ object PeekTransitConstants {
 
     fun getLastUpdatedFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 15f
+            "small" -> 13f
             "medium" -> 15f
             "large" -> 15f
-            "lockscreen" -> 15f
+            "lockscreen" -> 13f
             else -> 14f
         }
     }

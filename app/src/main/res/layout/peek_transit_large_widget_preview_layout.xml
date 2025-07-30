@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:weightSum="100"
-    android:background="@color/surface"
+    android:background="@drawable/widget_rounded_corner"
 >
     <ImageView
         android:layout_width="wrap_content"

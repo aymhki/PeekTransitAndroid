@@ -198,7 +198,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateSearchQuery(query: String) {
-        _searchQuery.postValue(query)
+        _searchQuery.postValue(query.trim())
     }
 
     fun clearSearchQuery() {
@@ -208,8 +208,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun searchForStops(query: String, userLocation: Location? = null) {
         viewModelScope.launch {
-            stopsDataStore.searchForStops(query, userLocation)
-            _lastSearchedQuery.postValue(query)
+            stopsDataStore.searchForStops(query.trim(), userLocation)
+            _lastSearchedQuery.postValue(query.trim())
         }
     }
 
