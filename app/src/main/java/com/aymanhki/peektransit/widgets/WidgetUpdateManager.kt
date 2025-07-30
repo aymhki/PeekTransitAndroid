@@ -315,107 +315,149 @@ object WidgetUpdateManager {
     suspend fun workToUpdateWidgetCoreData(context: Context) {
         val allAppWidgetIds = PeekTransitConstants.getAllActiveWidgetIds(context)
 
+        val widgetsNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
+        val widgetsNotNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
+
         for (appWidgetId in allAppWidgetIds) {
             val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
-            if (widgetConfig == null) { continue }
-            val widgetConfigId = widgetConfig.id
-            val finalWidgetScheduleData = PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfigId) ?: WidgetSchedule(
-                widgetAppId = appWidgetId.toString(),
-                widgetConfigId = widgetConfigId,
-                userLocationLon = "",
-                userLocationLat = "",
-                lastUpdatedTime = "",
-                scheduleData = mutableMapOf<String, List<String>>(),
-                errorMsg = ""
-            )
-
-            val thisIsTheFirstUpdateForTheWidget = finalWidgetScheduleData.lastUpdatedTime.isEmpty()
-
-            val newErrorMsg = checkForWidgetErrors(
-                context = context,
-                appWidgetId = appWidgetId.toString(),
-                widgetConfig = widgetConfig,
-                widgetScheduleData = finalWidgetScheduleData
-            )
-
-            if (newErrorMsg.isNotEmpty()) {
-                finalWidgetScheduleData.errorMsg = newErrorMsg
-                PeekTransitConstants.savedWidgetSchedule(context,finalWidgetScheduleData)
-                continue
-            } else {
-                finalWidgetScheduleData.errorMsg = ""
-            }
-
+            if (widgetConfig == null) continue
             val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
-            val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
 
-            try {
-                if (needsBackgroundLocation) {
-                    val (userLocation, locationError) = WidgetLocationManager.getCurrentLocation(context)
-
-                    if (userLocation != null) {
-                        finalWidgetScheduleData.userLocationLon = "${userLocation.latitude}"
-                        finalWidgetScheduleData.userLocationLat = "${userLocation.longitude}"
-                        val nearbyStops = api.getNearbyStops(
-                            userLocation,
-                            PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE
-                        )
-                        val filteredStops = getFilteredStopsForWidget(nearbyStops, widgetConfig)
-                        finalWidgetScheduleData.scheduleData =
-                            getStopsScheduleData(filteredStops, widgetConfig)
-
-                    } else {
-                        finalWidgetScheduleData.errorMsg = "Unable to fetch user location. Please check your location settings."
-                    }
-                } else {
-                    val selectedStops =
-                        widgetConfig.widgetData["stops"] as? List<Stop> ?: emptyList()
-                    val schedules = getStopsScheduleData(selectedStops, widgetConfig)
-                    finalWidgetScheduleData.scheduleData = schedules
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching schedules for widget $appWidgetId", e)
-
-                if (thisIsTheFirstUpdateForTheWidget) {
-                    var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection"
-
-                    if (needsBackgroundLocation) {
-                        finalErrorMsg += ". And make sure location services are enabled for this widget."
-                    } else {
-                        finalErrorMsg += "."
-                    }
-
-                    finalErrorMsg += " " + estimateWhenTheNextUpdateWillBe(context)
-
-                    finalWidgetScheduleData.errorMsg = finalErrorMsg
-                }
+            if (needsBackgroundLocation) {
+                widgetsNeedingLocation.add(appWidgetId to widgetConfig)
+            } else {
+                widgetsNotNeedingLocation.add(appWidgetId to widgetConfig)
             }
-
-
-            var lastUpdatedTimeString: String = finalWidgetScheduleData.lastUpdatedTime
-
-            if (!thisIsTheFirstUpdateForTheWidget && WidgetSchedule.theTwoHaveDifferentSchedules(
-                finalWidgetScheduleData,
-                PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfigId))) {
-                 lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
-            } else if (!thisIsTheFirstUpdateForTheWidget) {
-                if (widgetSize == "lockscreen" || widgetSize == "small") {
-                    if (!lastUpdatedTimeString.contains(" O.")) {
-                        lastUpdatedTimeString += " O."
-                    }
-                } else {
-                    if (!lastUpdatedTimeString.contains(" Old")) {
-                        lastUpdatedTimeString += " Old"
-                    }
-                }
-            } else if (finalWidgetScheduleData.errorMsg.isEmpty()) {
-                lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
-            }
-
-            finalWidgetScheduleData.lastUpdatedTime = lastUpdatedTimeString
-            PeekTransitConstants.savedWidgetSchedule(context,finalWidgetScheduleData)
         }
+
+        var userLocation: Location? = null
+        var locationError: String? = null
+
+        if (widgetsNeedingLocation.isNotEmpty()) {
+            val locationResult = WidgetLocationManager.getCurrentLocation(context)
+            userLocation = locationResult.first
+            locationError = locationResult.second
+        }
+
+        for ((appWidgetId, widgetConfig) in widgetsNeedingLocation) {
+            processWidget(
+                context = context,
+                appWidgetId = appWidgetId,
+                widgetConfig = widgetConfig,
+                userLocation = userLocation,
+                locationError = locationError,
+                needsBackgroundLocation = true
+            )
+        }
+
+        for ((appWidgetId, widgetConfig) in widgetsNotNeedingLocation) {
+            processWidget(
+                context = context,
+                appWidgetId = appWidgetId,
+                widgetConfig = widgetConfig,
+                userLocation = null,
+                locationError = null,
+                needsBackgroundLocation = false
+            )
+        }
+    }
+
+    private suspend fun processWidget(
+        context: Context,
+        appWidgetId: Int,
+        widgetConfig: WidgetModel,
+        userLocation: Location?,
+        locationError: String?,
+        needsBackgroundLocation: Boolean
+    ) {
+        val widgetConfigId = widgetConfig.id
+        val finalWidgetScheduleData = PeekTransitConstants.getWidgetSchedule(
+            context,
+            appWidgetId.toString(),
+            widgetConfigId
+        ) ?: WidgetSchedule(
+            widgetAppId = appWidgetId.toString(),
+            widgetConfigId = widgetConfigId,
+            userLocationLon = "",
+            userLocationLat = "",
+            lastUpdatedTime = "",
+            scheduleData = mutableMapOf<String, List<String>>(),
+            errorMsg = ""
+        )
+
+        val thisIsTheFirstUpdateForTheWidget = finalWidgetScheduleData.lastUpdatedTime.isEmpty()
+        val newErrorMsg = checkForWidgetErrors(
+            context = context,
+            appWidgetId = appWidgetId.toString(),
+            widgetConfig = widgetConfig,
+            widgetScheduleData = finalWidgetScheduleData
+        )
+
+        if (newErrorMsg.isNotEmpty()) {
+            finalWidgetScheduleData.errorMsg = newErrorMsg
+            PeekTransitConstants.savedWidgetSchedule(context, finalWidgetScheduleData)
+            return
+        } else {
+            finalWidgetScheduleData.errorMsg = ""
+        }
+
+        val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
+
+        try {
+            if (needsBackgroundLocation) {
+                if (userLocation != null) {
+                    finalWidgetScheduleData.userLocationLon = "${userLocation.latitude}"
+                    finalWidgetScheduleData.userLocationLat = "${userLocation.longitude}"
+                    val nearbyStops = api.getNearbyStops(userLocation, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
+                    val filteredStops = getFilteredStopsForWidget(nearbyStops, widgetConfig)
+                    finalWidgetScheduleData.scheduleData = getStopsScheduleData(filteredStops, widgetConfig)
+                } else {
+                    if (finalWidgetScheduleData.scheduleData.isEmpty() || thisIsTheFirstUpdateForTheWidget) {
+                        finalWidgetScheduleData.errorMsg = "Unable to fetch user location. Please check your location settings."
+                        if (!locationError.isNullOrEmpty()) {
+                            finalWidgetScheduleData.errorMsg += " Error: $locationError"
+                        }
+                    }
+                }
+            } else {
+                val selectedStops = widgetConfig.widgetData["stops"] as? List<Stop> ?: emptyList()
+                val schedules = getStopsScheduleData(selectedStops, widgetConfig)
+                finalWidgetScheduleData.scheduleData = schedules
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching schedules for widget $appWidgetId", e)
+            if (thisIsTheFirstUpdateForTheWidget) {
+                var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection"
+                if (needsBackgroundLocation) {
+                    finalErrorMsg += ". And make sure location services are enabled for this widget."
+                } else {
+                    finalErrorMsg += "."
+                }
+                finalErrorMsg += " " + estimateWhenTheNextUpdateWillBe(context)
+                finalWidgetScheduleData.errorMsg = finalErrorMsg
+            }
+        }
+
+        var lastUpdatedTimeString: String = finalWidgetScheduleData.lastUpdatedTime
+
+        if (!thisIsTheFirstUpdateForTheWidget && WidgetSchedule.theTwoHaveDifferentSchedules(finalWidgetScheduleData, PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfigId))) {
+            lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+        } else if (!thisIsTheFirstUpdateForTheWidget) {
+            if (widgetSize == "lockscreen" || widgetSize == "small") {
+                if (!lastUpdatedTimeString.contains(" O.")) {
+                    lastUpdatedTimeString += " O."
+                }
+            } else {
+                if (!lastUpdatedTimeString.contains(" Old")) {
+                    lastUpdatedTimeString += " Old"
+                }
+            }
+        } else if (finalWidgetScheduleData.errorMsg.isEmpty()) {
+            lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+        }
+
+        finalWidgetScheduleData.lastUpdatedTime = lastUpdatedTimeString
+        PeekTransitConstants.savedWidgetSchedule(context, finalWidgetScheduleData)
     }
 
     fun estimateWhenTheNextUpdateWillBe(context: Context): String {
