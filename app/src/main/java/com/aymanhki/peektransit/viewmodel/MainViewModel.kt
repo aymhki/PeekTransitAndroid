@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     val stopsDataStore = StopsDataStore.getInstance().apply {
@@ -41,6 +42,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentLocation = MutableLiveData<Location?>()
     val currentLocation: LiveData<Location?> = _currentLocation
 
+    private val _cameraLocation = MutableLiveData<Location?>()
+    val cameraLocation: LiveData<Location?> = _cameraLocation
+
     private val _searchQuery = MutableLiveData("")
     val searchQuery: LiveData<String> = _searchQuery
 
@@ -55,12 +59,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val searchError: LiveData<TransitError?> = stopsDataStore.searchError
 
     private val locationMutex = Mutex()
-
     private var locationFetchJob: Job? = null
     private var cameraLocationJob: Job? = null
 
     private val _isCameraPositioned = MutableLiveData(false)
     val isCameraPositioned: LiveData<Boolean> = _isCameraPositioned
+
+    private val _hasInitialLocation = MutableLiveData(false)
+    val hasInitialLocation: LiveData<Boolean> = _hasInitialLocation
 
     fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         if (_isLoadingStops.value == true) return
@@ -87,9 +93,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun initializeGlobal() {
         if (_isInitialized.value == true) return
-
         if (locationManager.hasLocationPermission()) {
-            fetchLocationOnce(true)
+            fetchLocationOnce(false)
         }
     }
 
@@ -101,14 +106,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (_isCameraPositioned.value == true) return@withLock
 
                 try {
-                    val location = locationManager.getCurrentLocation(forceRefresh = true)
+                    _isLoadingLocation.postValue(true)
+
+                    val cachedLocation = getCachedLocationSync()
+                    if (cachedLocation != null) {
+                        _cameraLocation.postValue(cachedLocation)
+                        _isCameraPositioned.postValue(true)
+                        _hasInitialLocation.postValue(true)
+
+                        if (!isLocationRecent(cachedLocation)) {
+                            fetchFreshLocationInBackground()
+                        }
+                        return@withLock
+                    }
+
+                    val location = withTimeoutOrNull(PeekTransitConstants.MAIN_VIEW_MODEL_INITIAL_LOCATION_REQUEST_TIMEOUT_MS) {
+                        locationManager.getCurrentLocation(forceRefresh = true)
+                    }
+
                     if (location != null) {
+                        _cameraLocation.postValue(location)
                         _currentLocation.postValue(location)
                         _isCameraPositioned.postValue(true)
+                        _hasInitialLocation.postValue(true)
+
+                        if (_isInitialized.value != true) {
+                            initializeWithLocation(location)
+                        }
+                    } else {
+                        _hasInitialLocation.postValue(false)
                     }
                 } catch (e: Exception) {
-
+                    _locationError.postValue(TransitError.NetworkError(e))
+                    _hasInitialLocation.postValue(false)
+                } finally {
+                    _isLoadingLocation.postValue(false)
                 }
+            }
+        }
+    }
+
+
+    private suspend fun getCachedLocationSync(): Location? {
+        return try {
+            locationManager.getCachedLocation()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun fetchFreshLocationInBackground() {
+        viewModelScope.launch {
+            try {
+                val location = locationManager.getCurrentLocation(forceRefresh = true)
+                if (location != null) {
+                    _currentLocation.postValue(location)
+                    if (shouldUpdateStopsForLocation(location)) {
+                        loadStops(location, forceRefresh = false)
+                        previousLocation = location
+                    }
+                }
+            } catch (e: Exception) {
+                System.out.println("Error fetching fresh location in background: ${e.message}")
             }
         }
     }
@@ -123,24 +182,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val location = locationManager.getCurrentLocation(forceRefresh)
                     if (location != null) {
                         _currentLocation.postValue(location)
+                        _hasInitialLocation.postValue(true)
 
                         if (_isInitialized.value != true) {
                             initializeWithLocation(location)
                         } else if (shouldUpdateStopsForLocation(location)) {
                             loadStops(location, forceRefresh = forceRefresh)
                         }
-
                         previousLocation = location
                     } else {
                         _locationError.postValue(TransitError.NetworkError(Exception("Unable to get location. Please check location permissions and settings.")))
+                        _hasInitialLocation.postValue(false)
                     }
                 } catch (e: Exception) {
                     _locationError.postValue(TransitError.NetworkError(e))
+                    _hasInitialLocation.postValue(false)
                 } finally {
                     _isLoadingLocation.postValue(false)
                 }
             }
         }
+    }
+
+    private fun isLocationRecent(location: Location): Boolean {
+        val ageInMinutes = (System.currentTimeMillis() - location.time) / (1000 * 60)
+        return ageInMinutes < 1
     }
 
     private fun shouldUpdateStopsForLocation(location: Location): Boolean {
@@ -172,7 +238,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 minDistanceThreshold = PeekTransitConstants.LOCATION_UPDATE_MIN_DISTANCE_METERS,
                 callback = { newLocation ->
                     _currentLocation.postValue(newLocation)
-
                     if (shouldUpdateStopsForLocation(newLocation)) {
                         loadStops(newLocation, forceRefresh = false)
                         previousLocation = newLocation
@@ -195,6 +260,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun getCurrentLocationForCamera(): Location? {
         return locationManager.getCurrentLocation(forceRefresh = true)
+    }
+
+    suspend fun fetchLocationWithTimeout(timeoutMs: Long): Location? {
+        return withTimeoutOrNull(timeoutMs) {
+            locationManager.getCurrentLocation(forceRefresh = true)
+        }
     }
 
     fun updateSearchQuery(query: String) {
@@ -236,11 +307,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCameraPositioned(positioned: Boolean) {
         _isCameraPositioned.postValue(positioned)
-    }
-
-    suspend fun fetchLocationWithTimeout(timeoutMs: Long): Location? {
-        return withTimeoutOrNull(timeoutMs) {
-            locationManager.getCurrentLocation(forceRefresh = true)
-        }
     }
 }

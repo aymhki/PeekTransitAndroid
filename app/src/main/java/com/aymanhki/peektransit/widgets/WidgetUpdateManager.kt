@@ -20,7 +20,7 @@ import com.aymanhki.peektransit.data.models.Variant
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.data.network.WinnipegTransitAPI
 import com.aymanhki.peektransit.utils.PeekTransitConstants
-import com.aymanhki.peektransit.utils.PeekTransitConstants.FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
+import com.aymanhki.peektransit.utils.PeekTransitConstants.FLEXIBLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
 import com.aymanhki.peektransit.utils.PeekTransitConstants.MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES
 import com.aymanhki.peektransit.utils.TimeFormat
 import java.time.LocalDateTime
@@ -217,7 +217,7 @@ object WidgetUpdateManager {
     private fun startProductionModeUpdates(context: Context) {
         val updateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
             MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES, TimeUnit.MINUTES,
-            FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES, TimeUnit.MINUTES
+            FLEXIBLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES, TimeUnit.MINUTES
         ).build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -478,7 +478,7 @@ object WidgetUpdateManager {
             )
 
             val maximumNextUpdateTime = LocalDateTime.now().plusMinutes(
-                MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES + FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES + 1
+                MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES + FLEXIBLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES + 1
             )
 
             toReturn = "This widget will update again between: ${minimumNextUpdateTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} and ${maximumNextUpdateTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"

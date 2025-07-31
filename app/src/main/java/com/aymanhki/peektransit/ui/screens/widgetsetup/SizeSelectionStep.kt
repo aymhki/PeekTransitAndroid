@@ -369,7 +369,6 @@ private fun SizeOption(
             color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
             else MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            // Only allow wrapping if there are multiple words
             maxLines = if (words.size > 1) 2 else 1,
             overflow = TextOverflow.Ellipsis
         )

@@ -41,6 +41,8 @@ import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.MapStyleOptions
+import kotlinx.coroutines.delay
+
 
 @Composable
 fun MapViewScreen(
@@ -53,7 +55,6 @@ fun MapViewScreen(
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()
-
     val isDarkTheme = when (currentTheme) {
         StopViewTheme.CLASSIC -> true
         StopViewTheme.MODERN -> systemDarkTheme
@@ -73,6 +74,7 @@ fun MapViewScreen(
     val error by viewModel.error.observeAsState()
     val locationError by viewModel.locationError.observeAsState()
     val isCameraPositioned by viewModel.isCameraPositioned.observeAsState(false)
+    val hasInitialLocation by viewModel.hasInitialLocation.observeAsState(false)
 
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var locationStatus by remember { mutableStateOf("Initializing...") }
@@ -80,29 +82,24 @@ fun MapViewScreen(
     var isMapsInitialized by remember { mutableStateOf(false) }
     var isAnimatingCamera by remember { mutableStateOf(false) }
 
+    val cameraLocation by viewModel.cameraLocation.observeAsState()
+    val liveLocation by viewModel.currentLocation.observeAsState()
+
+    val defaultLocation = LatLng(49.8951, -97.1384)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            LatLng(49.8951, -97.1384),
-            0f
-        )
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 11.0f)
     }
 
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
-
     val isViewModelInitialized by viewModel.isInitialized.observeAsState(false)
-    val liveLocation by viewModel.currentLocation.observeAsState()
 
     LaunchedEffect(Unit) {
         try {
             MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { result ->
                 isMapsInitialized = true
                 showMap = true
-                locationStatus = if (result == MapsInitializer.Renderer.LATEST) {
-                    "Maps initialized"
-                } else {
-                    "Maps initialized (legacy)"
-                }
+                locationStatus = "Map ready"
             }
         } catch (e: Exception) {
             locationStatus = "Maps initialization failed: ${e.message}"
@@ -117,63 +114,56 @@ fun MapViewScreen(
         }
     }
 
-    LaunchedEffect(isCurrentDestination) {
-        if (isCurrentDestination && locationPermissionsState.allPermissionsGranted) {
-            viewModel.initializeGlobal()
-            if (!isCameraPositioned) {
-                viewModel.fetchLocationForCamera()
-            }
+    LaunchedEffect(isCurrentDestination, locationPermissionsState.allPermissionsGranted, isMapsInitialized) {
+        if (isCurrentDestination && locationPermissionsState.allPermissionsGranted && isMapsInitialized) {
+            viewModel.fetchLocationForCamera()
         }
     }
 
-    LaunchedEffect(liveLocation, isMapsInitialized, showMap) {
-        if (liveLocation != null && isMapsInitialized && showMap && !isAnimatingCamera && !isCameraPositioned) {
-            val newLatLng = LatLng(liveLocation!!.latitude, liveLocation!!.longitude)
+    LaunchedEffect(cameraLocation, isMapsInitialized, showMap) {
+        if (cameraLocation != null && isMapsInitialized && showMap && !isAnimatingCamera) {
+            val newLatLng = LatLng(cameraLocation!!.latitude, cameraLocation!!.longitude)
             userLocation = newLatLng
-            locationStatus = "Location: ${"%.4f".format(liveLocation!!.latitude)}, ${"%.4f".format(liveLocation!!.longitude)}"
+            locationStatus = "Location: ${"%.4f".format(cameraLocation!!.latitude)}, ${"%.4f".format(cameraLocation!!.longitude)}"
 
             isAnimatingCamera = true
             try {
+                val zoomLevel = if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f
                 cameraPositionState.animate(
                     CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                        CameraPosition.fromLatLngZoom(newLatLng, zoomLevel)
                     ),
-                    1500
+                    1000
                 )
-                viewModel.setCameraPositioned(true)
             } catch (e: Exception) {
                 cameraPositionState.move(
                     CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.fromLatLngZoom(newLatLng, PeekTransitConstants.DEFAULT_MAP_ZOOM)
+                        CameraPosition.fromLatLngZoom(newLatLng, if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f)
                     )
                 )
-                viewModel.setCameraPositioned(true)
             } finally {
                 isAnimatingCamera = false
             }
         }
     }
 
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted, isViewModelInitialized) {
-        if (locationPermissionsState.allPermissionsGranted && isViewModelInitialized && !isCameraPositioned) {
-            Log.d("MapViewScreen", "Fallback location fetch triggered for camera positioning")
-            val locationResult = viewModel.fetchLocationWithTimeout(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS)
-
-            if (locationResult == null) {
-                val defaultLatLng = LatLng(49.8951, -97.1384)
-                locationStatus = "Using default location (Winnipeg)"
+    LaunchedEffect(isMapsInitialized, showMap, hasInitialLocation, isLoadingLocation) {
+        if (isMapsInitialized && showMap && !hasInitialLocation && !isLoadingLocation) {
+            delay(PeekTransitConstants.CAMERA_DELAY_FOR_INITIAL_LOCATION_ZOOM_MS)
+            if (!hasInitialLocation && cameraLocation == null) {
+                locationStatus = "Showing Winnipeg area (location unavailable)"
                 isAnimatingCamera = true
                 try {
                     cameraPositionState.animate(
                         CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(defaultLatLng, 11.0f)
+                            CameraPosition.fromLatLngZoom(defaultLocation, 11.0f)
                         ),
-                        1500
+                        1000
                     )
                 } catch (e: Exception) {
                     cameraPositionState.move(
                         CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.fromLatLngZoom(defaultLatLng, 11.0f)
+                            CameraPosition.fromLatLngZoom(defaultLocation, 11.0f)
                         )
                     )
                 } finally {
@@ -183,10 +173,12 @@ fun MapViewScreen(
         }
     }
 
-    LaunchedEffect(isLoadingLocation, isLoadingStops) {
+    LaunchedEffect(isLoadingLocation, isLoadingStops, hasInitialLocation) {
         when {
             isLoadingLocation -> locationStatus = "Getting your location..."
             isLoadingStops -> locationStatus = "Loading nearby stops..."
+            !hasInitialLocation && locationPermissionsState.allPermissionsGranted ->
+                locationStatus = "Location services unavailable"
         }
     }
 
@@ -194,7 +186,7 @@ fun MapViewScreen(
         if (!locationPermissionsState.allPermissionsGranted) {
             locationStatus = "Location permission required"
         } else if (!isMapsInitialized) {
-            locationStatus = "Initializing maps..."
+            locationStatus = "Initializing map..."
         }
     }
 
@@ -216,21 +208,13 @@ fun MapViewScreen(
                         modifier = Modifier.size(48.dp),
                         strokeWidth = 4.dp
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Text(
-                        text = if (locationStatus.contains("Initializing") || locationStatus.contains("Maps")) {
-                            "Loading Map..."
-                        } else {
-                            "Getting Your Location..."
-                        },
+                        text = "Loading Map...",
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
                         text = locationStatus,
                         style = MaterialTheme.typography.bodyMedium,
@@ -244,7 +228,7 @@ fun MapViewScreen(
                     cameraPositionState = cameraPositionState,
                     onMapClick = { showBottomSheet = false },
                     properties = MapProperties(
-                        isMyLocationEnabled = locationPermissionsState.allPermissionsGranted,
+                        isMyLocationEnabled = locationPermissionsState.allPermissionsGranted && hasInitialLocation,
                         mapStyleOptions = mapStyle
                     ),
                     uiSettings = MapUiSettings(
@@ -255,9 +239,9 @@ fun MapViewScreen(
                         scrollGesturesEnabled = true,
                     )
                 ) {
-                    userLocation?.let { location ->
+                    if (hasInitialLocation && userLocation != null) {
                         Circle(
-                            center = location,
+                            center = userLocation!!,
                             radius = PeekTransitConstants.STOPS_DISTANCE_RADIUS_IN_METERS,
                             strokeColor = MaterialTheme.colorScheme.secondary,
                             fillColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -270,7 +254,6 @@ fun MapViewScreen(
                             stop.centre.geographic.latitude,
                             stop.centre.geographic.longitude
                         )
-
                         Marker(
                             state = MarkerState(position = position),
                             title = stop.name,
@@ -318,7 +301,6 @@ fun MapViewScreen(
                 onClick = {
                     if (locationPermissionsState.allPermissionsGranted) {
                         viewModel.resetCameraPosition()
-
                         scope.launch {
                             val currentLocation = viewModel.getCurrentLocationForCamera()
                             if (currentLocation != null) {
@@ -326,7 +308,6 @@ fun MapViewScreen(
                                 userLocation = latLng
                                 locationStatus = "Location: ${"%.4f".format(currentLocation.latitude)}, ${"%.4f".format(currentLocation.longitude)}"
                                 viewModel.updateCurrentLocation(currentLocation)
-
                                 isAnimatingCamera = true
                                 try {
                                     cameraPositionState.animate(
@@ -366,7 +347,6 @@ fun MapViewScreen(
                     )
                 }
             }
-
         } else {
             Column(
                 modifier = Modifier
@@ -381,25 +361,19 @@ fun MapViewScreen(
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
                     text = "Location Permission Required",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
                     text = "This app needs location access to show nearby bus stops on the map.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Button(
                     onClick = { locationPermissionsState.launchMultiplePermissionRequest() }
                 ) {
@@ -448,7 +422,6 @@ fun MapViewScreen(
             onDismissRequest = { showBottomSheet = false }
         ) {
             val scrollState = rememberScrollState()
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -461,15 +434,12 @@ fun MapViewScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-
                 StopRow(
                     stop = selectedStop!!,
                     distance = selectedStop!!.getDistance(),
                     onNavigateToLiveStop = onNavigateToLiveStop
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Button(
                     onClick = {
                         onNavigateToLiveStop(selectedStop!!.number)
@@ -483,7 +453,6 @@ fun MapViewScreen(
                 ) {
                     Text("View Live Arrivals")
                 }
-
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
@@ -498,7 +467,6 @@ private fun getCustomMarkerIcon(context: Context, direction: String): BitmapDesc
         "westbound", "west" -> R.drawable.blue_ball
         else -> R.drawable.default_ball
     }
-
     val drawable = ContextCompat.getDrawable(context, drawableId)
     drawable?.let {
         val targetSize = (PeekTransitConstants.STOP_MARKER_SIZE_DP * context.resources.displayMetrics.density).toInt()
@@ -506,10 +474,8 @@ private fun getCustomMarkerIcon(context: Context, direction: String): BitmapDesc
         val canvas = Canvas(bitmap)
         it.setBounds(0, 0, targetSize, targetSize)
         it.draw(canvas)
-
         val descriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
         return descriptor
     }
-
     return BitmapDescriptorFactory.defaultMarker()
 }

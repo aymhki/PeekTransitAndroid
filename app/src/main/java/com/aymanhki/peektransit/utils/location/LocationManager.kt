@@ -12,6 +12,9 @@ import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.google.android.gms.location.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlin.coroutines.resume
 
 class LocationManager(private val context: Context) {
@@ -20,9 +23,10 @@ class LocationManager(private val context: Context) {
     private var locationCallback: LocationCallback? = null
     private var isRequestingLocation = false
 
-
     companion object {
         private const val TAG = "LocationManager"
+        private const val QUICK_LOCATION_TIMEOUT_MS = PeekTransitConstants.QUICK_LOCATION_TIMEOUT_MS
+        private const val PROGRESSIVE_LOCATION_TIMEOUT_MS = PeekTransitConstants.PROGRESSIVE_LOCATION_TIMEOUT_MS
     }
 
     suspend fun getCurrentLocation(forceRefresh: Boolean = false): Location? {
@@ -37,12 +41,103 @@ class LocationManager(private val context: Context) {
         }
 
         val location = if (forceRefresh) {
-            requestFreshLocationWithTimeout()
+            requestProgressiveLocation()
         } else {
-            getCachedLocation()?.takeIf { isLocationRecent(it) } ?: requestFreshLocationWithTimeout()
+            getCachedLocation()?.takeIf { isLocationRecent(it) } ?: requestProgressiveLocation()
         }
 
         return location ?: getFallbackLocation()
+    }
+
+
+    private suspend fun requestProgressiveLocation(): Location? = coroutineScope {
+        if (!hasLocationPermission()) return@coroutineScope null
+
+        if (isRequestingLocation) {
+            Log.d(TAG, "Already requesting location, skipping duplicate request")
+            return@coroutineScope null
+        }
+
+        val quickLocationDeferred = async {
+            Log.d(TAG, "Phase 1: Requesting quick location")
+            requestLocationWithStrategy(
+                priority = Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                waitForAccuracy = false,
+                timeoutMs = QUICK_LOCATION_TIMEOUT_MS
+            )
+        }
+
+        val quickLocation = quickLocationDeferred.await()
+
+        if (quickLocation != null && quickLocation.accuracy <= PeekTransitConstants.DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS) {
+            Log.d(TAG, "Got acceptable quick location: accuracy=${quickLocation.accuracy}m")
+            return@coroutineScope quickLocation
+        }
+
+        Log.d(TAG, "Phase 2: Requesting higher accuracy location")
+        val accurateLocation = requestLocationWithStrategy(
+            priority = Priority.PRIORITY_HIGH_ACCURACY,
+            waitForAccuracy = false,
+            timeoutMs = PROGRESSIVE_LOCATION_TIMEOUT_MS
+        )
+
+        return@coroutineScope when {
+            accurateLocation != null && quickLocation != null -> {
+                if (accurateLocation.accuracy < quickLocation.accuracy) accurateLocation else quickLocation
+            }
+            accurateLocation != null -> accurateLocation
+            quickLocation != null -> quickLocation
+            else -> null
+        }
+    }
+
+    private suspend fun requestLocationWithStrategy(
+        priority: Int,
+        waitForAccuracy: Boolean,
+        timeoutMs: Long
+    ): Location? = withTimeoutOrNull(timeoutMs) {
+        suspendCancellableCoroutine { continuation ->
+            if (!hasLocationPermission()) {
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
+
+            isRequestingLocation = true
+
+            val locationRequest = LocationRequest.Builder(priority, PeekTransitConstants.LOCATION_UPDATE_INTERVAL_MS)
+                .setWaitForAccurateLocation(waitForAccuracy)
+                .setMinUpdateIntervalMillis(PeekTransitConstants.LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS)
+                .setMaxUpdateDelayMillis(timeoutMs)
+                .build()
+
+            val callback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    super.onLocationResult(locationResult)
+                    val location = locationResult.lastLocation
+                    fusedLocationClient.removeLocationUpdates(this)
+                    isRequestingLocation = false
+                    Log.d(TAG, "Location received: lat=${location?.latitude}, lng=${location?.longitude}, accuracy=${location?.accuracy}")
+                    continuation.resume(location)
+                }
+            }
+
+            try {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    callback,
+                    Looper.getMainLooper()
+                )
+
+                continuation.invokeOnCancellation {
+                    fusedLocationClient.removeLocationUpdates(callback)
+                    isRequestingLocation = false
+                }
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Security exception requesting location", e)
+                isRequestingLocation = false
+                continuation.resume(null)
+            }
+        }
     }
 
     private fun getFallbackLocation(): Location? {
@@ -70,7 +165,7 @@ class LocationManager(private val context: Context) {
         return null
     }
 
-    private suspend fun getCachedLocation(): Location? = suspendCancellableCoroutine { continuation ->
+    suspend fun getCachedLocation(): Location? = suspendCancellableCoroutine { continuation ->
         try {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 continuation.resume(location)
@@ -86,55 +181,7 @@ class LocationManager(private val context: Context) {
 
     private suspend fun requestFreshLocationWithTimeout(): Location? {
         return withTimeoutOrNull(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS) {
-            requestFreshLocation()
-        }
-    }
-
-    private suspend fun requestFreshLocation(): Location? = suspendCancellableCoroutine { continuation ->
-        if (!hasLocationPermission()) {
-            continuation.resume(null)
-            return@suspendCancellableCoroutine
-        }
-
-        if (isRequestingLocation) {
-            Log.d(TAG, "Already requesting location, skipping duplicate request")
-            continuation.resume(null)
-            return@suspendCancellableCoroutine
-        }
-
-        isRequestingLocation = true
-
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, PeekTransitConstants.LOCATION_REQUEST_UPDATE_INTERVAL_MS)
-            .setWaitForAccurateLocation(true)
-            .setMinUpdateIntervalMillis(PeekTransitConstants.LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS)
-            .setMaxUpdateDelayMillis(PeekTransitConstants.LOCATION_REQUEST_TIMEOUT_MS)
-            .build()
-
-        val callback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                super.onLocationResult(locationResult)
-                val location = locationResult.lastLocation
-                fusedLocationClient.removeLocationUpdates(this)
-                isRequestingLocation = false
-                continuation.resume(location)
-            }
-        }
-
-        try {
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                callback,
-                Looper.getMainLooper()
-            )
-
-            continuation.invokeOnCancellation {
-                fusedLocationClient.removeLocationUpdates(callback)
-                isRequestingLocation = false
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Security exception requesting fresh location", e)
-            isRequestingLocation = false
-            continuation.resume(null)
+            requestProgressiveLocation()
         }
     }
 
@@ -155,7 +202,6 @@ class LocationManager(private val context: Context) {
         callback: (Location) -> Unit
     ) {
         if (!hasLocationPermission()) return
-
         stopLocationUpdates()
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, updateInterval)

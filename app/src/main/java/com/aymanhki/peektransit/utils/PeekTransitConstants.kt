@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
-import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.WidgetModel
 import com.aymanhki.peektransit.managers.SavedWidgetsManager
 import com.aymanhki.peektransit.managers.SettingsManager
@@ -25,11 +24,14 @@ import com.aymanhki.peektransit.widgets.WidgetUpdateManager
 import kotlin.math.roundToInt
 
 object PeekTransitConstants {
+
+    const val QUICK_LOCATION_TIMEOUT_MS = 5000L
+    const val PROGRESSIVE_LOCATION_TIMEOUT_MS = 15000L
     const val DEBUG_MODE = false
     const val DEBUG_WIDGET_LOCATION_ACCESS = false
     const val HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT = 5
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
-    const val FLEXIABLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
+    const val FLEXIBLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
     var TRANSIT_API_KEY: String = ""
     const val BASE_URL = "https://api.winnipegtransit.com/v4/"
     const val STOPS_DISTANCE_RADIUS_IN_METERS = 1000.0
@@ -55,11 +57,13 @@ object PeekTransitConstants {
     const val MAX_CALLS_PER_MINUTE = 100
     const val MINIMUM_REQUEST_INTERVAL_IN_SECONDS = 0.1
     const val LOCATION_UPDATE_INTERVAL_MS = 1000L
+    const val MAIN_VIEW_MODEL_INITIAL_LOCATION_REQUEST_TIMEOUT_MS = 10000L
     const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 1.0f
     const val LOCATION_REQUEST_UPDATE_INTERVAL_MS = 1000L
-    const val LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS = 5000L
+    const val LOCATION_REQUEST_MIN_UPDATE_INTERVAL_MS = 500L
     const val LOCATION_REQUEST_TIMEOUT_MS = 15000L
     const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L
+    const val CAMERA_DELAY_FOR_INITIAL_LOCATION_ZOOM_MS = 8000L
     const val DEFAULT_MAP_ZOOM = 16.5f
     const val STOP_MARKER_SIZE_DP = 32
     const val MAP_PREVIEW_WIDTH_SIZE_DP = 80
