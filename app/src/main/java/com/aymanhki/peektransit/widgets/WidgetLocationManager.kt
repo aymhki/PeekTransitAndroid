@@ -280,7 +280,6 @@ object WidgetLocationManager {
             return@coroutineScope null
         }
 
-        // Phase 1: Quick location with balanced power accuracy
         val quickLocationDeferred = async {
             Log.d(TAG, "Phase 1: Requesting quick location")
             requestLocationWithStrategy(
@@ -297,7 +296,6 @@ object WidgetLocationManager {
             return@coroutineScope quickLocation
         }
 
-        // Phase 2: High accuracy location
         Log.d(TAG, "Phase 2: Requesting higher accuracy location")
         val accurateLocation = requestLocationWithStrategy(
             context = context,

@@ -596,8 +596,8 @@ fun BusArrivalCard(
         }
 
         val columnWidths: List<Float>  = listOf(
-            0.12f,
-            0.43f,
+            0.15f,
+            0.40f,
             if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.44f else 0.20f,
             if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.01f else 0.25f
         )
