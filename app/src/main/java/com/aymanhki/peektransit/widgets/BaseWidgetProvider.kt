@@ -43,7 +43,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         super.onDisabled(context)
         if (context == null) return
         WidgetUpdateManager.stopUpdates(context)
-        WidgetLocationManager.stopLocationUpdates()
+        WidgetLocationManager.cleanup()
     }
 
     override fun onDeleted(context: Context?, appWidgetIds: IntArray?) {
@@ -53,7 +53,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         PeekTransitConstants.removeDeletedWidgetInstancesData(context, appWidgetIds)
 
         if (!PeekTransitConstants.isThereActiveWidgetsWithLocationAccessNeeded(context)) {
-            WidgetLocationManager.stopLocationUpdates()
+            WidgetLocationManager.cleanup()
         }
 
     }
