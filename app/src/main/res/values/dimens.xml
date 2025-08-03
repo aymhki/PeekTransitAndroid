@@ -33,6 +33,6 @@
 
     <dimen name="location_coordinates_layout_padding">16dp</dimen>
 
-    <dimen name="widgets_round_corners_radius">16dp</dimen>
+    <dimen name="widgets_round_corners_radius">8dp</dimen>
 
 </resources>
