@@ -28,6 +28,11 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import android.location.Location
 import kotlinx.coroutines.*
+import android.os.Build
+import android.provider.Settings
+import android.app.ActivityManager
+import android.net.ConnectivityManager
+
 
 object WidgetUpdateManager {
     private const val TAG = "WidgetUpdateManager"
@@ -87,11 +92,21 @@ object WidgetUpdateManager {
                     this.debugUpdateIntervalMinutes = debugIntervalMinutes
                     stopProductionModeUpdates(context)
                     startDebugModeUpdates(context)
+                } else if ( (isBackgroundRestricted(context) || powerSavingActive)  ) {
+                    CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                        workToUpdateWidgetCoreData(context)
+                        broadcastWidgetLooksUpdate(context)
+                    }
                 }
             } else {
                 if (!checkProductionModeUpdatesAreRunning(context)) {
                     stopAlarmUpdates(context)
                     startProductionModeUpdates(context)
+                } else if ( (isBackgroundRestricted(context) || powerSavingActive) && userOptedInForManualUpdatesInLowPower ) {
+                    CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                        workToUpdateWidgetCoreData(context)
+                        broadcastWidgetLooksUpdate(context)
+                    }
                 }
             }
         } else {
@@ -156,9 +171,58 @@ object WidgetUpdateManager {
         return (batteryPct <= LOW_BATTERY_THRESHOLD) && !isCharging
     }
 
+
+
     private fun isPowerSaveMode(context: Context): Boolean {
-        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        return powerManager.isPowerSaveMode
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager?.isPowerSaveMode == true ) {
+            return true
+        }
+
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val isOemPowerSaveMode = when {
+            manufacturer.contains("samsung") -> {
+                try { Settings.System.getString(context.contentResolver, "psm_switch") == "1" }
+                catch (e: Exception) { false }
+            }
+            manufacturer.contains("huawei") -> {
+                try { Settings.System.getInt(context.contentResolver, "SmartModeStatus") == 4 }
+                catch (e: Exception) { false }
+            }
+            manufacturer.contains("xiaomi") -> {
+                try { Settings.System.getInt(context.contentResolver, "POWER_SAVE_MODE_OPEN") == 1 }
+                catch (e: Exception) { false }
+            }
+            manufacturer.contains("sony") -> {
+                try { Settings.Secure.getInt(context.contentResolver, "somc.stamina_mode") != 0 }
+                catch (e: Exception) { false }
+            }
+            else -> false
+        }
+
+        if (isOemPowerSaveMode) {
+            return true
+        }
+
+
+        return false
+    }
+
+    private fun isBackgroundRestricted(context: Context): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        if (activityManager?.isBackgroundRestricted == true) {
+            return true
+        }
+
+        val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+
+        if (connManager != null && connManager.isActiveNetworkMetered) {
+            if (connManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED) {
+                return true
+            }
+        }
+
+        return false
     }
 
     private fun registerBatteryReceiver(context: Context) {
