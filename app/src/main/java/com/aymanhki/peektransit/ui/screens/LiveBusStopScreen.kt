@@ -650,10 +650,11 @@ fun BusArrivalCard(
 
 
                 Text(
-                    text =  if (status != PeekTransitConstants.OK_STATUS_TEXT &&
-                        status != PeekTransitConstants.DUE_STATUS_TEXT) status else "",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(columnWidths[2]),
+                    text =  status,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier
+                        .weight(columnWidths[2])
+                        .padding(end = 20.dp),
                     color = when (theme) {
                         StopViewTheme.CLASSIC -> textColor
                         StopViewTheme.MODERN -> when (status) {
@@ -668,7 +669,7 @@ fun BusArrivalCard(
 
                 Text(
                     text = if (status != PeekTransitConstants.CANCELLED_STATUS_TEXT) arrivalTime else "",
-                    textAlign = TextAlign.End,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.weight(columnWidths[3]),
                     color = when (theme) {
                         StopViewTheme.CLASSIC -> textColor

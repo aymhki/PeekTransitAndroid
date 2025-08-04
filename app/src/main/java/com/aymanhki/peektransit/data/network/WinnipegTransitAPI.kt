@@ -758,7 +758,7 @@ class WinnipegTransitAPI private constructor() {
                                     }
                                 }
 
-                                sortValue = if (timeDifference < 0 && timeDifference >= -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
+                                sortValue = if (timeDifference <= 0 && timeDifference >= -PeekTransitConstants.MINUTES_ALLOWED_TO_KEEP_DUE_BUSES_IN_SCHEDULE) {
                                     timeInMinutes = PeekTransitConstants.DUE_STATUS_TEXT
                                     -1
                                 } else {
