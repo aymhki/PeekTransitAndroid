@@ -344,12 +344,23 @@ fun MoreScreen(
                                                             horizontalArrangement = Arrangement.SpaceBetween,
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
-                                                            Text(
-                                                                text = "Manual Update Even In Low Power Mode",
-                                                                style = MaterialTheme.typography.bodyMedium,
-                                                                color = MaterialTheme.colorScheme.onSurface,
-                                                                modifier = Modifier.weight(1f).padding(end = 16.dp)
-                                                            )
+                                                            Column(
+                                                                modifier = Modifier.weight(1f).padding(end = 16.dp),
+                                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = "Manual Update Even In Low Power Mode",
+                                                                    style = MaterialTheme.typography.bodyMedium,
+                                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                                )
+
+                                                                Text(
+                                                                    text = "Note: Some manufacturers might not allow the widget to update more than once every 5 minutes in lower power mode.",
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+
                                                             Switch(
                                                                 checked = lowPowerMode,
                                                                 onCheckedChange = {

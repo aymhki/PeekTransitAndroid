@@ -433,7 +433,7 @@ object WidgetUpdateManager {
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching schedules for widget $appWidgetId", e)
             if (thisIsTheFirstUpdateForTheWidget) {
-                var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection"
+                var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection or your power saving mode settings."
                 if (needsBackgroundLocation) {
                     finalErrorMsg += ". And make sure location services are enabled for this widget."
                 } else {
