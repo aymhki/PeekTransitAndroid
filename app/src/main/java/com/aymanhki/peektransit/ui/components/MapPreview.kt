@@ -34,6 +34,7 @@ import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.core.graphics.createBitmap
 
 @Composable
 fun MapPreview(
@@ -175,6 +176,7 @@ fun MapPreview(
                                                     .position(target)
                                                     .icon(getCustomMarkerIconForPreview(context, direction))
                                                     .anchor(0.5f, 1.0f)
+
                                             )
                                             
                                             takeSnapshotSafely(googleMap)
@@ -258,7 +260,7 @@ private fun getCustomMarkerIconForPreview(context: Context, direction: String): 
     drawable?.let {
         val markerSizeDp = PeekTransitConstants.MAP_PREVIEW_MARKER_SIZE_DP
         val targetSize = (markerSizeDp * context.resources.displayMetrics.density).toInt()
-        val bitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(targetSize, targetSize)
         val canvas = Canvas(bitmap)
         it.setBounds(0, 0, targetSize, targetSize)
         it.draw(canvas)

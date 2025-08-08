@@ -316,7 +316,7 @@ class StopsDataStore private constructor() {
         return try {
             _isLoading.postValue(true)
             _error.postValue(null)
-            null
+            return api.getStop(stopNumber)
             
         } catch (e: Exception) {
             val transitError = when (e) {

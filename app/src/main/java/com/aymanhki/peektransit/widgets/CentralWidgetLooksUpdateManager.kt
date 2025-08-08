@@ -438,7 +438,7 @@ class CentralWidgetLooksUpdateManager
             if (widgetScheduleData != null) {
                 val widgetSchedules = widgetScheduleData.scheduleData
 
-                val isCompactMode = (widgetSize == "small" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean != true)
+                val isCompactMode = (widgetSize == "small" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean != true) || (widgetSize == "lockscreen" && widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean != true)
 
                 if (isCompactMode) {
                     handleCompactMode(context, views, widgetSchedules, busSchedulesComponentsResIds,

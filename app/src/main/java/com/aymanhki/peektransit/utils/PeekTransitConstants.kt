@@ -33,8 +33,9 @@ object PeekTransitConstants {
     const val MAXIMUM_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 15L
     const val FLEXIBLE_WIDGET_UPDATE_WORKER_INTERVAL_IN_MINUTES = 5L
     var TRANSIT_API_KEY: String = ""
+    var GOOGLE_PLACES_API_KEY: String = ""
     const val BASE_URL = "https://api.winnipegtransit.com/v4/"
-    const val STOPS_DISTANCE_RADIUS_IN_METERS = 1000.0
+    const val STOPS_DISTANCE_RADIUS_IN_METERS = 500.0
     const val MAX_STOPS_ALLOWED_TO_FETCH = 25
     const val MAX_STOPS_ALLOWED_TO_FETCH_FOR_SEARCH = 15
     const val DISTANCE_CHANGE_ALLOWED_BEFORE_REFRESHING_STOPS_IN_METERS = STOPS_DISTANCE_RADIUS_IN_METERS/3
@@ -65,15 +66,16 @@ object PeekTransitConstants {
     const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L
     const val CAMERA_DELAY_FOR_INITIAL_LOCATION_ZOOM_MS = 8000L
     const val DEFAULT_MAP_ZOOM = 16.5f
-    const val STOP_MARKER_SIZE_DP = 32
+    const val STOP_MARKER_SIZE_DP = 42
     const val MAP_PREVIEW_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_HEIGHT_SIZE_DP = 160
     const val MAP_PREVIEW_ZOOM_LEVEL = 16.5f
     const val MAP_PREVIEW_RENDER_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP = 160
-    const val MAP_PREVIEW_MARKER_SIZE_DP = 20
+    const val MAP_PREVIEW_MARKER_SIZE_DP = 36
     const val GLOBAL_API_FOR_SHORT_USAGE = true
     const val STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET = 28
+    const val NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER = 3
     val CLASSIC_THEM_TEXT_COLOR = Color(0xFFFC7C24)
     val CLASSIC_THEM_BACKGROUND_COLOR_ALWAYS = Color.Black
     val BACKGROUND_COLOR_IN_MODERN_THEME_DAY = Color.White
@@ -384,6 +386,10 @@ object PeekTransitConstants {
             TRANSIT_API_KEY = context.applicationContext.packageManager
                 .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
                 .metaData.getString("TRANSIT_API_KEY") ?: ""
+
+            GOOGLE_PLACES_API_KEY = context.applicationContext.packageManager
+                .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+                .metaData.getString("GOOGLE_PLACES_API_KEY") ?: ""
         }
     }
 
@@ -628,6 +634,12 @@ enum class TimeFormat {
      }
 }
 
+enum class SegmentType(val value: String) {
+    WALK("walk"),
+    RIDE("ride"),
+    TRANSFER("transfer")
+}
+
 object SharedPrefrencesKeys {
     const val DEFAULT_TAB = "default_tab_preference"
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
@@ -645,4 +657,5 @@ val allWidgetProviders = listOf(
     PeekTransitLargeWidgetProvider::class.java,
     PeekTransitLockScreenWidgetProvider::class.java
 )
+
 

@@ -521,13 +521,6 @@ fun LiveBusStopScreen(
 
                     else -> {
 
-//                        items(PeekTransitConstants.TEST_ENTRIES) { testEntry ->
-//                            BusArrivalCard(
-//                                scheduleEntry = testEntry,
-//                                theme = currentTheme
-//                            )
-//                        }
-
                         items(scheduleData) { scheduleEntry ->
                             BusArrivalCard(
                                 scheduleEntry = scheduleEntry,
@@ -591,15 +584,15 @@ fun BusArrivalCard(
         val status = parts[2]
         val arrivalTime = parts[3]
         val fontSizeForBusArrivalCard = when (theme) {
-            StopViewTheme.CLASSIC -> 14.sp
-            StopViewTheme.MODERN -> 15.sp
+            StopViewTheme.CLASSIC -> 16.sp
+            StopViewTheme.MODERN -> 18.sp
         }
 
         val columnWidths: List<Float>  = listOf(
-            0.15f,
-            0.40f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.44f else 0.20f,
-            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.01f else 0.25f
+            0.13f,
+            0.42f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.36f else 0.23f,
+            if (status == PeekTransitConstants.CANCELLED_STATUS_TEXT) 0.0001f else 0.25f
         )
 
         val backgroundColor = when (theme) {

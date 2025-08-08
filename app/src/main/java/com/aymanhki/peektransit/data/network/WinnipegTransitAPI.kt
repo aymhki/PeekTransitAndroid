@@ -7,6 +7,7 @@ import com.aymanhki.peektransit.utils.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
@@ -71,6 +72,30 @@ interface WinnipegTransitApiService {
     suspend fun getStop(
         @Path("stopNumber") stopNumber: Int,
         @Query("usage") usage: String = "long",
+        @Query("api-key") apiKey: String
+    ): Response<JsonObject>
+
+    @GET("locations.json")
+    suspend fun getLocationKey(
+        @Query("lat") latitude: String,
+        @Query("lon") longitude: String,
+        @Query("usage") usage: String,
+        @Query("api-key") apiKey: String
+    ): Response<JsonObject>
+
+    @GET("trip-planner.json")
+    suspend fun findTrip(
+        @Query("origin") origin: String,
+        @Query("destination") destination: String,
+        @Query("max-transfers") maxTransfers: Int? = null,
+        @Query("walk-speed") walkSpeed: Double? = null,
+        @Query("max-walk-time") maxWalkTime: Int? = null,
+        @Query("min-transfer-wait") minTransferWait: Int? = null,
+        @Query("max-transfer-wait") maxTransferWait: Int? = null,
+        @Query("mode") mode: String? = null,
+        @Query("date") date: String? = null,
+        @Query("time") time: String? = null,
+        @Query("usage") usage: String,
         @Query("api-key") apiKey: String
     ): Response<JsonObject>
 }
@@ -918,7 +943,312 @@ class WinnipegTransitAPI private constructor() {
             }
         }
     }
-    
+
+    suspend fun getLocationKey(latitude: Double, longitude: Double): String? = withContext(Dispatchers.IO) {
+        rateLimiter.waitIfNeeded()
+
+        try {
+            val response = apiService.getLocationKey(
+                latitude = latitude.toString(),
+                longitude = longitude.toString(),
+                usage = if (PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE) "short" else "long",
+                apiKey = PeekTransitConstants.TRANSIT_API_KEY
+            )
+
+            if (!response.isSuccessful) {
+                throw TransitError.NetworkError(IOException("HTTP ${response.code()}"))
+            }
+
+            val jsonResponse = response.body() ?: throw TransitError.InvalidData
+            val locationsJson = jsonResponse.getAsJsonArray("locations")
+                ?: throw TransitError.ParseError("No locations found")
+
+            if (locationsJson.size() == 0) {
+                return@withContext null
+            }
+
+            val firstLocation = locationsJson.get(0).asJsonObject
+            val locationType = firstLocation.get("type").asString
+
+            val key = when {
+                firstLocation.has("key") && firstLocation.get("key").isJsonPrimitive -> {
+                    val keyElement = firstLocation.get("key")
+                    if (keyElement.isJsonPrimitive) {
+                        if (keyElement.asJsonPrimitive.isString) {
+                            keyElement.asString
+                        } else {
+                            keyElement.asInt.toString()
+                        }
+                    } else {
+                        throw TransitError.ParseError("Invalid key format")
+                    }
+                }
+                else -> throw TransitError.ParseError("No key found in location")
+            }
+
+            when (locationType) {
+                "intersection" -> "intersections/$key"
+                "monument" -> "monuments/$key"
+                "address" -> "addresses/$key"
+                else -> null
+            }
+        } catch (e: Exception) {
+            when (e) {
+                is TransitError -> throw e
+                else -> throw TransitError.NetworkError(e)
+            }
+        }
+    }
+
+    suspend fun findTrip(origin: Location, destination: Location): List<TripPlan> = withContext(Dispatchers.IO) {
+        val allPlans = mutableListOf<TripPlan>()
+
+        try {
+            val originParam = "geo/${origin.latitude},${origin.longitude}"
+            val destinationParam = "geo/${destination.latitude},${destination.longitude}"
+
+            val initialResponse = apiService.findTrip(
+                origin = originParam,
+                destination = destinationParam,
+                usage = if (PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE) "short" else "long",
+                apiKey = PeekTransitConstants.TRANSIT_API_KEY
+            )
+
+            if (initialResponse.isSuccessful) {
+                val jsonResponse = initialResponse.body()
+                jsonResponse?.getAsJsonArray("plans")?.let { plansArray ->
+                    for (i in 0 until plansArray.size()) {
+                        try {
+                            val planJson = plansArray.get(i).asJsonObject
+                            val planMap = convertJsonToMap(planJson)
+                            TripPlan.fromDict(planMap)?.let { allPlans.add(it) }
+                        } catch (e: Exception) {
+                            continue
+                        }
+                    }
+                }
+            }
+
+            var foundAtTransfers: Int? = null
+
+            for (transfers in 0..5) {
+                val transferResponse = apiService.findTrip(
+                    origin = originParam,
+                    destination = destinationParam,
+                    maxTransfers = transfers,
+                    usage = if (PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE) "short" else "long",
+                    apiKey = PeekTransitConstants.TRANSIT_API_KEY
+                )
+
+                if (!transferResponse.isSuccessful) {
+                    continue
+                }
+
+                val transferJsonResponse = transferResponse.body() ?: continue
+                val transferPlansArray = transferJsonResponse.getAsJsonArray("plans") ?: continue
+
+                val plansForThisTransfer = mutableListOf<TripPlan>()
+                for (i in 0 until transferPlansArray.size()) {
+                    try {
+                        val planJson = transferPlansArray.get(i).asJsonObject
+                        val planMap = convertJsonToMap(planJson)
+                        TripPlan.fromDict(planMap)?.let { plansForThisTransfer.add(it) }
+                    } catch (e: Exception) {
+                        continue
+                    }
+                }
+
+                if (plansForThisTransfer.isNotEmpty()) {
+                    if (foundAtTransfers == null) {
+                        foundAtTransfers = transfers
+                        allPlans.addAll(plansForThisTransfer)
+                    } else {
+                        allPlans.addAll(plansForThisTransfer)
+                        break
+                    }
+                } else if (foundAtTransfers != null) {
+                    continue
+                }
+
+                if (transfers < 5) {
+                    delay(1000)
+                }
+            }
+
+            return@withContext allPlans.distinct()
+        } catch (e: Exception) {
+            when (e) {
+                is TransitError -> throw e
+                else -> throw TransitError.NetworkError(e)
+            }
+        }
+    }
+
+    suspend fun findTripWithLocationKey(
+        currentLocationKey: String,
+        toLocationKey: String,
+        walkSpeed: Double = 5.0,
+        maxWalkTime: Int = 15,
+        minTransferWait: Int = 2,
+        maxTransferWait: Int = 15,
+        maxTransfers: Int = 3,
+        mode: String = "depart-after",
+        date: Date? = null
+    ): List<TripPlan> = withContext(Dispatchers.IO) {
+        val allPlans = mutableListOf<TripPlan>()
+
+
+        try {
+            val initialResponse = apiService.findTrip(
+                origin = currentLocationKey,
+                destination = toLocationKey,
+                usage = if (PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE) "short" else "long",
+                apiKey = PeekTransitConstants.TRANSIT_API_KEY
+            )
+
+            if (initialResponse.isSuccessful) {
+                val jsonResponse = initialResponse.body()
+                jsonResponse?.getAsJsonArray("plans")?.let { plansArray ->
+                    for (i in 0 until plansArray.size()) {
+                        try {
+                            val planJson = plansArray.get(i).asJsonObject
+                            val planMap = convertJsonToMap(planJson)
+                            TripPlan.fromDict(planMap)?.let { allPlans.add(it) }
+                        } catch (e: Exception) {
+                            continue
+                        }
+                    }
+                }
+            }
+
+            var foundAtTransfers: Int? = null
+
+            for (transfers in 0..5) {
+                val transferResponse = apiService.findTrip(
+                    origin = currentLocationKey,
+                    destination = toLocationKey,
+                    maxTransfers = transfers,
+//                    walkSpeed = walkSpeed,
+//                    maxWalkTime = maxWalkTime,
+//                    minTransferWait = minTransferWait,
+//                    maxTransferWait = maxTransferWait,
+//                    mode = mode,
+//                    date = dateStr,
+//                    time = timeStr,
+                    usage = if (PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE) "short" else "long",
+                    apiKey = PeekTransitConstants.TRANSIT_API_KEY
+                )
+
+                if (!transferResponse.isSuccessful) {
+                    continue
+                }
+
+                val transferJsonResponse = transferResponse.body() ?: continue
+                val transferPlansArray = transferJsonResponse.getAsJsonArray("plans") ?: continue
+
+                val plansForThisTransfer = mutableListOf<TripPlan>()
+                for (i in 0 until transferPlansArray.size()) {
+                    try {
+                        val planJson = transferPlansArray.get(i).asJsonObject
+                        val planMap = convertJsonToMap(planJson)
+                        TripPlan.fromDict(planMap)?.let { plansForThisTransfer.add(it) }
+                    } catch (e: Exception) {
+                        continue
+                    }
+                }
+
+                if (plansForThisTransfer.isNotEmpty()) {
+                    if (foundAtTransfers == null) {
+                        foundAtTransfers = transfers
+                        allPlans.addAll(plansForThisTransfer)
+                    } else {
+                        allPlans.addAll(plansForThisTransfer)
+                        break
+                    }
+                } else if (foundAtTransfers != null) {
+                    continue
+                }
+
+                if (transfers < 5) {
+                    delay(1000)
+                }
+            }
+
+            return@withContext allPlans.distinct()
+        } catch (e: Exception) {
+            when (e) {
+                is TransitError -> throw e
+                else -> throw TransitError.NetworkError(e)
+            }
+        }
+    }
+
+    private fun convertJsonToMap(jsonObject: JsonObject): Map<String, Any?> {
+        val result = mutableMapOf<String, Any?>()
+
+        for ((key, element) in jsonObject.entrySet()) {
+            when {
+                element.isJsonNull -> result[key] = null
+                element.isJsonPrimitive -> {
+                    val primitive = element.asJsonPrimitive
+                    when {
+                        primitive.isBoolean -> result[key] = primitive.asBoolean
+                        primitive.isNumber -> {
+                            val number = primitive.asNumber
+                            val doubleValue = number.toDouble()
+                            if (doubleValue.toInt().toDouble() == doubleValue) {
+                                result[key] = number.toInt()
+                            } else {
+                                result[key] = doubleValue
+                            }
+                        }
+                        else -> result[key] = primitive.asString
+                    }
+                }
+                element.isJsonArray -> {
+                    val array = element.asJsonArray
+                    val list = mutableListOf<Any?>()
+
+                    for (arrayElement in array) {
+                        when {
+                            arrayElement.isJsonObject -> list.add(convertJsonToMap(arrayElement.asJsonObject))
+                            arrayElement.isJsonPrimitive -> {
+                                val primitive = arrayElement.asJsonPrimitive
+                                when {
+                                    primitive.isBoolean -> list.add(primitive.asBoolean)
+                                    primitive.isNumber -> {
+                                        val number = primitive.asNumber
+                                        val doubleValue = number.toDouble()
+                                        if (doubleValue.toInt().toDouble() == doubleValue) {
+                                            list.add(number.toInt())
+                                        } else {
+                                            list.add(doubleValue)
+                                        }
+                                    }
+                                    else -> list.add(primitive.asString)
+                                }
+                            }
+                            arrayElement.isJsonNull -> list.add(null)
+                            arrayElement.isJsonArray -> {
+                                val nestedList = mutableListOf<Any?>()
+                                for (nestedElement in arrayElement.asJsonArray) {
+                                    if (nestedElement.isJsonObject) {
+                                        nestedList.add(convertJsonToMap(nestedElement.asJsonObject))
+                                    }
+                                }
+                                list.add(nestedList)
+                            }
+                        }
+                    }
+                    result[key] = list
+                }
+                element.isJsonObject -> result[key] = convertJsonToMap(element.asJsonObject)
+            }
+        }
+
+        return result
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: WinnipegTransitAPI? = null
@@ -930,3 +1260,4 @@ class WinnipegTransitAPI private constructor() {
         }
     }
 }
+
