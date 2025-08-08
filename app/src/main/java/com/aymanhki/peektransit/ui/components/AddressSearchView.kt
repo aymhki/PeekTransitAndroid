@@ -120,7 +120,7 @@ fun AddressSearchView(
                         .focusRequester(focusRequester),
                     placeholder = { Text("Type your destination address") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search, autoCorrect = false),
                     keyboardActions = KeyboardActions(onSearch = {
                         keyboardController?.hide()
                     }),

@@ -316,8 +316,19 @@ class StopsDataStore private constructor() {
         return try {
             _isLoading.postValue(true)
             _error.postValue(null)
-            return api.getStop(stopNumber)
-            
+            val fetchedStop = api.getStop(stopNumber)
+
+            if (fetchedStop != null) {
+                val currentStops = _stops.value?.toMutableList() ?: mutableListOf()
+                if (!currentStops.any { it.number == stopNumber }) {
+                    currentStops.add(fetchedStop)
+                    _stops.postValue(currentStops)
+                }
+            }
+
+            _isLoading.postValue(false)
+            return fetchedStop
+
         } catch (e: Exception) {
             val transitError = when (e) {
                 is TransitError -> e

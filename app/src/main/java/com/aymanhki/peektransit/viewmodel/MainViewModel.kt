@@ -11,6 +11,7 @@ import com.aymanhki.peektransit.data.models.TransitError
 import com.aymanhki.peektransit.data.repository.StopsDataStore
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
+import com.google.android.gms.maps.model.CameraPosition
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -50,6 +51,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _lastSearchedQuery = MutableLiveData("")
     val lastSearchedQuery: LiveData<String> = _lastSearchedQuery
+
+    private val _hasPerformedInitialCameraAnimation = MutableLiveData(false)
+    val hasPerformedInitialCameraAnimation: LiveData<Boolean> = _hasPerformedInitialCameraAnimation
+
+    fun setInitialCameraAnimationPerformed() {
+        _hasPerformedInitialCameraAnimation.postValue(true)
+    }
+
+    private val _lastKnownCameraPosition = MutableLiveData<CameraPosition?>(null)
+    val lastKnownCameraPosition: LiveData<CameraPosition?> = _lastKnownCameraPosition
+
+    fun saveLastCameraPosition(position: CameraPosition) {
+        _lastKnownCameraPosition.postValue(position)
+    }
 
     val stops: LiveData<List<Stop>> = stopsDataStore.stops
     val isLoading: LiveData<Boolean> = stopsDataStore.isLoading

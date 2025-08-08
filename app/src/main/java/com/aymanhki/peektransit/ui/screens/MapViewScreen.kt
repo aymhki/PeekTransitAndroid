@@ -109,8 +109,10 @@ fun MapViewScreen(
     val cameraLocation by viewModel.cameraLocation.observeAsState()
     val liveLocation by viewModel.currentLocation.observeAsState()
     val defaultLocation = LatLng(49.8951, -97.1384)
+    val hasPerformedInitialAnimation by viewModel.hasPerformedInitialCameraAnimation.observeAsState(false)
+    val lastKnownCameraPosition by viewModel.lastKnownCameraPosition.observeAsState()
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultLocation, 11.0f)
+        position = lastKnownCameraPosition ?: CameraPosition.fromLatLngZoom(defaultLocation, 11.0f)
     }
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -121,6 +123,12 @@ fun MapViewScreen(
     var showHighlightedStopCallout by remember { mutableStateOf(false) }
 
     var showInfoWindowForStop by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(cameraPositionState.position) {
+        if (!isAnimatingCamera) {
+            viewModel.saveLastCameraPosition(cameraPositionState.position)
+        }
+    }
 
 
     LaunchedEffect(Unit) {
@@ -149,28 +157,33 @@ fun MapViewScreen(
         }
     }
 
-    LaunchedEffect(cameraLocation, isMapsInitialized, showMap) {
+    LaunchedEffect(cameraLocation, isMapsInitialized, showMap, hasPerformedInitialAnimation) {
         if (cameraLocation != null && isMapsInitialized && showMap && !isAnimatingCamera) {
             val newLatLng = LatLng(cameraLocation!!.latitude, cameraLocation!!.longitude)
             userLocation = newLatLng
             locationStatus = "Location: ${"%.4f".format(cameraLocation!!.latitude)}, ${"%.4f".format(cameraLocation!!.longitude)}"
-            isAnimatingCamera = true
-            try {
-                val zoomLevel = if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.fromLatLngZoom(newLatLng, zoomLevel)
-                    ),
-                    1000
-                )
-            } catch (e: Exception) {
-                cameraPositionState.move(
-                    CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.fromLatLngZoom(newLatLng, if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f)
+
+            if (!hasPerformedInitialAnimation) {
+                isAnimatingCamera = true
+                try {
+                    val zoomLevel = if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.fromLatLngZoom(newLatLng, zoomLevel)
+                        ),
+                        1000
                     )
-                )
-            } finally {
-                isAnimatingCamera = false
+                    viewModel.setInitialCameraAnimationPerformed()
+                } catch (e: Exception) {
+                    cameraPositionState.move(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.fromLatLngZoom(newLatLng, if (hasInitialLocation) PeekTransitConstants.DEFAULT_MAP_ZOOM else 13.0f)
+                        )
+                    )
+                    viewModel.setInitialCameraAnimationPerformed()
+                } finally {
+                    isAnimatingCamera = false
+                }
             }
         }
     }
@@ -201,12 +214,12 @@ fun MapViewScreen(
         }
     }
 
-    LaunchedEffect(isLoadingLocation, isLoadingStops, hasInitialLocation) {
+    LaunchedEffect(isLoadingLocation, isLoadingStops, hasInitialLocation, viewModel.currentLocation.value) {
         when {
             isLoadingLocation -> locationStatus = "Getting your location..."
             isLoadingStops -> locationStatus = "Loading nearby stops..."
-            !hasInitialLocation && locationPermissionsState.allPermissionsGranted ->
-                locationStatus = "Location services unavailable"
+            !hasInitialLocation && locationPermissionsState.allPermissionsGranted -> locationStatus = "Location services unavailable"
+            else -> locationStatus = "Location: ${"%.4f".format(viewModel.currentLocation.value?.latitude)}, ${"%.4f".format(viewModel.currentLocation.value?.longitude)}"
         }
     }
 
@@ -357,33 +370,32 @@ fun MapViewScreen(
                 }
             }
 
-            if (locationPermissionsState.allPermissionsGranted) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                        ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                    ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (isLoadingLocation || isLoadingStops) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            text = locationStatus,
-                            style = MaterialTheme.typography.bodySmall
+                    if (isLoadingLocation || isLoadingStops) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
+                    Text(
+                        text = locationStatus,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 
@@ -413,7 +425,6 @@ fun MapViewScreen(
                     FloatingActionButton(
                         onClick = {
                             if (locationPermissionsState.allPermissionsGranted) {
-                                viewModel.resetCameraPosition()
                                 scope.launch {
                                     val currentLocation = viewModel.getCurrentLocationForCamera()
                                     if (currentLocation != null) {
@@ -542,8 +553,8 @@ fun MapViewScreen(
                                                         if (goToSchedule) {
                                                             onNavigateToLiveStop(targetStopNumber)
                                                         } else {
-                                                            showBottomSheet = true
-                                                            showInfoWindowForStop = null
+                                                            // showBottomSheet = true
+                                                            // showInfoWindowForStop = null
                                                         }
                                                     }
                                                 }
