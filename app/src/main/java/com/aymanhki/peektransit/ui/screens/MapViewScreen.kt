@@ -480,7 +480,7 @@ fun MapViewScreen(
                     ) {
                         AddressSearchView(
                             onRouteSelected = { tripPlan, goToSchedule ->
-                                var firstSegmentWithAStop = tripPlan.segments.first {
+                                val firstSegmentWithAStop = tripPlan.segments.first {
                                     it.fromStop != null && it.fromStop.key != -1 && it.fromStop.location != null ||
                                             it.toStop != null && it.toStop.key != -1 && it.toStop.location != null
                                 }
