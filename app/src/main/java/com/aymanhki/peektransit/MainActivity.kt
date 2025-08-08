@@ -7,6 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.automirrored.filled.List
@@ -149,6 +152,8 @@ fun MainScreen(initialStopNumber: Int? = null) {
         }
     }
 
+    val isMapScreen = currentDestination?.route == BottomNavItem.Map.route
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -175,7 +180,13 @@ fun MainScreen(initialStopNumber: Int? = null) {
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
+            modifier = if (isMapScreen) {
+                Modifier.padding(
+                    bottom = innerPadding.calculateBottomPadding()
+                )
+            } else {
+                Modifier.padding(innerPadding)
+            }
         ) {
             composable(BottomNavItem.Map.route) {
                 MapViewScreen(

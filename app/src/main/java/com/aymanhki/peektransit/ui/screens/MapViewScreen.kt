@@ -361,7 +361,11 @@ fun MapViewScreen(
                 Card(
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(16.dp),
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                        ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Row(
@@ -476,7 +480,7 @@ fun MapViewScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 64.dp)
+                            .padding(top = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
                     ) {
                         AddressSearchView(
                             onRouteSelected = { tripPlan, goToSchedule ->
@@ -690,4 +694,3 @@ private fun getCustomMarkerIcon(context: Context, direction: String): BitmapDesc
     }
     return BitmapDescriptorFactory.defaultMarker()
 }
-

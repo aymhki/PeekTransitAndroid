@@ -35,15 +35,14 @@ class AddressSearchHandler(context: Context) {
             return
         }
 
-
-
         val newQueryNonSpaceCount = query.count { !it.isWhitespace() }
         val lastQueryNonSpaceCount = lastSearchedQuery.count { !it.isWhitespace() }
 
         val isFirstSearch = lastSearchedQuery.isEmpty() && query.length >= PeekTransitConstants.NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER
         val hasSufficientNewChars = !lastSearchedQuery.isEmpty() && (newQueryNonSpaceCount - lastQueryNonSpaceCount >= PeekTransitConstants.NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER)
+        val isQuerySignificantlyReduced = !lastSearchedQuery.isEmpty() && newQueryNonSpaceCount < lastQueryNonSpaceCount && query.length >= PeekTransitConstants.NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER
 
-        if (isFirstSearch || hasSufficientNewChars) {
+        if (isFirstSearch || hasSufficientNewChars || isQuerySignificantlyReduced) {
             _isSearching.value = true
             searchJob = coroutineScope.launch {
                 delay(debounceTime)
