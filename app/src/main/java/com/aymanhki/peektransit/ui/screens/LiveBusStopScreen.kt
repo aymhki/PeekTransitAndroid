@@ -584,8 +584,8 @@ fun BusArrivalCard(
         val status = parts[2]
         val arrivalTime = parts[3]
         val fontSizeForBusArrivalCard = when (theme) {
-            StopViewTheme.CLASSIC -> 16.sp
-            StopViewTheme.MODERN -> 18.sp
+            StopViewTheme.CLASSIC -> 14.sp
+            StopViewTheme.MODERN -> 15.sp
         }
 
         val columnWidths: List<Float>  = listOf(
