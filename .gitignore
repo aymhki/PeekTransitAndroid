@@ -1,8 +1,8 @@
 *.iml
 .gradle
 /local.properties
-# Comprehensive .idea directory exclusion to prevent sensitive data commits
-/.idea/
+.idea/copilotDiffState.xml
+.idea/workspace.xml
 .DS_Store
 /build
 /captures
