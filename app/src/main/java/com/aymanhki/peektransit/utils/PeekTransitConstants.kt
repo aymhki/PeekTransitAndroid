@@ -413,24 +413,24 @@ object PeekTransitConstants {
     }
 
     fun saveWidgetSelection(context: Context, appWidgetId: Int, widget: WidgetModel) {
-        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         with(prefs.edit()) {
-            putString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
+            putString(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, widget.id)
             apply()
         }
     }
 
     fun getWidgetConfigUsingAppWidgetId(context: Context, appWidgetId: Int): WidgetModel? {
-        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        val widgetId = prefs.getString(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
+        val prefs = context.getSharedPreferences(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val widgetId = prefs.getString(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId, null) ?: return null
         val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
         return savedWidgetsManager.savedWidgets.value.find { it.id == widgetId }
     }
 
     fun deleteWidgetConfigurationUsingWidgetId(context: Context, appWidgetId: Int) {
-        val prefs = context.getSharedPreferences(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         with(prefs.edit()) {
-            remove(SharedPrefrencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId)
+            remove(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId)
             commit()
         }
     }
@@ -553,6 +553,43 @@ object PeekTransitConstants {
     }
 
 
+    fun removeWidgetConfigurationConnectionIfNeeded(context: Context) {
+        val widgetAppIds = getAllActiveWidgetIds(context)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+
+        widgetAppIds.forEach { appWidgetId ->
+            val widgetConfig = getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+            val widgetSize = widgetConfig?.widgetData["size"] as? String
+            val widgetInfo = appWidgetManager.getAppWidgetInfo(appWidgetId)
+            val actualProviderClass = widgetInfo?.provider?.className
+
+            if (widgetSize == "lockscreen") {
+                if (actualProviderClass != PeekTransitLockScreenWidgetProvider::class.java.name) {
+                    removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+                }
+
+            } else if (widgetSize == "small") {
+                if (actualProviderClass != PeekTransitSmallWidgetProvider::class.java.name) {
+                    removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+                }
+
+            } else if (widgetSize == "medium") {
+                if (actualProviderClass != PeekTransitMediumWidgetProvider::class.java.name) {
+                    removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+                }
+
+            } else if (widgetSize == "large") {
+                if (actualProviderClass != PeekTransitLargeWidgetProvider::class.java.name) {
+                    removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+                }
+
+            } else {
+                removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+            }
+        }
+    }
+
+
 
     val updateActions = listOf(
         Intent.ACTION_CONFIGURATION_CHANGED,
@@ -640,7 +677,7 @@ enum class SegmentType(val value: String) {
     TRANSFER("transfer")
 }
 
-object SharedPrefrencesKeys {
+object SharedPreferencesKeys {
     const val DEFAULT_TAB = "default_tab_preference"
     const val STOP_VIEW_THEME = "stop_view_theme_preference"
     const val SHARED_STOP_VIEW_THEME = "shared_stop_view_theme"

@@ -59,6 +59,8 @@ class SavedWidgetsManager(private val context: Context) {
             currentWidgets[index] = updatedWidget
             saveWidgets(currentWidgets)
         }
+
+       PeekTransitConstants.removeWidgetConfigurationConnectionIfNeeded(context)
     }
     
     fun deleteWidget(widgetId: String) {
