@@ -593,7 +593,7 @@ object WidgetUpdateManager {
                         if (!processedVariants.contains(variantIdentifier)) {
                             val variantEntries = cleanedSchedules.filter {
                                 val entryComponents = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-                                return@filter entryComponents.size >= 2 && entryComponents[0] == variantKey && entryComponents[1] == variantName
+                                return@filter entryComponents.size >= 2 && entryComponents[0] == variantKey && variantName.contains(entryComponents[1])
                             }
 
                             val entriesToAdd = if (isMultipleEntriesPerVariant) {
@@ -624,7 +624,7 @@ object WidgetUpdateManager {
 
                     val matchingSchedules = cleanedSchedules.filter {
                         val components = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-                        return@filter components.size >= 2 && components[0] == variantKey && components[1] == variantName
+                        return@filter components.size >= 2 && components[0] == variantKey && (variantName?.contains(components[1]) == true)
                     }
 
                     val entriesToAdd = if (isMultipleEntriesPerVariant) {

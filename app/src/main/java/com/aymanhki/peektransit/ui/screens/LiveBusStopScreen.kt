@@ -605,10 +605,7 @@ fun BusArrivalCard(
             StopViewTheme.MODERN -> MaterialTheme.colorScheme.onSurface
         }
         
-        val fontFamily = when (theme) {
-            StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-            StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-        }
+        val fontFamily = PeekTransitConstants.getTextFont(theme)
 
         Row(
             modifier = Modifier

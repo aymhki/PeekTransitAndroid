@@ -49,10 +49,7 @@ fun PreviewContent(
                     text = "671",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -63,10 +60,7 @@ fun PreviewContent(
                     text = "Prairie Point",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -82,10 +76,7 @@ fun PreviewContent(
                     text = PeekTransitConstants.LATE_STATUS_TEXT,
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.error
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -96,10 +87,7 @@ fun PreviewContent(
                     text = "1 ${PeekTransitConstants.MINUTES_REMAINING_TEXT}",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -121,10 +109,7 @@ fun PreviewContent(
                     text = "B",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -135,10 +120,7 @@ fun PreviewContent(
                     text = "Downtown",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -154,10 +136,7 @@ fun PreviewContent(
                     text = PeekTransitConstants.EARLY_STATUS_TEXT,
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily =PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.primary
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -168,10 +147,7 @@ fun PreviewContent(
                     text = "11:15 ${PeekTransitConstants.GLOBAL_AM_TEXT}",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -193,10 +169,7 @@ fun PreviewContent(
                     text = "47",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -207,10 +180,7 @@ fun PreviewContent(
                     text = "U of M",
                     fontSize = previewFontSize,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = when (theme) {
-                        StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    },
+                    fontFamily = PeekTransitConstants.getTextFont(theme),
                     color = when (theme) {
                         StopViewTheme.MODERN -> MaterialTheme.colorScheme.onBackground
                         StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR
@@ -222,10 +192,7 @@ fun PreviewContent(
                 text = PeekTransitConstants.CANCELLED_STATUS_TEXT,
                 fontSize = previewFontSize,
                 fontWeight = FontWeight.Bold,
-                fontFamily = when (theme) {
-                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                    StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                },
+                fontFamily = PeekTransitConstants.getTextFont(theme),
                 color = when (theme) {
                     StopViewTheme.MODERN -> MaterialTheme.colorScheme.error
                     StopViewTheme.CLASSIC -> PeekTransitConstants.CLASSIC_THEM_TEXT_COLOR

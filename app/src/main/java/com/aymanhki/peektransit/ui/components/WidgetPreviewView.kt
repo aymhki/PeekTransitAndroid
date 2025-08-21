@@ -154,10 +154,7 @@ private fun PreviewDynamicWidgetView(
                         },
                         fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
                         fontWeight = FontWeight.Medium,
-                        fontFamily = when (theme) {
-                            StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                            StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        }
+                        fontFamily = PeekTransitConstants.getTextFont(theme)
                     )
                 }
             }
@@ -175,10 +172,7 @@ private fun PreviewDynamicWidgetView(
                         },
                         fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
                         fontWeight = FontWeight.Medium,
-                        fontFamily = when (theme) {
-                            StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                            StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                        }
+                        fontFamily =PeekTransitConstants.getTextFont(theme)
                     )
                 }
             }
@@ -261,10 +255,7 @@ private fun PreviewWidgetStopView(
                 color = textColor,
                 fontSize = PeekTransitConstants.getStopNameFontSizeForWidgetPreview(widgetSize).sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = when (theme) {
-                    StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                },
+                fontFamily =PeekTransitConstants.getTextFont(theme),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -359,10 +350,7 @@ private fun PreviewBusScheduleRowView(
             color = textColor,
             fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = when (theme) {
-                StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-            },
+            fontFamily = PeekTransitConstants.getTextFont(theme),
             modifier = Modifier.width(PeekTransitConstants.getRouteNumberWidthForWidgetPreview(widgetSize).dp)
         )
 
@@ -377,10 +365,7 @@ private fun PreviewBusScheduleRowView(
                 text = displayRouteName,
                 color = textColor,
                 fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
-                fontFamily = when (theme) {
-                    StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                },
+                fontFamily = PeekTransitConstants.getTextFont(theme),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 modifier = Modifier.width(PeekTransitConstants.getRouteNameWidthForWidgetPreview(widgetSize).dp)
@@ -407,10 +392,7 @@ private fun PreviewBusScheduleRowView(
                 color = statusColor,
                 fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
                 fontWeight = FontWeight.Medium,
-                fontFamily = when (theme) {
-                    StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                }
+                fontFamily = PeekTransitConstants.getTextFont(theme)
             )
         }
 
@@ -421,10 +403,7 @@ private fun PreviewBusScheduleRowView(
                 color = if (time == PeekTransitConstants.DUE_STATUS_TEXT) statusColor else textColor,
                 fontSize = PeekTransitConstants.getNormalFontSizeForWidgetSize(widgetSize).sp,
                 fontWeight = if (time == PeekTransitConstants.DUE_STATUS_TEXT) FontWeight.Bold else FontWeight.Normal,
-                fontFamily = when (theme) {
-                    StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                    StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-                },
+                fontFamily = PeekTransitConstants.getTextFont(theme),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )
@@ -464,10 +443,7 @@ private fun PreviewLastUpdatedView(
             text = displayText,
             color = textColor,
             fontSize = PeekTransitConstants.getLastSeenFontSizeForWidgetPreview(widgetSize).sp,
-            fontFamily = when (theme) {
-                StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
-                StopViewTheme.MODERN -> FontUtils.CourierFontFamily
-            }
+            fontFamily = PeekTransitConstants.getTextFont(theme)
         )
     }
 }

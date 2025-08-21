@@ -55,6 +55,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _hasPerformedInitialCameraAnimation = MutableLiveData(false)
     val hasPerformedInitialCameraAnimation: LiveData<Boolean> = _hasPerformedInitialCameraAnimation
 
+    private val _showSupportSheet = MutableLiveData(false)
+    val showSupportSheet: LiveData<Boolean> = _showSupportSheet
+
     fun setInitialCameraAnimationPerformed() {
         _hasPerformedInitialCameraAnimation.postValue(true)
     }
@@ -97,6 +100,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoadingStops.postValue(false)
             }
         }
+    }
+
+    fun showSupportSheet() {
+        _showSupportSheet.postValue(true)
+    }
+
+    fun hideSupportSheet() {
+        _showSupportSheet.postValue(false)
     }
 
     fun initializeWithLocation(userLocation: Location) {

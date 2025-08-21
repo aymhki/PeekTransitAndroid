@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.os.PowerManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontFamily
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.WidgetModel
@@ -66,13 +67,13 @@ object PeekTransitConstants {
     const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L
     const val CAMERA_DELAY_FOR_INITIAL_LOCATION_ZOOM_MS = 8000L
     const val DEFAULT_MAP_ZOOM = 16.5f
-    const val STOP_MARKER_SIZE_DP = 42
     const val MAP_PREVIEW_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_HEIGHT_SIZE_DP = 160
     const val MAP_PREVIEW_ZOOM_LEVEL = 16.5f
     const val MAP_PREVIEW_RENDER_WIDTH_SIZE_DP = 80
     const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP = 160
-    const val MAP_PREVIEW_MARKER_SIZE_DP = 36
+    const val STOP_MARKER_SIZE_DP = 32
+    const val MAP_PREVIEW_MARKER_SIZE_DP = 32
     const val GLOBAL_API_FOR_SHORT_USAGE = true
     const val STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET = 28
     const val NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER = 3
@@ -85,7 +86,7 @@ object PeekTransitConstants {
     val LATE_OR_CANCELLED_TEXT_COLOR_IN_MODERN_THEME_ALWAYS = Color(0xFFD2183B)
     val EARLY_OR_DUE_TEXT_COLOR_IN_MODERN_THEME_ALWAYS = AccentBlue
     val CLASSIC_THEME_FONT = R.font.lcd_dot
-    val MODERN_THEME_FONT = R.font.courier_prime_bold
+    val MODERN_THEME_FONT = R.font.lcd_dot
     val ACCENT_COLOR_IN_ALL_THEMES = AccentBlue
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
@@ -305,40 +306,22 @@ object PeekTransitConstants {
     }
 
     fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
-        return when (currentTheme) {
-            StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
-                "small" -> 16f
-                "medium" -> 14f
-                "large" -> 16f
-                "lockscreen" -> 14f
-                else -> 14f
-            }
-            StopViewTheme.CLASSIC -> when (widgetSize.lowercase()) {
+        return when (widgetSize.lowercase()) {
                 "small" -> 16f
                 "medium" -> 13f
                 "large" -> 16f
                 "lockscreen" -> 14f
                 else -> 14f
-            }
         }
     }
 
     fun getScheduleEntryFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
-        return when (currentTheme) {
-            StopViewTheme.MODERN -> when (widgetSize.lowercase()) {
-                "small" -> 17f
-                "medium" -> 20f
-                "large" -> 20f
-                "lockscreen" -> 17f
-                else -> 10f
-            }
-            StopViewTheme.CLASSIC -> when (widgetSize.lowercase()) {
-                "small" -> 17f
-                "medium" -> 18f
-                "large" -> 18f
-                "lockscreen" -> 17f
-                else -> 10f
-            }
+        return when (widgetSize.lowercase()) {
+            "small" -> 17f
+            "medium" -> 18f
+            "large" -> 18f
+            "lockscreen" -> 17f
+            else -> 10f
         }
     }
 
@@ -349,10 +332,17 @@ object PeekTransitConstants {
         }.toArgb()
     }
 
-    fun getWidgetTextFont(stopViewTheme: StopViewTheme): Int {
+    fun getWidgetTextFont(stopViewTheme: StopViewTheme): Int  {
         return when (stopViewTheme) {
-            StopViewTheme.MODERN ->  MODERN_THEME_FONT
+            StopViewTheme.MODERN -> MODERN_THEME_FONT
             StopViewTheme.CLASSIC -> CLASSIC_THEME_FONT
+        }
+    }
+
+    fun getTextFont(stopViewTheme: StopViewTheme): FontFamily {
+        return when (stopViewTheme) {
+            StopViewTheme.MODERN -> FontUtils.LCDDotFontFamily
+            StopViewTheme.CLASSIC -> FontUtils.LCDDotFontFamily
         }
     }
 

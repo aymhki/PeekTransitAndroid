@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
+
 data class SettingsSection(
     val title: String,
     val items: List<SettingsItem>
@@ -53,6 +54,7 @@ sealed class SettingsAction {
     object About : SettingsAction()
     object Credits : SettingsAction()
     object TermsAndPrivacy : SettingsAction()
+    object SupportDevelopment : SettingsAction()
 }
 
 @Composable
@@ -60,7 +62,8 @@ fun MoreScreen(
     onNavigateToThemeSelection: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     onNavigateToCredits: () -> Unit = {},
-    onNavigateToTermsAndPrivacy: () -> Unit = {}
+    onNavigateToTermsAndPrivacy: () -> Unit = {},
+    onNavigateToSupportDevelopment: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
@@ -158,9 +161,15 @@ fun MoreScreen(
                 SettingsItem(
                     icon = Icons.Default.Info,
                     iconColor = Color(0xFFF44336),
-                    text = "About",
+                    text = "About & Feedback",
                     action = SettingsAction.About
-                )
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Favorite,
+                    iconColor = Color(0xFFE91E63),
+                    text = "Support Development",
+                    action = SettingsAction.SupportDevelopment
+            )
             )
         )
     )
@@ -412,6 +421,7 @@ fun MoreScreen(
                                                 SettingsAction.About -> onNavigateToAbout()
                                                 SettingsAction.Credits -> onNavigateToCredits()
                                                 SettingsAction.TermsAndPrivacy -> onNavigateToTermsAndPrivacy()
+                                                SettingsAction.SupportDevelopment -> onNavigateToSupportDevelopment()
                                             }
                                         }
                                         .padding(vertical = 8.dp),

@@ -49,7 +49,10 @@ import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
-
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.runtime.livedata.observeAsState
+import com.aymanhki.peektransit.ui.components.SupportDevelopmentSheet
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
@@ -122,7 +125,15 @@ fun MainScreen(initialStopNumber: Int? = null) {
     val currentDestination = navBackStackEntry?.destination
     
     val mainViewModel: MainViewModel = viewModel()
-    
+
+    val showSupportSheet by mainViewModel.showSupportSheet.observeAsState(false)
+
+    if (showSupportSheet) {
+        SupportDevelopmentSheet(
+            onDismiss = { mainViewModel.hideSupportSheet() }
+        )
+    }
+
     LaunchedEffect(Unit) {
         mainViewModel.initializeGlobal()
     }
@@ -224,7 +235,12 @@ fun MainScreen(initialStopNumber: Int? = null) {
                     onNavigateToThemeSelection = { navController.navigate("theme_selection") },
                     onNavigateToAbout = { navController.navigate("about") },
                     onNavigateToCredits = { navController.navigate("credits") },
-                    onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") }
+                    onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") },
+                    onNavigateToSupportDevelopment = {
+//                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/aymhki"))
+//                        context.startActivity(intent)
+                        mainViewModel.showSupportSheet()
+                    }
                 )
             }
             composable(

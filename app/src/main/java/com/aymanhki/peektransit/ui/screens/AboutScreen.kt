@@ -123,6 +123,12 @@ fun AboutScreen(
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Text(
+                    text = "If you have any feedback or suggestions,",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 
                 Text(
                     text = "agamyahk@myumanitoba",
