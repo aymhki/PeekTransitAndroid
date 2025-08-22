@@ -1,5 +1,6 @@
 [versions]
 agp = "8.12.1"
+appUpdate = "2.1.0"
 coilCompose = "2.7.0"
 converterGson = "3.0.0"
 datastorePreferences = "1.1.7"
@@ -26,6 +27,8 @@ recyclerview = "1.4.0"
 glanceAppwidget = "1.1.1"
 constraintlayout = "2.2.1"
 retrofit = "3.0.0"
+review = "2.0.2"
+reviewKtx = "2.0.2"
 roomRuntime = "2.7.2"
 runtimeLivedata = "1.9.0"
 workRuntimeKtx = "2.10.3"
@@ -41,6 +44,8 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeKtx" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+app-update = { module = "com.google.android.play:app-update", version.ref = "appUpdate" }
+app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -69,6 +74,8 @@ places = { module = "com.google.android.libraries.places:places", version.ref = 
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+review = { module = "com.google.android.play:review", version.ref = "review" }
+review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "reviewKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
