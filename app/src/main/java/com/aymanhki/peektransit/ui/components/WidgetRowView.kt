@@ -89,7 +89,7 @@ fun WidgetRowView(
                 Text(
                     text = widgetName,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Normal,
                     modifier = Modifier.weight(1f)
                 )
                 

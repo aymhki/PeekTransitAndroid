@@ -7,9 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.automirrored.filled.List
@@ -49,8 +46,6 @@ import com.aymanhki.peektransit.utils.permissions.PermissionManager
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.livedata.observeAsState
 import com.aymanhki.peektransit.ui.components.SupportDevelopmentSheet
 
@@ -123,9 +118,8 @@ fun MainScreen(initialStopNumber: Int? = null) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    
-    val mainViewModel: MainViewModel = viewModel()
 
+    val mainViewModel: MainViewModel = viewModel()
     val showSupportSheet by mainViewModel.showSupportSheet.observeAsState(false)
 
     if (showSupportSheet) {
