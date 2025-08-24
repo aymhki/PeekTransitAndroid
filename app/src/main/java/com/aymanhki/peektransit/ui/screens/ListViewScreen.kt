@@ -186,7 +186,7 @@ fun ListViewScreen(
                                     viewModel.searchForStops(localSearchQuery)
                                 }
                             } else {
-                                viewModel.retry()
+                                viewModel.retryLocationFetch()
                             }
                         }
                     ) {
@@ -361,7 +361,7 @@ fun ListViewScreen(
                                 } else {
                                     viewModel.clearError()
                                     viewModel.clearLocationError()
-                                    viewModel.retry()
+                                    viewModel.retryLocationFetch()
                                 }
                             },
                             onDismiss = {

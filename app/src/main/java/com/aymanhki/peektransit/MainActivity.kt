@@ -2,11 +2,20 @@ package com.aymanhki.peektransit
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.automirrored.filled.List
@@ -15,6 +24,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -47,7 +57,15 @@ import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.unit.dp
+import com.aymanhki.peektransit.ui.components.BannerView
 import com.aymanhki.peektransit.ui.components.SupportDevelopmentSheet
+import com.aymanhki.peektransit.utils.BannerType
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.review.ReviewManagerFactory
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Map : BottomNavItem("map", "Map", Icons.Default.Map)
@@ -58,7 +76,6 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 }
 
 class MainActivity : ComponentActivity() {
-    
     private lateinit var permissionManager: PermissionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,7 +95,7 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val settingsManager = remember { SettingsManager.getInstance(context) }
             var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
-            
+
             LaunchedEffect(Unit) {
                 while (true) {
                     currentTheme = settingsManager.stopViewTheme
@@ -89,10 +106,10 @@ class MainActivity : ComponentActivity() {
 
             val forceDarkTheme = currentTheme == com.aymanhki.peektransit.utils.StopViewTheme.CLASSIC
             val isNightMode = when (applicationContext.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-                    Configuration.UI_MODE_NIGHT_YES -> true
-                    Configuration.UI_MODE_NIGHT_NO -> false
-                    else -> false
-                }
+                Configuration.UI_MODE_NIGHT_YES -> true
+                Configuration.UI_MODE_NIGHT_NO -> false
+                else -> false
+            }
 
 
             LaunchedEffect(forceDarkTheme, isNightMode) {
@@ -103,7 +120,7 @@ class MainActivity : ComponentActivity() {
 
             PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
                 CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
-                    MainScreen(initialStopNumber = if (stopNumber > 0) stopNumber else null)
+                    MainScreen(activity = this, initialStopNumber = if (stopNumber > 0) stopNumber else null)
                 }
             }
         }
@@ -112,7 +129,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun MainScreen(initialStopNumber: Int? = null) {
+fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val navController = rememberNavController()
@@ -121,6 +138,71 @@ fun MainScreen(initialStopNumber: Int? = null) {
 
     val mainViewModel: MainViewModel = viewModel()
     val showSupportSheet by mainViewModel.showSupportSheet.observeAsState(false)
+    val thereIsAnUpdateAvailable by mainViewModel.thereIsAnUpdateAvailable.observeAsState(false)
+    val theUserHasClickedOnTheUpdateAvailableBanner by mainViewModel.theUserHasClickedOnTheUpdateAvailableBanner.observeAsState(false)
+    val shouldShowRateAppBanner by mainViewModel.shouldShowRateAppBanner.observeAsState(false)
+    val hasShownRateAppBannerThisSession by mainViewModel.hasShownRateAppBannerThisSession.observeAsState(false)
+    val wasRateAppBannerManuallyHidden by mainViewModel.wasRateAppBannerManuallyHidden.observeAsState(false)
+    val shouldShowTipBanner by mainViewModel.shouldShowTipBanner.observeAsState(false)
+    val hasShownTipBannerThisSession by mainViewModel.hasShownTipBannerThisSession.observeAsState(false)
+    val wasTipBannerManuallyHidden by mainViewModel.wasTipBannerManuallyHidden.observeAsState(false)
+    val startUpdateFlow by mainViewModel.startUpdateFlow.observeAsState(false)
+    val showInAppReview by mainViewModel.showInAppReview.observeAsState(false)
+
+    if (startUpdateFlow) {
+        LaunchedEffect(Unit) {
+            val appUpdateManager = AppUpdateManagerFactory.create(context)
+            val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+            appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+                    val updateOptions = AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                    appUpdateManager.startUpdateFlow(appUpdateInfo, activity, updateOptions)
+                }
+            }.addOnFailureListener { e ->
+                mainViewModel.onUpdateFlowStarted()
+            }
+
+            mainViewModel.onUpdateFlowStarted()
+        }
+    }
+
+    if (showInAppReview) {
+        LaunchedEffect(Unit) {
+            val reviewManager = ReviewManagerFactory.create(context)
+            val request = reviewManager.requestReviewFlow()
+            request.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val reviewInfo = task.result
+                    val flow = reviewManager.launchReviewFlow(activity, reviewInfo)
+                    flow.addOnCompleteListener { _ ->
+                        mainViewModel.onInAppReviewFlowStarted()
+                    }
+                } else {
+                    mainViewModel.onInAppReviewFlowStarted()
+                }
+            }
+        }
+    }
+
+    val activeBanner: BannerType? = when {
+        (hasShownRateAppBannerThisSession || hasShownTipBannerThisSession || thereIsAnUpdateAvailable) -> {
+            when {
+                (hasShownRateAppBannerThisSession && shouldShowRateAppBanner && !wasRateAppBannerManuallyHidden) -> BannerType.RATE
+                (hasShownTipBannerThisSession && shouldShowTipBanner && !wasTipBannerManuallyHidden) -> BannerType.TIP
+                (thereIsAnUpdateAvailable && !theUserHasClickedOnTheUpdateAvailableBanner) -> BannerType.UPDATE
+                else -> null
+            }
+        }
+        thereIsAnUpdateAvailable && !theUserHasClickedOnTheUpdateAvailableBanner -> BannerType.UPDATE
+        (shouldShowRateAppBanner && !wasRateAppBannerManuallyHidden) -> BannerType.RATE
+        (shouldShowTipBanner && !wasTipBannerManuallyHidden) -> BannerType.TIP
+        else -> null
+    }
+
+    val shouldShowBanner by remember { derivedStateOf { activeBanner != null } }
+    val isUpdateBanner by remember { derivedStateOf { activeBanner == BannerType.UPDATE } }
+    val isRateAppBanner by remember { derivedStateOf { activeBanner == BannerType.RATE } }
 
     if (showSupportSheet) {
         SupportDevelopmentSheet(
@@ -131,7 +213,7 @@ fun MainScreen(initialStopNumber: Int? = null) {
     LaunchedEffect(Unit) {
         mainViewModel.initializeGlobal()
     }
-    
+
     LaunchedEffect(initialStopNumber) {
         initialStopNumber?.let { stopNumber ->
             navController.navigate("live_stop/$stopNumber")
@@ -145,7 +227,7 @@ fun MainScreen(initialStopNumber: Int? = null) {
         BottomNavItem.Widgets,
         BottomNavItem.More
     )
-    
+
     val startDestination = remember {
         val defaultTab = settingsManager.defaultTab
         when (defaultTab) {
@@ -182,91 +264,113 @@ fun MainScreen(initialStopNumber: Int? = null) {
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = if (isMapScreen) {
-                Modifier.padding(
-                    bottom = innerPadding.calculateBottomPadding()
-                )
-            } else {
-                Modifier.padding(innerPadding)
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                modifier = if (isMapScreen) {
+                    Modifier.padding(
+                        bottom = innerPadding.calculateBottomPadding()
+                    )
+                } else {
+                    Modifier.padding(innerPadding)
+                }
+            ) {
+                composable(BottomNavItem.Map.route) {
+                    MapViewScreen(
+                        viewModel = mainViewModel,
+                        onNavigateToLiveStop = { stopNumber ->
+                            navController.navigate("live_stop/$stopNumber")
+                        },
+                        isCurrentDestination = currentDestination?.route == BottomNavItem.Map.route
+                    )
+                }
+                composable(BottomNavItem.Stops.route) {
+                    ListViewScreen(
+                        viewModel = mainViewModel,
+                        onNavigateToLiveStop = { stopNumber ->
+                            navController.navigate("live_stop/$stopNumber")
+                        },
+                        isCurrentDestination = currentDestination?.route == BottomNavItem.Stops.route
+                    )
+                }
+                composable(BottomNavItem.Saved.route) {
+                    BookmarkedStopsScreen(
+                        onNavigateToLiveStop = { stopNumber ->
+                            navController.navigate("live_stop/$stopNumber")
+                        }
+                    )
+                }
+                composable(BottomNavItem.Widgets.route) {
+                    WidgetsScreen(
+                        stopsDataStore = mainViewModel.stopsDataStore,
+                        mainViewModel = mainViewModel
+                    )
+                }
+                composable(BottomNavItem.More.route) {
+                    MoreScreen(
+                        onNavigateToThemeSelection = { navController.navigate("theme_selection") },
+                        onNavigateToAbout = { navController.navigate("about") },
+                        onNavigateToCredits = { navController.navigate("credits") },
+                        onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") },
+                        onNavigateToSupportDevelopment = {
+                            //    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/aymhki"))
+                            //    context.startActivity(intent)
+                            mainViewModel.showSupportSheet()
+                        }
+                    )
+                }
+                composable(
+                    "live_stop/{stopNumber}",
+                    arguments = listOf(navArgument("stopNumber") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val stopNumber = backStackEntry.arguments?.getInt("stopNumber") ?: return@composable
+                    LiveBusStopScreen(
+                        stopNumber = stopNumber,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("theme_selection") {
+                    ThemeSelectionScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("about") {
+                    AboutScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("credits") {
+                    CreditsScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("terms_privacy") {
+                    TermsAndPrivacyScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
-        ) {
-            composable(BottomNavItem.Map.route) {
-                MapViewScreen(
-                    viewModel = mainViewModel,
-                    onNavigateToLiveStop = { stopNumber ->
-                        navController.navigate("live_stop/$stopNumber")
-                    },
-                    isCurrentDestination = currentDestination?.route == BottomNavItem.Map.route
-                )
-            }
-            composable(BottomNavItem.Stops.route) {
-                ListViewScreen(
-                    viewModel = mainViewModel,
-                    onNavigateToLiveStop = { stopNumber ->
-                        navController.navigate("live_stop/$stopNumber")
-                    },
-                    isCurrentDestination = currentDestination?.route == BottomNavItem.Stops.route
-                )
-            }
-            composable(BottomNavItem.Saved.route) {
-                BookmarkedStopsScreen(
-                    onNavigateToLiveStop = { stopNumber ->
-                        navController.navigate("live_stop/$stopNumber")
-                    }
-                )
-            }
-            composable(BottomNavItem.Widgets.route) {
-                WidgetsScreen(
-                    stopsDataStore = mainViewModel.stopsDataStore,
-                    mainViewModel = mainViewModel
-                )
-            }
-            composable(BottomNavItem.More.route) {
-                MoreScreen(
-                    onNavigateToThemeSelection = { navController.navigate("theme_selection") },
-                    onNavigateToAbout = { navController.navigate("about") },
-                    onNavigateToCredits = { navController.navigate("credits") },
-                    onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") },
-                    onNavigateToSupportDevelopment = {
-//                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/aymhki"))
-//                        context.startActivity(intent)
-                        mainViewModel.showSupportSheet()
-                    }
-                )
-            }
-            composable(
-                "live_stop/{stopNumber}",
-                arguments = listOf(navArgument("stopNumber") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val stopNumber = backStackEntry.arguments?.getInt("stopNumber") ?: return@composable
-                LiveBusStopScreen(
-                    stopNumber = stopNumber,
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable("theme_selection") {
-                ThemeSelectionScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable("about") {
-                AboutScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable("credits") {
-                CreditsScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable("terms_privacy") {
-                TermsAndPrivacyScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
+
+            BannerView(
+                activeBanner = if (isMapScreen) activeBanner else null,
+                mainViewModel = mainViewModel,
+                isMapScreen = true,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 64.dp)
+                    .padding(innerPadding)
+            )
+
+            BannerView(
+                activeBanner = if (!isMapScreen) activeBanner else null,
+                mainViewModel = mainViewModel,
+                isMapScreen = false,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 30.dp)
+                    .padding(innerPadding)
+            )
         }
     }
 }

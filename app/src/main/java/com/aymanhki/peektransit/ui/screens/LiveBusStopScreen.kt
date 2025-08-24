@@ -583,10 +583,7 @@ fun BusArrivalCard(
         val routeName = parts[1]
         val status = parts[2]
         val arrivalTime = parts[3]
-        val fontSizeForBusArrivalCard = when (theme) {
-            StopViewTheme.CLASSIC -> 14.sp
-            StopViewTheme.MODERN -> 15.sp
-        }
+        val fontSizeForBusArrivalCard = PeekTransitConstants.getFontSizeForScheduleEntryInLiveBusStopView(theme)
 
         val columnWidths: List<Float>  = listOf(
             0.13f,

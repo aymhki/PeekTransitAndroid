@@ -1,7 +1,9 @@
 package com.aymanhki.peektransit.viewmodel
 
+import android.app.Activity
 import android.app.Application
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,64 +11,70 @@ import androidx.lifecycle.viewModelScope
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.TransitError
 import com.aymanhki.peektransit.data.repository.StopsDataStore
+import com.aymanhki.peektransit.managers.RateAppBannerManager
+import com.aymanhki.peektransit.managers.TipBannerManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 
+
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    val stopsDataStore = StopsDataStore.getInstance().apply {
-        initialize(application.applicationContext)
-    }
+    val stopsDataStore = StopsDataStore.getInstance().apply { initialize(application.applicationContext) }
 
     private val _isInitialized = MutableLiveData(false)
     val isInitialized: LiveData<Boolean> = _isInitialized
-
     private val _isLoadingLocation = MutableLiveData(false)
     val isLoadingLocation: LiveData<Boolean> = _isLoadingLocation
-
     private val _isLoadingStops = MutableLiveData(false)
     val isLoadingStops: LiveData<Boolean> = _isLoadingStops
-
     private val _locationError = MutableLiveData<TransitError?>(null)
     val locationError: LiveData<TransitError?> = _locationError
-
-    private val locationManager = LocationManagerProvider.getInstance(application)
-    private var isLocationMonitoringActive = false
-    private var previousLocation: Location? = null
-
     private val _currentLocation = MutableLiveData<Location?>()
     val currentLocation: LiveData<Location?> = _currentLocation
-
     private val _cameraLocation = MutableLiveData<Location?>()
     val cameraLocation: LiveData<Location?> = _cameraLocation
-
     private val _searchQuery = MutableLiveData("")
     val searchQuery: LiveData<String> = _searchQuery
-
     private val _lastSearchedQuery = MutableLiveData("")
     val lastSearchedQuery: LiveData<String> = _lastSearchedQuery
-
     private val _hasPerformedInitialCameraAnimation = MutableLiveData(false)
     val hasPerformedInitialCameraAnimation: LiveData<Boolean> = _hasPerformedInitialCameraAnimation
-
     private val _showSupportSheet = MutableLiveData(false)
     val showSupportSheet: LiveData<Boolean> = _showSupportSheet
-
-    fun setInitialCameraAnimationPerformed() {
-        _hasPerformedInitialCameraAnimation.postValue(true)
-    }
-
+    private val _isCameraPositioned = MutableLiveData(false)
+    val isCameraPositioned: LiveData<Boolean> = _isCameraPositioned
+    private val _hasInitialLocation = MutableLiveData(false)
+    val hasInitialLocation: LiveData<Boolean> = _hasInitialLocation
     private val _lastKnownCameraPosition = MutableLiveData<CameraPosition?>(null)
     val lastKnownCameraPosition: LiveData<CameraPosition?> = _lastKnownCameraPosition
-
-    fun saveLastCameraPosition(position: CameraPosition) {
-        _lastKnownCameraPosition.postValue(position)
-    }
+    private val _thereIsAnUpdateAvailable = MutableLiveData(false)
+    val thereIsAnUpdateAvailable: LiveData<Boolean> = _thereIsAnUpdateAvailable
+    private val _theUserHasClickedOnTheUpdateAvailableBanner = MutableLiveData(false)
+    val theUserHasClickedOnTheUpdateAvailableBanner: LiveData<Boolean> = _theUserHasClickedOnTheUpdateAvailableBanner
+    private val _startUpdateFlow = MutableLiveData<Boolean>()
+    val startUpdateFlow: LiveData<Boolean> = _startUpdateFlow
+    private lateinit var appUpdateManager: AppUpdateManager
+    val tipBannerManager = TipBannerManager.getInstance(application.applicationContext)
+    val rateAppBannerManager = RateAppBannerManager.getInstance(application.applicationContext)
+    val shouldShowRateAppBanner: LiveData<Boolean> = rateAppBannerManager.shouldShowRateAppBanner
+    val hasShownRateAppBannerThisSession: LiveData<Boolean> = rateAppBannerManager.hasShownRateAppBannerThisSession
+    val wasRateAppBannerManuallyHidden: LiveData<Boolean> = rateAppBannerManager.wasRateAppBannerManuallyHidden
+    val shouldShowTipBanner: LiveData<Boolean> = tipBannerManager.shouldShowTipBanner
+    val hasShownTipBannerThisSession: LiveData<Boolean> = tipBannerManager.hasShownTipBannerThisSession
+    val wasTipBannerManuallyHidden: LiveData<Boolean> = tipBannerManager.wasTipBannerManuallyHidden
+    private val _showInAppReview = MutableLiveData(false)
+    val showInAppReview: LiveData<Boolean> = _showInAppReview
 
     val stops: LiveData<List<Stop>> = stopsDataStore.stops
     val isLoading: LiveData<Boolean> = stopsDataStore.isLoading
@@ -74,16 +82,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val searchResults: LiveData<List<Stop>> = stopsDataStore.searchResults
     val isSearching: LiveData<Boolean> = stopsDataStore.isSearching
     val searchError: LiveData<TransitError?> = stopsDataStore.searchError
-
     private val locationMutex = Mutex()
     private var locationFetchJob: Job? = null
     private var cameraLocationJob: Job? = null
+    private val locationManager = LocationManagerProvider.getInstance(application)
+    private var isLocationMonitoringActive = false
+    private var previousLocation: Location? = null
 
-    private val _isCameraPositioned = MutableLiveData(false)
-    val isCameraPositioned: LiveData<Boolean> = _isCameraPositioned
+    fun setInitialCameraAnimationPerformed() {
+        _hasPerformedInitialCameraAnimation.postValue(true)
+    }
 
-    private val _hasInitialLocation = MutableLiveData(false)
-    val hasInitialLocation: LiveData<Boolean> = _hasInitialLocation
+    fun saveLastCameraPosition(position: CameraPosition) {
+        _lastKnownCameraPosition.postValue(position)
+    }
+
+    private fun checkIfThereIsAnUpdate(): Boolean {
+        return try {
+            appUpdateManager = AppUpdateManagerFactory.create(getApplication())
+            val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+            appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+                val isUpdateAvailable = appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                val isImmediateUpdateAllowed = appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+                val isFlexibleUpdateAllowed = appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+
+                val updateAvailable = isUpdateAvailable && (isImmediateUpdateAllowed || isFlexibleUpdateAllowed)
+                _thereIsAnUpdateAvailable.postValue(updateAvailable)
+            }.addOnFailureListener {
+                Log.d("MainViewModel", "Failed to check for update: ${it.message}")
+                _thereIsAnUpdateAvailable.postValue(false)
+            }
+
+            false
+        } catch (e: Exception) {
+            Log.d("MainViewModel", "Error checking for update: ${e.message}")
+            _thereIsAnUpdateAvailable.postValue(false)
+            false
+        }
+    }
+
 
     fun loadStops(userLocation: Location, loadingFromWidgetSetup: Boolean = false, forceRefresh: Boolean = false) {
         if (_isLoadingStops.value == true) return
@@ -118,9 +156,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun initializeGlobal() {
         if (_isInitialized.value == true) return
+
         if (locationManager.hasLocationPermission()) {
             fetchLocationOnce(false)
         }
+
+        checkIfThereIsAnUpdate()
+        rateAppBannerManager.startTrackingAppUsage()
+        tipBannerManager.startTrackingAppUsage()
+    }
+
+    fun onUpdateFlowStarted() {
+        _startUpdateFlow.postValue(false)
     }
 
     fun fetchLocationForCamera() {
@@ -170,7 +217,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-
 
     private suspend fun getCachedLocationSync(): Location? {
         return try {
@@ -241,10 +287,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } ?: true
     }
 
-    fun retry() {
+    fun retryLocationFetch() {
         clearError()
         clearLocationError()
         fetchLocationOnce(forceRefresh = true)
+    }
+
+    fun tipBannerWasTapped() {
+        tipBannerManager.tipBannerWasTapped()
+        _showSupportSheet.postValue(true)
+    }
+
+    fun rateAppBannerWasTapped() {
+        rateAppBannerManager.rateAppBannerWasTapped()
+        _showInAppReview.postValue(true)
+    }
+
+    fun onInAppReviewFlowStarted() {
+        _showInAppReview.postValue(false)
+    }
+
+    fun updateBannerWasTapped() {
+        _theUserHasClickedOnTheUpdateAvailableBanner.postValue(true)
+        _startUpdateFlow.postValue(true)
     }
 
     fun clearLocationError() {
@@ -328,6 +393,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         stopLocationMonitoring()
         stopsDataStore.cancelAllOperations()
+        rateAppBannerManager.stopTrackingAppUsage()
+        tipBannerManager.stopTrackingAppUsage()
     }
 
     fun setCameraPositioned(positioned: Boolean) {

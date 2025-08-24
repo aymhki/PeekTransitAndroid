@@ -714,7 +714,14 @@ object WidgetUpdateManager {
             toReturn[stopKey] = finalSchedulesForThisStop
         }
 
-        return toReturn
+//        val testEntries = mutableMapOf<String, List<String>>()
+//
+//        stopsToUse.forEach {
+//            val stopKey = "${it.name}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${it.number}"
+//            testEntries[stopKey] = PeekTransitConstants.TEST_ENTRIES
+//        }
+
+        return  toReturn // testEntries
     }
 
     suspend fun getFilteredStopsForWidget(stops: List<Stop>, widgetConfig: WidgetModel): List<Stop> {

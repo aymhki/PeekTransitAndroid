@@ -2,21 +2,16 @@ package com.aymanhki.peektransit.ui.screens
 
 import android.Manifest
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.util.Log
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
@@ -31,13 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.ui.components.StopRow
@@ -452,7 +444,7 @@ fun MapViewScreen(
                                     }
                                 }
                             }
-                            viewModel.retry()
+                            viewModel.retryLocationFetch()
                         },
                         modifier = Modifier,
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -625,7 +617,7 @@ fun MapViewScreen(
                 onRetry = {
                     viewModel.clearError()
                     viewModel.clearLocationError()
-                    viewModel.retry()
+                    viewModel.retryLocationFetch()
                 },
                 onDismiss = {
                     viewModel.clearError()

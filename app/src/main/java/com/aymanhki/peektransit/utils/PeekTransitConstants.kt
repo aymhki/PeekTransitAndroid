@@ -10,6 +10,8 @@ import android.os.PowerManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import com.aymanhki.peektransit.ui.theme.AccentBlue
 import com.aymanhki.peektransit.R
 import com.aymanhki.peektransit.data.models.WidgetModel
@@ -22,6 +24,7 @@ import com.aymanhki.peektransit.widgets.PeekTransitSmallWidgetProvider
 import com.aymanhki.peektransit.widgets.SavedWidgetSchedulesManager
 import com.aymanhki.peektransit.widgets.WidgetSchedule
 import com.aymanhki.peektransit.widgets.WidgetUpdateManager
+import kotlin.div
 import kotlin.math.roundToInt
 
 object PeekTransitConstants {
@@ -88,6 +91,10 @@ object PeekTransitConstants {
     val CLASSIC_THEME_FONT = R.font.lcd_dot
     val MODERN_THEME_FONT = R.font.lcd_dot
     val ACCENT_COLOR_IN_ALL_THEMES = AccentBlue
+    val MAXIMUM_TIMES_TO_SHOW_TIP_BANNER = 3
+    val MAXIMUM_TIMES_TO_SHOW_RATE_APP_BANNER = 3
+    val USAGE_TIME_TO_SHOW_TIP_BANNER_AFTER_IN_SECONDS = (60 * 3).toLong()
+    val USAGE_TIME_TO_SHOW_RATE_APP_BANNER_AFTER_IN_SECONDS = (60 * 3).toLong()
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
     const val LONG_SCHEDULE_ENTRY_WITH_LATE_FOR_TESTING = "899" + SCHEDULE_STRING_SEPARATOR + "Kildonan Place" + SCHEDULE_STRING_SEPARATOR + LATE_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 AM"
@@ -100,6 +107,13 @@ object PeekTransitConstants {
         LONG_SCHEDULE_ENTRY_WITH_DUE_FOR_TESTING,
         LONG_SCHEDULE_ENTRY_WITH_CANCELLED_FOR_TESTING
     )
+
+    fun getFontSizeForScheduleEntryInLiveBusStopView(currentTheme: StopViewTheme): TextUnit {
+        return when (currentTheme) {
+            StopViewTheme.MODERN -> 16.sp
+            StopViewTheme.CLASSIC -> 16.sp
+        }
+    }
 
     fun formatDistance(distanceInMeters: Double): String {
         return when {
@@ -245,10 +259,10 @@ object PeekTransitConstants {
 
     fun getLastUpdatedFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (widgetSize.lowercase()) {
-            "small" -> 13f
-            "medium" -> 15f
-            "large" -> 15f
-            "lockscreen" -> 13f
+            "small" -> 14f
+            "medium" -> 16f
+            "large" -> 16f
+            "lockscreen" -> 14f
             else -> 14f
         }
     }
@@ -264,64 +278,105 @@ object PeekTransitConstants {
         }
     }
 
+    fun getScheduleEntryWidths(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): List<Int> {
+        val res = context.resources
+        val isSmallOrLockscreen = widgetSize.lowercase() in listOf("small", "lockscreen")
 
-    fun getRouteNumberWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
-        return when (widgetSize.lowercase()) {
-            "small" -> 40
-            "medium" -> 50
-            "large" -> 50
-            "lockscreen" -> 40
-            else -> 50
+        val routeNumberWeight = if (isSmallOrLockscreen) {
+            res.getInteger(R.integer.route_number_layout_weight_in_small_and_lockscreen_widgets)
+        } else {
+            res.getInteger(R.integer.route_number_layout_weight_in_medium_and_large_widgets)
         }
+
+        val routeNameWeight = if (isSmallOrLockscreen) {
+            res.getInteger(R.integer.route_name_layout_weight_in_small_and_lockscreen_widgets)
+        } else {
+            res.getInteger(R.integer.route_name_layout_weight_in_medium_and_large_widgets)
+        }
+
+        val arrivalStatusWeight = if (isSmallOrLockscreen) {
+            res.getInteger(R.integer.arrival_status_layout_weight_in_small_and_lockscreen_widgets)
+        } else {
+            res.getInteger(R.integer.arrival_status_layout_weight_in_medium_and_large_widgets)
+        }
+
+        val arrivalTimeWeight = if (isSmallOrLockscreen) {
+            res.getInteger(R.integer.arrival_time_layout_weight_in_small_and_lockscreen_widgets)
+        } else {
+            res.getInteger(R.integer.arrival_time_layout_weight_in_medium_and_large_widgets)
+        }
+
+        val totalWeight = maxWidgetWidth // routeNumberWeight + routeNameWeight + arrivalStatusWeight + arrivalTimeWeight
+
+        val horizontalPaddingDimen = if (isSmallOrLockscreen) {
+             R.dimen.stop_entry_layout_horizontal_padding_in_small_and_lockscreen_widgets
+        } else {
+             R.dimen.stop_entry_layout_horizontal_padding_in_medium_and_large_widgets
+        }
+
+        val pixelValue = res.getDimension(horizontalPaddingDimen)
+        val dpPadding = pixelValue / res.displayMetrics.density
+
+        val horizontalPadding = 2 * dpPadding
+
+        val availableWidth = totalWeight - horizontalPadding
+
+        val routeNumberWidth = ( availableWidth * (routeNumberWeight / 100f) ).toInt()
+        val routeNameWidth = ( availableWidth * (routeNameWeight / 100f) ).toInt()
+        val arrivalStatusWidth = ( availableWidth * (arrivalStatusWeight / 100f) ).toInt()
+        val arrivalTimeWidth = ( availableWidth * (arrivalTimeWeight / 100f) ).toInt()
+
+        return listOf(routeNumberWidth, routeNameWidth, arrivalStatusWidth, arrivalTimeWidth)
     }
 
-    fun getRouteNameWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
-        return when (widgetSize.lowercase()) {
-            "small" -> 25
-            "medium" -> 150
-            "large" -> 150
-            "lockscreen" -> 25
-            else -> 100
-        }
+    fun getRouteNumberWidthForWidget(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
+        return getScheduleEntryWidths(context, widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight)[0]
     }
 
-    fun getArrivalStatusWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
-        return when (widgetSize.lowercase()) {
-            "small" -> 25
-            "medium" -> 60
-            "large" -> 60
-            "lockscreen" -> 25
-            else -> 60
-        }
+    fun getRouteNameWidthForWidget(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
+        return getScheduleEntryWidths(context, widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight)[1]
     }
 
-    fun getArrivalTimeWidthForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
-        return when (widgetSize.lowercase()) {
-            "small" -> 80
-            "medium" -> 100
-            "large" -> 100
-            "lockscreen" -> 80
-            else -> 80
-        }
+    fun getArrivalStatusWidthForWidget(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
+        return getScheduleEntryWidths(context, widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight)[2]
+    }
+
+    fun getArrivalTimeWidthForWidget(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Int {
+        return getScheduleEntryWidths(context, widgetSize, currentTheme, maxWidgetWidth, maxWidgetHeight)[3]
     }
 
     fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (widgetSize.lowercase()) {
-                "small" -> 16f
-                "medium" -> 13f
-                "large" -> 16f
-                "lockscreen" -> 14f
-                else -> 14f
+            "small", "lockscreen" -> 16f
+            "medium", "large" -> 14f
+            else -> 14f
         }
     }
 
-    fun getScheduleEntryFontSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
+    fun getScheduleEntryFontSizeForWidget(context: Context, widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
+        val res = context.resources
+        val isSmallOrLockscreen = widgetSize.lowercase() in listOf("small", "lockscreen")
+        val horizontalPaddingDimen = if (isSmallOrLockscreen) {
+            R.dimen.stop_entry_layout_horizontal_padding_in_small_and_lockscreen_widgets
+        } else {
+            R.dimen.stop_entry_layout_horizontal_padding_in_medium_and_large_widgets
+        }
+
+        val pixelValue = res.getDimension(horizontalPaddingDimen)
+        val dpPadding = pixelValue / res.displayMetrics.density
+        val horizontalPadding = 2 * dpPadding
+        val availableWidth = maxWidgetWidth - horizontalPadding
+
         return when (widgetSize.lowercase()) {
-            "small" -> 17f
-            "medium" -> 18f
-            "large" -> 18f
-            "lockscreen" -> 17f
-            else -> 10f
+            "small", "lockscreen" -> {
+                val scaleFactor = 20f
+                val percentage = scaleFactor / availableWidth
+                (percentage * availableWidth).coerceIn(0.07f * availableWidth, 0.1f * availableWidth)
+            }
+            "medium", "large" -> {
+                (0.05f * availableWidth)
+            }
+            else -> 18f
         }
     }
 
@@ -685,4 +740,8 @@ val allWidgetProviders = listOf(
     PeekTransitLockScreenWidgetProvider::class.java
 )
 
-
+enum class BannerType {
+    UPDATE,
+    RATE,
+    TIP
+}

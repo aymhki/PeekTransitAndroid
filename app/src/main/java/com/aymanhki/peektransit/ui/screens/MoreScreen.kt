@@ -364,7 +364,7 @@ fun MoreScreen(
                                                                 )
 
                                                                 Text(
-                                                                    text = "Note: Some manufacturers might not allow the widget to update more than once every 5 minutes in lower power mode.",
+                                                                    text = "Note: Some manufacturers might not allow the widget to update more than once every 5 minutes in low power mode.",
                                                                     style = MaterialTheme.typography.bodySmall,
                                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                                 )

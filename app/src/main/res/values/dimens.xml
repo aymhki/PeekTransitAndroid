@@ -15,13 +15,13 @@
     <dimen name="min_for_height_cell_4">243dp</dimen>
     <dimen name="max_for_height_cell_4">730dp</dimen>
 
-    <item name="route_number_layout_weight_in_small_and_lockscreen_widgets" type="integer">25</item>
-    <item name="route_name_layout_weight_in_small_and_lockscreen_widgets" type="integer">15</item>
-    <item name="arrival_status_layout_weight_in_small_and_lockscreen_widgets" type="integer">15</item>
+    <item name="route_number_layout_weight_in_small_and_lockscreen_widgets" type="integer">27</item>
+    <item name="route_name_layout_weight_in_small_and_lockscreen_widgets" type="integer">14</item>
+    <item name="arrival_status_layout_weight_in_small_and_lockscreen_widgets" type="integer">14</item>
     <item name="arrival_time_layout_weight_in_small_and_lockscreen_widgets" type="integer">45</item>
 
-    <item name="route_number_layout_weight_in_medium_and_large_widgets" type="integer">12</item>
-    <item name="route_name_layout_weight_in_medium_and_large_widgets" type="integer">38</item>
+    <item name="route_number_layout_weight_in_medium_and_large_widgets" type="integer">14</item>
+    <item name="route_name_layout_weight_in_medium_and_large_widgets" type="integer">36</item>
     <item name="arrival_status_layout_weight_in_medium_and_large_widgets" type="integer">25</item>
     <item name="arrival_time_layout_weight_in_medium_and_large_widgets" type="integer">25</item>
 
@@ -33,6 +33,6 @@
 
     <dimen name="location_coordinates_layout_padding">16dp</dimen>
 
-    <dimen name="widgets_round_corners_radius">8dp</dimen>
+    <dimen name="widgets_round_corners_radius">4dp</dimen>
 
 </resources>

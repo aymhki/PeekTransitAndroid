@@ -220,7 +220,7 @@ fun StopSelectionStep(
                     } else {
                         stopsDataStore.clearError()
                         mainViewModel.clearLocationError()
-                        mainViewModel.retry()
+                        mainViewModel.retryLocationFetch()
                     }
                 }
             ) {
@@ -474,7 +474,7 @@ fun StopSelectionStep(
                                             onRetry = {
                                                 stopsDataStore.clearError()
                                                 mainViewModel.clearLocationError()
-                                                mainViewModel.retry()
+                                                mainViewModel.retryLocationFetch()
                                             },
                                             retryButtonText = when {
                                                 locationError != null -> "Retry Location"
@@ -530,7 +530,7 @@ fun StopSelectionStep(
 
                                             Button(
                                                 onClick = {
-                                                    mainViewModel.retry()
+                                                    mainViewModel.retryLocationFetch()
                                                 }
                                             ) {
                                                 Text("Retry")

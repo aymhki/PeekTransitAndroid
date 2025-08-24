@@ -115,8 +115,8 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val landscapeWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
         val landscapeHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
 
-        val maxWidth = maxOf(portraitWidth, landscapeWidth)
-        val maxHeight = maxOf(portraitHeight, landscapeHeight)
+        val maxWidth = minOf(portraitWidth, landscapeWidth)
+        val maxHeight = minOf(portraitHeight, landscapeHeight)
 
 
         return Pair(maxWidth, maxHeight)
