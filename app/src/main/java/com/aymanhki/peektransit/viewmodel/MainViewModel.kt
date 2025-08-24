@@ -73,6 +73,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val shouldShowTipBanner: LiveData<Boolean> = tipBannerManager.shouldShowTipBanner
     val hasShownTipBannerThisSession: LiveData<Boolean> = tipBannerManager.hasShownTipBannerThisSession
     val wasTipBannerManuallyHidden: LiveData<Boolean> = tipBannerManager.wasTipBannerManuallyHidden
+    val attemptedToStartTipBannerUsageTracking: LiveData<Boolean> = tipBannerManager.attemptedToStartUsageTracking
+    val attemptedToStartRateAppBannerUsageTracking: LiveData<Boolean> = rateAppBannerManager.attemptedToStartUsageTracking
     private val _showInAppReview = MutableLiveData(false)
     val showInAppReview: LiveData<Boolean> = _showInAppReview
     private val _isSearchingDestination = MutableLiveData(false)
@@ -164,8 +166,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         checkIfThereIsAnUpdate()
-        rateAppBannerManager.startTrackingAppUsage()
-        tipBannerManager.startTrackingAppUsage()
+
+        if (attemptedToStartRateAppBannerUsageTracking.value == false) {
+            rateAppBannerManager.startTrackingAppUsage()
+        }
+
+        if (attemptedToStartTipBannerUsageTracking.value == false) {
+            tipBannerManager.startTrackingAppUsage()
+        }
+
+        _isInitialized.postValue(true)
     }
 
     fun onUpdateFlowStarted() {

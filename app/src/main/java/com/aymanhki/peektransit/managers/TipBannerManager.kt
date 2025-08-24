@@ -30,20 +30,35 @@ class TipBannerManager private constructor(private val context: Context) {
     private val _wasTipBannerManuallyHidden = MutableLiveData(false)
     val wasTipBannerManuallyHidden: LiveData<Boolean> = _wasTipBannerManuallyHidden
 
+    private val _attemptedToStartUsageTracking = MutableLiveData(false)
+    val attemptedToStartUsageTracking: LiveData<Boolean> = _attemptedToStartUsageTracking
+
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("tip_banner_preferences", Context.MODE_PRIVATE)
 
     private val tipBannerShowCountKey = "tipBannerShowCount"
     private val tipBannerFirstShownDateKey = "tipBannerFirstShownDate"
     private val tipBannerLastShownDateKey = "tipBannerLastShownDate"
     private val tipBannerUserClickedKey = "tipBannerUserClicked"
+    private val tipBannerUsageTrackingCountKey = "tipBannerUsageTrackingCount"
 
     private var appUsageStartTime: Date? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var tipBannerRunnable: Runnable? = null
 
     fun startTrackingAppUsage() {
-        appUsageStartTime = Date()
-        startTipBannerTimer()
+        val currentTrackingCount = sharedPreferences.getInt(tipBannerUsageTrackingCountKey, 0)
+        val newTrackingCount = currentTrackingCount + 1
+
+        sharedPreferences.edit {
+            putInt(tipBannerUsageTrackingCountKey, newTrackingCount)
+        }
+
+        _attemptedToStartUsageTracking.value = true
+
+        if (newTrackingCount >= 3) {
+            appUsageStartTime = Date()
+            startTipBannerTimer()
+        }
     }
 
     fun stopTrackingAppUsage() {
@@ -97,9 +112,10 @@ class TipBannerManager private constructor(private val context: Context) {
         val showCount = sharedPreferences.getInt(tipBannerShowCountKey, 0)
         val userHasClicked = sharedPreferences.getBoolean(tipBannerUserClickedKey, false)
         val lastShownDateMillis = sharedPreferences.getLong(tipBannerLastShownDateKey, 0L)
+        val currentTrackingCount = sharedPreferences.getInt(tipBannerUsageTrackingCountKey, 0)
 
-        if (showCount == 0) {
-            return true
+        if (currentTrackingCount < 3) {
+            return false
         }
 
         if (userHasClicked && lastShownDateMillis != 0L) {

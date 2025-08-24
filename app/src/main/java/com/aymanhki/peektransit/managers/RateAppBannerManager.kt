@@ -32,18 +32,34 @@ class RateAppBannerManager private constructor(private val context: Context) {
     private val _wasRateAppBannerManuallyHidden = MutableLiveData(false)
     val wasRateAppBannerManuallyHidden: LiveData<Boolean> = _wasRateAppBannerManuallyHidden
 
+    private val _attemptedToStartUsageTracking = MutableLiveData(false)
+    val attemptedToStartUsageTracking: LiveData<Boolean> = _attemptedToStartUsageTracking
+
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("rate_app_preferences", Context.MODE_PRIVATE)
     private val rateAppShowCountKey = "rateAppShowCount"
     private val rateAppFirstShownDateKey = "rateAppFirstShownDate"
     private val rateAppLastShownDateKey = "rateAppLastShownDate"
     private val rateAppUserClickedKey = "rateAppUserClicked"
+    private val rateAppUsageTrackingCountKey = "rateAppUsageTrackingCount"
+
     private var appUsageStartTime: Date? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var rateAppRunnable: Runnable? = null
 
     fun startTrackingAppUsage() {
-        appUsageStartTime = Date()
-        startRateAppTimer()
+        val currentTrackingCount = sharedPreferences.getInt(rateAppUsageTrackingCountKey, 0)
+        val newTrackingCount = currentTrackingCount + 1
+
+        sharedPreferences.edit {
+            putInt(rateAppUsageTrackingCountKey, newTrackingCount)
+        }
+
+        _attemptedToStartUsageTracking.value = true
+
+        if (newTrackingCount >= 3) {
+            appUsageStartTime = Date()
+            startRateAppTimer()
+        }
     }
 
     fun stopTrackingAppUsage() {
@@ -95,6 +111,11 @@ class RateAppBannerManager private constructor(private val context: Context) {
         val userHasClicked = sharedPreferences.getBoolean(rateAppUserClickedKey, false)
         val lastShownDateMillis = sharedPreferences.getLong(rateAppLastShownDateKey, 0L)
         val firstShownDateMillis = sharedPreferences.getLong(rateAppFirstShownDateKey, 0L)
+        val currentTrackingCount = sharedPreferences.getInt(rateAppUsageTrackingCountKey, 0)
+
+        if (currentTrackingCount < 3) {
+            return false
+        }
 
         if (showCount == 0) {
             return true
