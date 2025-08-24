@@ -20,8 +20,8 @@ android {
         applicationId = "com.aymanhki.peektransit"
         minSdk = 31
         targetSdk = 36
-        versionCode = 26
-        versionName = "1.8"
+        versionCode = 28
+        versionName = "1.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")

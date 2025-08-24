@@ -75,6 +75,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val wasTipBannerManuallyHidden: LiveData<Boolean> = tipBannerManager.wasTipBannerManuallyHidden
     private val _showInAppReview = MutableLiveData(false)
     val showInAppReview: LiveData<Boolean> = _showInAppReview
+    private val _isSearchingDestination = MutableLiveData(false)
+    val isSearchingDestination: LiveData<Boolean> = _isSearchingDestination
 
     val stops: LiveData<List<Stop>> = stopsDataStore.stops
     val isLoading: LiveData<Boolean> = stopsDataStore.isLoading
@@ -372,6 +374,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             stopsDataStore.searchForStops(query.trim())
             _lastSearchedQuery.postValue(query.trim())
         }
+    }
+
+    fun setIsSearchingDestination(searching: Boolean) {
+        _isSearchingDestination.postValue(searching)
     }
 
     fun getStop(stopNumber: Int, callback: (Stop?) -> Unit) {

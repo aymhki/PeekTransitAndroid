@@ -58,7 +58,9 @@ import com.aymanhki.peektransit.viewmodel.MainViewModel
 import com.aymanhki.peektransit.managers.SettingsManager
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.unit.dp
+import com.aymanhki.peektransit.managers.FirstLaunchManager
 import com.aymanhki.peektransit.ui.components.BannerView
+import com.aymanhki.peektransit.ui.components.SplashScreen
 import com.aymanhki.peektransit.ui.components.SupportDevelopmentSheet
 import com.aymanhki.peektransit.utils.BannerType
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -93,8 +95,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val context = LocalContext.current
+            val firstLaunchManager = remember { FirstLaunchManager.getInstance(context) }
             val settingsManager = remember { SettingsManager.getInstance(context) }
             var currentTheme by remember { mutableStateOf(settingsManager.stopViewTheme) }
+            var showSplash by remember { mutableStateOf(firstLaunchManager.isFirstLaunch) }
 
             LaunchedEffect(Unit) {
                 while (true) {
@@ -120,7 +124,19 @@ class MainActivity : ComponentActivity() {
 
             PeekTransitTheme(forceDarkTheme = forceDarkTheme) {
                 CompositionLocalProvider(LocalPermissionManager provides permissionManager) {
-                    MainScreen(activity = this, initialStopNumber = if (stopNumber > 0) stopNumber else null)
+                    if (showSplash) {
+                        SplashScreen(
+                            onContinue = {
+                                firstLaunchManager.setFirstLaunchCompleted()
+                                showSplash = false
+                            }
+                        )
+                    } else {
+                        MainScreen(
+                            activity = this@MainActivity,
+                            initialStopNumber = if (stopNumber > 0) stopNumber else null
+                        )
+                    }
                 }
             }
         }
@@ -148,6 +164,7 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
     val wasTipBannerManuallyHidden by mainViewModel.wasTipBannerManuallyHidden.observeAsState(false)
     val startUpdateFlow by mainViewModel.startUpdateFlow.observeAsState(false)
     val showInAppReview by mainViewModel.showInAppReview.observeAsState(false)
+    val isSearchingInProgress by mainViewModel.isSearchingDestination.observeAsState(false)
 
     if (startUpdateFlow) {
         LaunchedEffect(Unit) {
@@ -353,7 +370,7 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
             }
 
             BannerView(
-                activeBanner = if (isMapScreen) activeBanner else null,
+                activeBanner = if (isMapScreen && !isSearchingInProgress) activeBanner else null,
                 mainViewModel = mainViewModel,
                 isMapScreen = true,
                 modifier = Modifier

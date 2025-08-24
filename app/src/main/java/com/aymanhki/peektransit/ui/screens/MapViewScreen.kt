@@ -263,6 +263,7 @@ fun MapViewScreen(
                         showBottomSheet = false
                         if (isSearchingRoute) {
                             isSearchingRoute = false
+                            viewModel.setIsSearchingDestination(false)
                         }
                     },
                     properties = MapProperties(
@@ -277,9 +278,9 @@ fun MapViewScreen(
                         scrollGesturesEnabled = true,
                     )
                 ) {
-                    if (hasInitialLocation && userLocation != null) {
+                    if (hasInitialLocation && viewModel.currentLocation.value != null) {
                         Circle(
-                            center = userLocation!!,
+                            center = viewModel.currentLocation.value?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(0.0, 0.0),
                             radius = PeekTransitConstants.STOPS_DISTANCE_RADIUS_IN_METERS,
                             strokeColor = MaterialTheme.colorScheme.secondary,
                             fillColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -408,7 +409,10 @@ fun MapViewScreen(
                         exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
                     ) {
                         DestinationSearchButton(
-                            onClick = { isSearchingRoute = true }
+                            onClick = {
+                                isSearchingRoute = true
+                                viewModel.setIsSearchingDestination(true)
+                            }
                         )
                     }
 
@@ -477,7 +481,10 @@ fun MapViewScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.5f))
-                        .clickable { isSearchingRoute = false },
+                        .clickable {
+                            isSearchingRoute = false
+                            viewModel.setIsSearchingDestination(false)
+                       },
                     contentAlignment = Alignment.TopCenter
                 ) {
                     Column(
@@ -556,10 +563,14 @@ fun MapViewScreen(
 
                                 } else {
                                     isSearchingRoute = false
+                                    viewModel.setIsSearchingDestination(false)
                                 }
                             },
                             userLocation = viewModel.currentLocation.value,
-                            onClose = { isSearchingRoute = false }
+                            onClose = {
+                                isSearchingRoute = false
+                                viewModel.setIsSearchingDestination(false)
+                            }
                         )
                     }
                 }
