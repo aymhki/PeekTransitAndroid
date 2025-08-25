@@ -104,7 +104,6 @@ fun AboutScreen(
                 contentDescription = "App Icon",
                 modifier = Modifier
                     .size(120.dp)
-                    .clip(RoundedCornerShape(30.dp))
             )
             
             Column(

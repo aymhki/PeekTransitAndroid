@@ -32,9 +32,11 @@ import android.os.Build
 import android.provider.Settings
 import android.app.ActivityManager
 import android.net.ConnectivityManager
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 object WidgetUpdateManager {
+    private val isUpdateInProgress = AtomicBoolean(false)
     private const val TAG = "WidgetUpdateManager"
     private const val REQUEST_CODE = 42
     private const val WORK_NAME = "widget_update_worker"
@@ -377,52 +379,63 @@ object WidgetUpdateManager {
     }
 
     suspend fun workToUpdateWidgetCoreData(context: Context) {
-        val allAppWidgetIds = PeekTransitConstants.getAllActiveWidgetIds(context)
+        if (isUpdateInProgress.getAndSet(true)) {
+            Log.d(TAG, "Update already in progress. Skipping.")
+            return
+        }
 
-        val widgetsNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
-        val widgetsNotNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
+        try {
 
-        for (appWidgetId in allAppWidgetIds) {
-            val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
-            if (widgetConfig == null) continue
-            val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
+            val allAppWidgetIds = PeekTransitConstants.getAllActiveWidgetIds(context)
 
-            if (needsBackgroundLocation) {
-                widgetsNeedingLocation.add(appWidgetId to widgetConfig)
-            } else {
-                widgetsNotNeedingLocation.add(appWidgetId to widgetConfig)
+            val widgetsNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
+            val widgetsNotNeedingLocation = mutableListOf<Pair<Int, WidgetModel>>()
+
+            for (appWidgetId in allAppWidgetIds) {
+                val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
+                if (widgetConfig == null) continue
+                val needsBackgroundLocation = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
+
+                if (needsBackgroundLocation) {
+                    widgetsNeedingLocation.add(appWidgetId to widgetConfig)
+                } else {
+                    widgetsNotNeedingLocation.add(appWidgetId to widgetConfig)
+                }
             }
-        }
 
-        var userLocation: Location? = null
-        var locationError: String? = null
+            var userLocation: Location? = null
+            var locationError: String? = null
 
-        if (widgetsNeedingLocation.isNotEmpty()) {
-            val locationResult = WidgetLocationManager.getCurrentLocation(context)
-            userLocation = locationResult.first
-            locationError = locationResult.second
-        }
+            if (widgetsNeedingLocation.isNotEmpty()) {
+                val locationResult = WidgetLocationManager.getCurrentLocation(context)
+                userLocation = locationResult.first
+                locationError = locationResult.second
+            }
 
-        for ((appWidgetId, widgetConfig) in widgetsNeedingLocation) {
-            processWidget(
-                context = context,
-                appWidgetId = appWidgetId,
-                widgetConfig = widgetConfig,
-                userLocation = userLocation,
-                locationError = locationError,
-                needsBackgroundLocation = true
-            )
-        }
+            for ((appWidgetId, widgetConfig) in widgetsNeedingLocation) {
+                processWidget(
+                    context = context,
+                    appWidgetId = appWidgetId,
+                    widgetConfig = widgetConfig,
+                    userLocation = userLocation,
+                    locationError = locationError,
+                    needsBackgroundLocation = true
+                )
+            }
 
-        for ((appWidgetId, widgetConfig) in widgetsNotNeedingLocation) {
-            processWidget(
-                context = context,
-                appWidgetId = appWidgetId,
-                widgetConfig = widgetConfig,
-                userLocation = null,
-                locationError = null,
-                needsBackgroundLocation = false
-            )
+            for ((appWidgetId, widgetConfig) in widgetsNotNeedingLocation) {
+                processWidget(
+                    context = context,
+                    appWidgetId = appWidgetId,
+                    widgetConfig = widgetConfig,
+                    userLocation = null,
+                    locationError = null,
+                    needsBackgroundLocation = false
+                )
+            }
+
+        } finally {
+            isUpdateInProgress.set(false)
         }
     }
 

@@ -55,7 +55,7 @@ class TipBannerManager private constructor(private val context: Context) {
 
         _attemptedToStartUsageTracking.value = true
 
-        if (newTrackingCount >= 3) {
+        if (newTrackingCount >= PeekTransitConstants.START_TRACKING_APP_USAGE_FOR_TIP_BANNER_AFTER_THIS_MANY_LAUNCHES) {
             appUsageStartTime = Date()
             startTipBannerTimer()
         }
@@ -114,7 +114,7 @@ class TipBannerManager private constructor(private val context: Context) {
         val lastShownDateMillis = sharedPreferences.getLong(tipBannerLastShownDateKey, 0L)
         val currentTrackingCount = sharedPreferences.getInt(tipBannerUsageTrackingCountKey, 0)
 
-        if (currentTrackingCount < 3) {
+        if (currentTrackingCount < PeekTransitConstants.START_TRACKING_APP_USAGE_FOR_TIP_BANNER_AFTER_THIS_MANY_LAUNCHES) {
             return false
         }
 

@@ -248,12 +248,12 @@ fun MapViewScreen(
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = locationStatus,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+//                    Text(
+//                        text = locationStatus,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        textAlign = TextAlign.Center,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
                 }
             } else {
                 GoogleMap(
@@ -364,33 +364,33 @@ fun MapViewScreen(
             }
 
 
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                    ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isLoadingLocation || isLoadingStops) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = locationStatus,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
+//            Card(
+//                modifier = Modifier
+//                    .align(Alignment.TopStart)
+//                    .padding(
+//                        start = 16.dp,
+//                        end = 16.dp,
+//                        top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+//                    ),
+//                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+//            ) {
+//                Row(
+//                    modifier = Modifier.padding(12.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    if (isLoadingLocation || isLoadingStops) {
+//                        CircularProgressIndicator(
+//                            modifier = Modifier.size(16.dp),
+//                            strokeWidth = 2.dp
+//                        )
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                    }
+//                    Text(
+//                        text = locationStatus,
+//                        style = MaterialTheme.typography.bodySmall
+//                    )
+//                }
+//            }
 
             Column(
                 modifier = Modifier

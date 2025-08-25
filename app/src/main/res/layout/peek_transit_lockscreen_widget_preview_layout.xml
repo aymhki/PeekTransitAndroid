@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:src="@mipmap/ic_launcher_round"
+        android:src="@mipmap/ic_launcher"
         android:contentDescription="@string/peek_transit_logo"
         android:layout_gravity="center"
         />

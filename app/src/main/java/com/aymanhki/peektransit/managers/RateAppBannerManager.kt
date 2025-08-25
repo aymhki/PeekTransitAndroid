@@ -56,7 +56,7 @@ class RateAppBannerManager private constructor(private val context: Context) {
 
         _attemptedToStartUsageTracking.value = true
 
-        if (newTrackingCount >= 3) {
+        if (newTrackingCount >= PeekTransitConstants.START_TRACKING_APP_USAGE_FOR_RATE_APP_BANNER_AFTER_THIS_MANY_LAUNCHES) {
             appUsageStartTime = Date()
             startRateAppTimer()
         }
@@ -113,7 +113,7 @@ class RateAppBannerManager private constructor(private val context: Context) {
         val firstShownDateMillis = sharedPreferences.getLong(rateAppFirstShownDateKey, 0L)
         val currentTrackingCount = sharedPreferences.getInt(rateAppUsageTrackingCountKey, 0)
 
-        if (currentTrackingCount < 3) {
+        if (currentTrackingCount < PeekTransitConstants.START_TRACKING_APP_USAGE_FOR_RATE_APP_BANNER_AFTER_THIS_MANY_LAUNCHES) {
             return false
         }
 

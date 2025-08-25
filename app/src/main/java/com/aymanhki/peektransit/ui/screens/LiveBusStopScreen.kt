@@ -69,14 +69,12 @@ fun LiveBusStopScreen(
     var stop by remember { mutableStateOf<Stop?>(null) }
     var isLiveUpdatesEnabled by remember { mutableStateOf(true) }
     var scheduleData by remember { mutableStateOf<List<String>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-    var isLoadingStop by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var isBookmarked by remember { mutableStateOf(false) }
     var isRefreshCooldown by remember { mutableStateOf(false) }
     var isNetworkAvailable by remember { mutableStateOf(true) }
-    var hasAttemptedScheduleFetch by remember { mutableStateOf(false) }
-    
+    var isLoading by remember { mutableStateOf(true) }
+
     val cooldownDuration = 1000L
     
     fun saveLiveUpdatesPreference(enabled: Boolean) {
@@ -110,10 +108,10 @@ fun LiveBusStopScreen(
         ),
         label = "alpha"
     )
-    
+
     fun fetchStopData() {
         scope.launch {
-            isLoadingStop = true
+            isLoading = true
             error = null
             try {
                 stop = api.getStop(stopNumber)
@@ -125,23 +123,20 @@ fun LiveBusStopScreen(
             } catch (e: Exception) {
                 error = e.message ?: "Failed to load stop data"
             } finally {
-                isLoadingStop = false
+                isLoading = false
             }
         }
     }
-    
+
     fun fetchScheduleData(isManual: Boolean = false) {
         scope.launch {
             if (isManual) {
                 if (isRefreshCooldown) return@launch
                 isRefreshCooldown = true
                 delay(cooldownDuration)
-                isRefreshCooldown = false
                 isLoading = true
             }
 
-
-            hasAttemptedScheduleFetch = true
             error = null
             try {
                 val schedule = api.getStopSchedule(stopNumber)
@@ -158,11 +153,41 @@ fun LiveBusStopScreen(
                         else -> e.message ?: "Failed to load schedule"
                     }
                 }
-                
+
                 println("LiveBusStopScreen: Error fetching schedule (manual=$isManual): ${e.message}")
             } finally {
                 isLoading = false
+
+                if (isManual) {
+                    isRefreshCooldown = false
+                }
             }
+        }
+    }
+
+    LaunchedEffect(stopNumber) {
+        isLoading = true
+        error = null
+        scheduleData = emptyList()
+
+        try {
+            val fetchedStop = api.getStop(stopNumber)
+            if (fetchedStop == null) {
+                error = "Stop #$stopNumber not found"
+                isLoading = false
+                return@LaunchedEffect
+            }
+            stop = fetchedStop
+            isBookmarked = savedStopsManager.isStopSaved(fetchedStop)
+
+            val schedule = api.getStopSchedule(stopNumber)
+            val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MIXED)
+            scheduleData = cleanedSchedule
+
+        } catch (e: Exception) {
+            error = e.message ?: "Failed to load data"
+        } finally {
+            isLoading = false
         }
     }
     
@@ -192,10 +217,7 @@ fun LiveBusStopScreen(
             }
         }
     }
-    
-    LaunchedEffect(stopNumber) {
-        fetchStopData()
-    }
+
     
     LaunchedEffect(isNetworkAvailable) {
         if (isNetworkAvailable && error == "No internet connection") {
@@ -218,23 +240,13 @@ fun LiveBusStopScreen(
         }
     }
     
-    LaunchedEffect(stopNumber, stop) {
-        if (stop != null) {
-            fetchScheduleData()
-        }
-    }
-    
     LaunchedEffect(isLiveUpdatesEnabled, stop, lifecycleState) {
         if (isLiveUpdatesEnabled && stop != null) {
             while (isLiveUpdatesEnabled && stop != null) {
                 delay(60000)
                 
                 if (lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
-                    try {
-                        fetchScheduleData(isManual = false)
-                    } catch (e: Exception) {
-                        println("LiveBusStopScreen: Auto-refresh failed: ${e.message}")
-                    }
+                    fetchScheduleData(isManual = false)
                 }
             }
         }
@@ -395,20 +407,6 @@ fun LiveBusStopScreen(
                 }
 
                 when {
-                    isLoadingStop -> {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator()
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text("Loading stop information...")
-                                }
-                            }
-                        }
-                    }
 
                     isLoading -> {
                         item {
@@ -419,7 +417,7 @@ fun LiveBusStopScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     CircularProgressIndicator()
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    Text("Loading arrivals...")
+                                    Text("Loading Stop Data...")
                                 }
                             }
                         }
@@ -470,22 +468,8 @@ fun LiveBusStopScreen(
                         }
                     }
 
-                    !hasAttemptedScheduleFetch -> {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator()
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text("Loading arrivals...")
-                                }
-                            }
-                        }
-                    }
 
-                    scheduleData.isEmpty() && hasAttemptedScheduleFetch -> {
+                    scheduleData.isEmpty() -> {
                         item {
                             Column(
                                 modifier = Modifier
