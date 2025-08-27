@@ -10,18 +10,26 @@ All transit data is provided by permission of Winnipeg Transit, a department of 
 
 Privacy Policy
 
+Peek Transit accesses location data to provide transit information but does not store this data permanently. Your favorite routes and stops are stored locally on your device. No analytics or tracking services are implemented. Location data is used solely to display relevant transit information and is not shared with third parties.
 
-• Peek Transit does not collect or store any personal information\n• Your favorite routes and stops are stored locally on your device\n• No analytics or tracking services are implemented\n• No data is shared with third parties.
+Data Collection and Usage
+
+Location Data:
+- Peek Transit accesses your device's location to provide nearby transit stops and real-time transit information
+- Location data is used locally on your device to determine relevant transit routes and stops
+- Location information is not stored on servers or shared with third parties
+- You can control location access through your device settings
+
+The following data may be accessed:
+- Approximate location (network-based)
+- Precise location (GPS and network-based) when available
+- Background location (GPS and network-based) when using widgets
 
 
 Disclaimer
 
-
 This application is provided 'as is' without warranty of any kind. While Peek Transit strive to provide accurate and timely information, it cannot guarantee the accuracy of the data as it is directly sourced from Winnipeg Transit's API.
-
-
 
 Contact
 
-
-For any questions or concerns regarding this application, please contact the developer through the About section.
+For any questions or concerns regarding this application, please contact the developer through the About section in the app.
