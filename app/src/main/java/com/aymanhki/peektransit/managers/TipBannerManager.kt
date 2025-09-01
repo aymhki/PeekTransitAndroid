@@ -113,6 +113,11 @@ class TipBannerManager private constructor(private val context: Context) {
         val userHasClicked = sharedPreferences.getBoolean(tipBannerUserClickedKey, false)
         val lastShownDateMillis = sharedPreferences.getLong(tipBannerLastShownDateKey, 0L)
         val currentTrackingCount = sharedPreferences.getInt(tipBannerUsageTrackingCountKey, 0)
+        val settingsManager = SettingsManager.getInstance(context)
+
+        if (settingsManager.userHasClickedSupportDevelopment) {
+            return false
+        }
 
         if (currentTrackingCount < PeekTransitConstants.START_TRACKING_APP_USAGE_FOR_TIP_BANNER_AFTER_THIS_MANY_LAUNCHES) {
             return false

@@ -66,6 +66,10 @@ class SettingsManager private constructor(private val context: Context) {
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
+    var userHasClickedSupportDevelopment: Boolean
+        get() = sharedPreferences.getBoolean(SharedPreferencesKeys.USER_HAS_CLICKED_SUPPORT_DEVELOPMENT, false)
+        set(value) = sharedPreferences.edit { putBoolean(SharedPreferencesKeys.USER_HAS_CLICKED_SUPPORT_DEVELOPMENT, value) }
+
     var widgetManualUpdateMinutes: Int
         get() = sharedPreferences.getInt(SharedPreferencesKeys.WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES, PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT)
         set(value) {

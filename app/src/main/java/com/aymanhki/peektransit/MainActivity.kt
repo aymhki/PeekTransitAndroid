@@ -331,9 +331,14 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
                         onNavigateToCredits = { navController.navigate("credits") },
                         onNavigateToTermsAndPrivacy = { navController.navigate("terms_privacy") },
                         onNavigateToSupportDevelopment = {
+                            val settingsManager = SettingsManager.getInstance(context)
+                            settingsManager.userHasClickedSupportDevelopment = true
+
                             //    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/aymhki"))
                             //    context.startActivity(intent)
+
                             mainViewModel.showSupportSheet()
+
                         }
                     )
                 }

@@ -733,6 +733,8 @@ object SharedPreferencesKeys {
     const val WIDGET_UPDATE_SETTINGS_MANUAL_UPDATES_MINUTES = "widget_update_settings_manual_updates_minutes"
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY = "PeekTransitWidgetData"
     const val WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX = "widget_data_id_"
+
+    const val USER_HAS_CLICKED_SUPPORT_DEVELOPMENT = "user_has_clicked_support_development"
 }
 
 val allWidgetProviders = listOf(
