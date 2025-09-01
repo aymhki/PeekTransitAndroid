@@ -255,7 +255,7 @@ fun ListViewScreen(
                                 }
                             }
                             when {
-                                isLoadingStops || isLoadingLocation || isLoading || isSearching || isDebouncing -> {
+                                isLoadingStops || isLoadingLocation || isLoading || isSearching || isDebouncing || currentLocation == null -> {
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -272,7 +272,7 @@ fun ListViewScreen(
                                                 Text(
                                                     text = when {
                                                         isSearching || isDebouncing -> "Searching..."
-                                                        isLoadingLocation -> "Getting your location..."
+                                                        isLoadingLocation || currentLocation == null -> "Getting your location..."
                                                         isLoadingStops || isLoading -> "Loading nearby stops..."
                                                         else -> "Loading..."
                                                     },

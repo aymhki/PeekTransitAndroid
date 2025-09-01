@@ -175,7 +175,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             tipBannerManager.startTrackingAppUsage()
         }
 
-        _isInitialized.postValue(true)
+        //_isInitialized.postValue(true)
     }
 
     fun onUpdateFlowStarted() {
