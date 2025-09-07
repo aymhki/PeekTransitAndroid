@@ -201,6 +201,10 @@ class CentralWidgetLooksUpdateManager
             maxWidgetWidth: Int,
             maxWidgetHeight: Int
         ): RemoteViews {
+            if (maxWidgetWidth <= 0 || maxWidgetHeight <= 0) {
+                return views
+            }
+
              views.setInt(layoutId, "setBackgroundColor", 0x00000000)
             val dimensionInPixels = context.resources.getDimensionPixelSize(R.dimen.widgets_round_corners_radius).toFloat()
             val bitmap = createRoundedRectangleBitmap(getWidgetBackgroundColor(currentTheme, isNightMode), dimensionInPixels, maxWidgetWidth, maxWidgetHeight)
@@ -215,7 +219,7 @@ class CentralWidgetLooksUpdateManager
             width: Int,
             height: Int
         ): Bitmap {
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
             val paint = Paint().apply {
                 this.color = color
