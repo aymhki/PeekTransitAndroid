@@ -86,6 +86,7 @@ fun FolderDetailsScreen(
         val uncategorizedStopIds = uncategorizedStopsOutsideThisFolder.value.map { it.id }
         localFolderCategories.add(0, FolderCategory( id = PeekTransitConstants.UNCATEGORIZED_FOLDER_ID, name = "Uncategorized", icons = listOf( "Folder"), stopOrder = uncategorizedStopIds ) )
         localFolderCategories.addAll(folderCategories.value)
+        localFolderCategories.removeAll { it.id == folderId }
         MoveToFolderBottomSheet(
             onDismiss = { showMoveToFolderDialog = false },
             onMove = { folderIds ->
