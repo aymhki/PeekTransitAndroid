@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aymanhki.peektransit.data.models.Variant
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 
 @Composable
 fun VariantBadge(
@@ -24,7 +25,7 @@ fun VariantBadge(
     val variantNumber = if (showFullVariantKey) {
         variant.key
     } else {
-        variant.key.split("-").firstOrNull() ?: variant.key
+        variant.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: variant.key
     }
     
     val finalTextToShow = if (showVariantName) {

@@ -124,18 +124,6 @@ fun AboutScreen(
                 )
 
                 Text(
-                    text = "If you have any feedback or suggestions,",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Text(
-                    text = "agamyahk@myumanitoba",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Text(
                     text = "Version ${packageInfo?.versionName ?: "Unknown"} (${packageInfo?.longVersionCode ?: "Unknown"})",
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

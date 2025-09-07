@@ -568,6 +568,7 @@ object WidgetUpdateManager {
 
     suspend fun getStopsScheduleData(stopsToUse: List<Stop>, widgetConfig: WidgetModel): Map<String, List<String>> {
         val toReturn = mutableMapOf<String, List<String>>()
+        var widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = false
 
         stopsToUse.forEach { currentStop ->
             val schedules = api.getStopSchedule(currentStop.number)
@@ -580,11 +581,21 @@ object WidgetUpdateManager {
             val cleanedSchedules: List<String>
             val maxVariants: Int
 
+
+            for(variant in selectedVariantsForThisStop[currentStop.number.toString()] as? List<Variant> ?: emptyList()) {
+                val variantKey = variant.key as? String
+
+                if ( !variantKey.isNullOrEmpty() && variantKey.contains(PeekTransitConstants.VARIANT_KEY_SEPARATOR) ) {
+                    widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = true
+                    break
+                }
+            }
+
             if (isMultipleEntriesPerVariant) {
-                cleanedSchedules = api.cleanScheduleMixedTimeFormat(schedules)
+                cleanedSchedules = api.cleanScheduleMixedTimeFormat(schedules, true)
                 maxVariants = PeekTransitConstants.getMaxVariantsAllowedForMultipleEntries(widgetConfig.widgetData["size"] as? String ?: "medium")
             } else {
-                cleanedSchedules = api.cleanStopSchedule(schedules, timeFormat)
+                cleanedSchedules = api.cleanStopSchedule(schedules, timeFormat, true)
                 maxVariants = PeekTransitConstants.getMaxVariantsAllowed(widgetConfig.widgetData["size"] as? String ?: "medium")
             }
 
@@ -601,12 +612,23 @@ object WidgetUpdateManager {
                     if (components.size > 2) {
                         val variantKey = components[0]
                         val variantName = components[1]
-                        val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
+                        val variantIdentifier: String
+
+                        if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                            variantIdentifier = variantKey
+                        } else {
+                            variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
+                        }
 
                         if (!processedVariants.contains(variantIdentifier)) {
                             val variantEntries = cleanedSchedules.filter {
                                 val entryComponents = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-                                return@filter entryComponents.size >= 2 && entryComponents[0] == variantKey && variantName.contains(entryComponents[1])
+
+                                if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                    return@filter entryComponents.size >= 1 && entryComponents[0] == variantKey
+                                } else {
+                                    return@filter entryComponents.size >= 2 && entryComponents[0] == variantKey && variantName.contains(entryComponents[1])
+                                }
                             }
 
                             val entriesToAdd = if (isMultipleEntriesPerVariant) {
@@ -617,7 +639,13 @@ object WidgetUpdateManager {
 
                             finalSchedulesForThisStop = finalSchedulesForThisStop.plus(entriesToAdd)
 
-                            selectedVariants.add(Variant(key = variantKey, name = variantName))
+                            if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                selectedVariants.add(Variant(key = variantKey, name = variantKey))
+                            } else {
+                                selectedVariants.add(Variant(key = variantKey, name = variantName))
+                            }
+
+
                             processedVariants = processedVariants.plus(variantIdentifier)
 
                             if (selectedVariants.size >= maxVariants) {
@@ -637,7 +665,12 @@ object WidgetUpdateManager {
 
                     val matchingSchedules = cleanedSchedules.filter {
                         val components = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-                        return@filter components.size >= 2 && components[0] == variantKey && (variantName?.contains(components[1]) == true)
+
+                        if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                            return@filter components.size >= 1 && components[0] == variantKey
+                        } else {
+                            return@filter components.size >= 2 && components[0] == variantKey && (variantName?.contains(components[1]) == true)
+                        }
                     }
 
                     val entriesToAdd = if (isMultipleEntriesPerVariant) {
@@ -647,8 +680,6 @@ object WidgetUpdateManager {
                     }
 
                     finalSchedulesForThisStop = finalSchedulesForThisStop.plus(entriesToAdd)
-
-
                 }
             }
 
@@ -663,9 +694,16 @@ object WidgetUpdateManager {
                         for (scheduleString in finalSchedulesForThisStop) {
                             val components = scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
-                            if (components.size >= 2 && components[0] == variant.key && components[1] == variant.name) {
-                                variantHasAnEntry = true
-                                break
+                            if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                if (components.size >= 1 && components[0] == variant.key) {
+                                    variantHasAnEntry = true
+                                    break
+                                }
+                            } else {
+                                if (components.size >= 2 && components[0] == variant.key && components[1] == variant.name) {
+                                    variantHasAnEntry = true
+                                    break
+                                }
                             }
                         }
 
@@ -680,9 +718,16 @@ object WidgetUpdateManager {
                         for (scheduleString in finalSchedulesForThisStop) {
                             val components = scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
-                            if (components.size >= 2 && components[0] == variant.key && components[1] == variant.name) {
-                                variantHasAnEntry = true
-                                break
+                            if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                if (components.size >= 1 && components[0] == variant.key) {
+                                    variantHasAnEntry = true
+                                    break
+                                }
+                            } else {
+                                if (components.size >= 2 && components[0] == variant.key && components[1] == variant.name) {
+                                    variantHasAnEntry = true
+                                    break
+                                }
                             }
                         }
 
@@ -697,7 +742,7 @@ object WidgetUpdateManager {
                 for (i in 0 until difference) {
                     for (variant in missingVariantEntries) {
                         finalSchedulesForThisStop = finalSchedulesForThisStop.plus(
-                            variant.key +
+                            variant.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).first() +
                                     PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
                                     variant.name + PeekTransitConstants.SCHEDULE_STRING_SEPARATOR +
                                     PeekTransitConstants.OK_STATUS_TEXT +
@@ -739,6 +784,7 @@ object WidgetUpdateManager {
 
     suspend fun getFilteredStopsForWidget(stops: List<Stop>, widgetConfig: WidgetModel): List<Stop> {
         var filteredStops: List<Stop> = emptyList()
+        var widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = false
         val seenVariants = mutableSetOf<String>()
         val isMultipleEntriesPerVariant = widgetConfig.widgetData["multipleEntriesPerVariant"] as? Boolean ?: false
 
@@ -765,11 +811,17 @@ object WidgetUpdateManager {
                     val variantKey = variant.key as? String
                     val variantName = variant.name as? String
 
-                    if (!variantKey.isNullOrEmpty() && !variantName.isNullOrEmpty()) {
+                    if ( !variantKey.isNullOrEmpty() && !variantKey.contains(PeekTransitConstants.VARIANT_KEY_SEPARATOR) && !variantName.isNullOrEmpty()) {
                         val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
 
                         if (!preferredVariants.contains(variantIdentifier)) {
                             preferredVariants.add(variantIdentifier)
+                        }
+                    } else if (!variantKey.isNullOrEmpty() && variantKey.contains(PeekTransitConstants.VARIANT_KEY_SEPARATOR) ) {
+                        widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = true
+
+                        if (!preferredVariants.contains(variantKey)) {
+                            preferredVariants.add(variantKey)
                         }
                     }
                 }
@@ -789,18 +841,25 @@ object WidgetUpdateManager {
                         matchingNearbyStop = preferredStop
 
                         val schedule = api.getStopSchedule(matchingNearbyStop.number)
-                        val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT)
+                        val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
                         val currentStopVariants = mutableSetOf<String>()
 
                         for (scheduleString in cleanedSchedule) {
                             val components =
                                 scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
-                            if (components.size >= 2) {
-                                val variantKey = components[0]
-                                val variantName = components[1]
-                                val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
-                                currentStopVariants.add(variantIdentifier)
+                            if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                if (components.size >= 1) {
+                                    val variantKey = components[0]
+                                    currentStopVariants.add(variantKey)
+                                }
+                            } else {
+                                if (components.size >= 2) {
+                                    val variantKey = components[0]
+                                    val variantName = components[1]
+                                    val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
+                                    currentStopVariants.add(variantIdentifier)
+                                }
                             }
                         }
 
@@ -832,20 +891,26 @@ object WidgetUpdateManager {
 
                 try {
                     val schedule = api.getStopSchedule(stop.number)
-                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT)
+                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
 
                     val stopVariants = mutableSetOf<String>()
 
                     for (scheduleString in cleanedSchedule) {
                         val components = scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
-                        if (components.size >= 2) {
-                            val variantKey = components[0]
-                            val variantName = components[1]
-                            val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
-                            stopVariants.add(variantIdentifier)
+                        if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                            if (components.size >= 1) {
+                                val variantKey = components[0]
+                                stopVariants.add(variantKey)
+                            }
+                        } else {
+                            if (components.size >= 2) {
+                                val variantKey = components[0]
+                                val variantName = components[1]
+                                val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
+                                stopVariants.add(variantIdentifier)
+                            }
                         }
-
                     }
 
                     val matchingPreferredVariants = stopVariants.intersect(preferredVariants)
@@ -860,13 +925,15 @@ object WidgetUpdateManager {
                             if (components.size == 2) {
                                 val variant = Variant(key = components[0], name = components[1])
                                 selectedVariantsForThisStop.add(variant)
+                            } else if (components.size == 1 && widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                                val variant = Variant(key = components[0], name = components[0])
+                                selectedVariantsForThisStop.add(variant)
                             }
                         }
 
                         updatedStop.selectedVariants = selectedVariantsForThisStop
                         filteredStops = filteredStops.plus(updatedStop)
                         seenVariants.addAll(stopVariants)
-
 
                     }
 
@@ -896,7 +963,7 @@ object WidgetUpdateManager {
 
                 try {
                     val schedule = api.getStopSchedule(stop.number)
-                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT)
+                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
 
                     val stopVariants = mutableSetOf<String>()
 
@@ -904,11 +971,18 @@ object WidgetUpdateManager {
                         val components =
                             scheduleString.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
-                        if (components.size >= 2) {
-                            val variantKey = components[0]
-                            val variantName = components[1]
-                            val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
-                            stopVariants.add(variantIdentifier)
+                        if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
+                            if (components.size >= 1) {
+                                val variantKey = components[0]
+                                stopVariants.add(variantKey)
+                            }
+                        } else {
+                            if (components.size >= 2) {
+                                val variantKey = components[0]
+                                val variantName = components[1]
+                                val variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
+                                stopVariants.add(variantIdentifier)
+                            }
                         }
 
                     }

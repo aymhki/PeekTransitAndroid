@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.aymanhki.peektransit.data.models.SavedStopsViewMode
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.repository.StopsDataStore
 import com.aymanhki.peektransit.managers.SavedStopsManager
@@ -656,9 +657,23 @@ private fun SelectableStopRow(
                     latitude = stop.centre.geographic.latitude,
                     longitude = stop.centre.geographic.longitude,
                     direction = stop.direction,
+                    sizeWidth = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP_IN_LIST,
+                    sizeHeight = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST,
+                    renderWidth = PeekTransitConstants.MAP_PREVIEW_RENDER_WIDTH_SIZE_DP_IN_LIST,
+                    renderHeight = PeekTransitConstants.MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP_IN_LIST,
+                    markerSize = PeekTransitConstants.MAP_PREVIEW_MARKER_SIZE_DP_IN_LIST,
+                    zoomLevel = PeekTransitConstants.MAP_PREVIEW_ZOOM_LEVEL_IN_LIST,
+                    stopViewMode = SavedStopsViewMode.LIST,
+                    bottomBannerPercentage = PeekTransitConstants.MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_LIST,
+                    bottomBannerColor = MaterialTheme.colorScheme.surface,
+                    bottomBannerOpacity = PeekTransitConstants.MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_LIST,
+                    showBottomBanner = PeekTransitConstants.MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_LIST,
                     modifier = Modifier
-                        .size(width = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP.dp, height = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .width(PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP_IN_LIST.dp)
+                        .height(
+                            if (PeekTransitConstants.MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_LIST) {
+                                (PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST - (PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST * PeekTransitConstants.MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_LIST)).dp
+                            } else PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST.dp)
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -708,7 +723,7 @@ private fun SelectableStopRow(
                                 val effectiveTo = variant.getEffectiveToDate()
                                 (effectiveFrom == null || currentDate >= effectiveFrom) &&
                                         (effectiveTo == null || currentDate <= effectiveTo)
-                            }.distinctBy { it.key.split("-")[0] }
+                            }.distinctBy { it.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR)[0] }
 
                             if (currentVariants.isNotEmpty()) {
                                 FlowRow(
@@ -730,9 +745,9 @@ private fun SelectableStopRow(
 
                 val context = LocalContext.current
                 val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
-                val isStopSaved = savedStopsManager.isStopSaved(stop)
+                val isStopSaved = savedStopsManager.isStopSavedFlow(stop.number.toString()).collectAsState(false)
 
-                if (isStopSaved) {
+                if (isStopSaved.value) {
                     Icon(
                         imageVector = Icons.Default.Bookmark,
                         contentDescription = "Saved stop",

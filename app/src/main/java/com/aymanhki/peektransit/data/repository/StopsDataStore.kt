@@ -243,14 +243,14 @@ class StopsDataStore private constructor() {
             val cache = variantsCache ?: return
 
             val bulkVariantIdentifiers = bulkVariants.mapNotNull { variant ->
-                variant.key.split("-").firstOrNull()
+                variant.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull()
             }.toSet()
 
             for (stopNumber in stopNumbers) {
                 val cachedVariants = cache.getCachedVariants(stopNumber) ?: continue
 
                 for (variant in cachedVariants) {
-                    val variantIdentifier = variant.key.split("-").firstOrNull() ?: ""
+                    val variantIdentifier = variant.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: ""
 
                     if (!bulkVariantIdentifiers.contains(variantIdentifier)) {
                         println("Cache validation failed: ${variant.key} from stop $stopNumber not found in bulk variants")

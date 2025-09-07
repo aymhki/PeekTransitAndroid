@@ -17,10 +17,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -35,6 +42,7 @@ import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.core.graphics.createBitmap
+import com.aymanhki.peektransit.data.models.SavedStopsViewMode
 
 @Composable
 fun MapPreview(
@@ -42,27 +50,42 @@ fun MapPreview(
     longitude: Double,
     direction: String,
     modifier: Modifier = Modifier,
+    stopViewMode: SavedStopsViewMode,
+    sizeWidth: Int,
+    sizeHeight: Int,
+    renderWidth: Int,
+    renderHeight: Int,
+    markerSize: Int,
+    zoomLevel: Float,
+    bottomBannerPercentage: Float,
+    bottomBannerColor: Color,
+    bottomBannerOpacity: Float,
+    showBottomBanner: Boolean
 ) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val currentTheme = settingsManager.stopViewTheme
     val systemDarkTheme = isSystemInDarkTheme()
-    
+
     val isDarkMode = when (currentTheme) {
         StopViewTheme.CLASSIC -> true
         StopViewTheme.MODERN -> systemDarkTheme
     }
+
     val scope = rememberCoroutineScope()
-    
     var snapshotBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     var isMapsInitialized by remember { mutableStateOf(false) }
     
-    LaunchedEffect(latitude, longitude, direction, isDarkMode) {
-        val cachedSnapshot = MapSnapshotCache.getCachedSnapshot(latitude, longitude, direction, isDarkMode)
+    LaunchedEffect(latitude, longitude, direction, isDarkMode, stopViewMode) {
+        val cachedSnapshot = MapSnapshotCache.getCachedSnapshot(latitude, longitude, direction, isDarkMode, stopViewMode)
         if (cachedSnapshot != null) {
-            snapshotBitmap = cachedSnapshot
+            snapshotBitmap = if (showBottomBanner) {
+                cropBitmapFromBottom(cachedSnapshot, bottomBannerPercentage)
+            } else {
+                cachedSnapshot
+            }
             isLoading = false
             hasError = false
             return@LaunchedEffect
@@ -87,10 +110,14 @@ fun MapPreview(
                     
                     googleMap.snapshot { bitmap ->
                         if (bitmap != null) {
-                            snapshotBitmap = bitmap
+                            snapshotBitmap = if (showBottomBanner) {
+                                cropBitmapFromBottom(bitmap, bottomBannerPercentage)
+                            } else {
+                                bitmap
+                            }
                             hasError = false
                             scope.launch {
-                                MapSnapshotCache.cacheSnapshot(latitude, longitude, direction, isDarkMode, bitmap)
+                                MapSnapshotCache.cacheSnapshot(latitude, longitude, direction, isDarkMode, stopViewMode, bitmap)
                             }
                         } else {
                             hasError = true
@@ -107,17 +134,20 @@ fun MapPreview(
     
     Box(
         modifier = modifier
-           .size(width = PeekTransitConstants.MAP_PREVIEW_WIDTH_SIZE_DP.dp, height = PeekTransitConstants.MAP_PREVIEW_HEIGHT_SIZE_DP.dp)
+           .size(width = sizeWidth.dp, height = sizeHeight.dp)
            .clip(RoundedCornerShape(8.dp))
     ) {
         when {
             snapshotBitmap != null -> {
-                Image(
-                    bitmap = snapshotBitmap!!.asImageBitmap(),
-                    contentDescription = "Map preview for $direction",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        bitmap = snapshotBitmap!!.asImageBitmap(),
+                        contentDescription = "Map preview for $direction",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                }
             }
             
             else -> {
@@ -144,22 +174,24 @@ fun MapPreview(
                                                 isZoomGesturesEnabled = false
                                                 isIndoorLevelPickerEnabled = false
                                             }
+
+                                            val styleResId = if (isDarkMode) {
+                                                R.raw.map_style_dark
+                                            } else {
+                                                R.raw.map_style_light
+                                            }
                                             
                                             googleMap.mapType = com.google.android.gms.maps.GoogleMap.MAP_TYPE_NORMAL
-                                            
-                                            if (isDarkMode) {
-                                                try {
-                                                    val darkStyle = MapStyleOptions.loadRawResourceStyle(
-                                                        context, R.raw.map_style_dark
-                                                    )
-                                                    googleMap.setMapStyle(darkStyle)
-                                                } catch (e: Exception) {
-                                                    println(e.message)
-                                                }
+
+                                            try {
+                                                val mapStyle = MapStyleOptions.loadRawResourceStyle(context, styleResId)
+                                                googleMap.setMapStyle(mapStyle)
+                                            } catch (e: Exception) {
+                                                println("Failed to load map style: ${e.message}")
                                             }
                                             
                                             val target = LatLng(latitude, longitude)
-                                            val zoomLevel = PeekTransitConstants.MAP_PREVIEW_ZOOM_LEVEL
+                                            val zoomLevel = zoomLevel
                                             val cameraPosition = CameraPosition.Builder()
                                                 .target(target)
                                                 .zoom(zoomLevel)
@@ -174,8 +206,8 @@ fun MapPreview(
                                             googleMap.addMarker(
                                                 MarkerOptions()
                                                     .position(target)
-                                                    .icon(getCustomMarkerIconForPreview(context, direction))
-                                                    .anchor(0.5f, 1.0f)
+                                                    .icon(getCustomMarkerIconForPreview(context, direction, markerSize))
+                                                    .anchor(PeekTransitConstants.MAP_PREVIEW_MARKER_ANCHOR_X_OFFSET, PeekTransitConstants.MAP_PREVIEW_MARKER_ANCHOR_Y_OFFSET)
 
                                             )
                                             
@@ -189,7 +221,7 @@ fun MapPreview(
                                 }
                             },
                             modifier = Modifier
-                                .size(width = PeekTransitConstants.MAP_PREVIEW_RENDER_WIDTH_SIZE_DP.dp ,height = PeekTransitConstants.MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP.dp)
+                                .size(width = renderWidth.dp, height = renderHeight.dp)
                         )
                         
                         if (isLoading || hasError) {
@@ -217,6 +249,16 @@ fun MapPreview(
                                 }
                             }
                         }
+
+//                        if (showBottomBanner) {
+//                            Box(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .fillMaxHeight(bottomBannerPercentage)
+//                                    .background(bottomBannerColor.copy(alpha = bottomBannerOpacity))
+//                                    .align(Alignment.BottomCenter)
+//                            )
+//                        }
                     }
                 } else {
                     Box(
@@ -247,7 +289,7 @@ private fun getDirectionColor(direction: String): Color {
     return ACCENT_COLOR_IN_ALL_THEMES
 }
 
-private fun getCustomMarkerIconForPreview(context: Context, direction: String): BitmapDescriptor {
+private fun getCustomMarkerIconForPreview(context: Context, direction: String, markerSize: Int): BitmapDescriptor {
     val drawableId = when (direction.lowercase()) {
         "southbound", "south" -> R.drawable.green_ball
         "northbound", "north" -> R.drawable.orange_ball
@@ -258,8 +300,7 @@ private fun getCustomMarkerIconForPreview(context: Context, direction: String): 
     
     val drawable = ContextCompat.getDrawable(context, drawableId)
     drawable?.let {
-        val markerSizeDp = PeekTransitConstants.MAP_PREVIEW_MARKER_SIZE_DP
-        val targetSize = (markerSizeDp * context.resources.displayMetrics.density).toInt()
+        val targetSize = (markerSize * context.resources.displayMetrics.density).toInt()
         val bitmap = createBitmap(targetSize, targetSize)
         val canvas = Canvas(bitmap)
         it.setBounds(0, 0, targetSize, targetSize)
@@ -269,4 +310,19 @@ private fun getCustomMarkerIconForPreview(context: Context, direction: String): 
     }
     
     return BitmapDescriptorFactory.defaultMarker()
+}
+
+
+private fun cropBitmapFromBottom(sourceBitmap: Bitmap, percentageToCrop: Float): Bitmap {
+    if (percentageToCrop <= 0f || percentageToCrop >= 1f) {
+        return sourceBitmap
+    }
+    val width = sourceBitmap.width
+    val originalHeight = sourceBitmap.height
+    val newHeight = (originalHeight * (1 - percentageToCrop)).toInt()
+
+    if (newHeight <= 0) {
+        return createBitmap(1, 1)
+    }
+    return Bitmap.createBitmap(sourceBitmap, 0, 0, width, newHeight)
 }

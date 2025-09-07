@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 val localProperties = Properties()
@@ -20,8 +21,8 @@ android {
         applicationId = "com.aymanhki.peektransit"
         minSdk = 31
         targetSdk = 36
-        versionCode = 31
-        versionName = "2.1"
+        versionCode = 32
+        versionName = "2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = localProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
@@ -92,6 +93,10 @@ dependencies {
     implementation(libs.app.update.ktx)
     implementation(libs.review)
     implementation(libs.review.ktx)
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

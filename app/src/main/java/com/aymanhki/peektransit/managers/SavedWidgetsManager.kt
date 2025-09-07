@@ -23,14 +23,14 @@ class SavedWidgetsManager(private val context: Context) {
         .registerTypeAdapter(WidgetModel::class.java, WidgetModelTypeAdapter())
         .serializeSpecialFloatingPointValues()
         .create()
-    
+
     private val _savedWidgets = MutableStateFlow<List<WidgetModel>>(emptyList())
     val savedWidgets: StateFlow<List<WidgetModel>> = _savedWidgets.asStateFlow()
-    
+
     init {
         loadSavedWidgets()
     }
-    
+
     fun loadSavedWidgets() {
         val json = sharedPreferences.getString(KEY_SAVED_WIDGETS, null)
         if (json != null) {
@@ -45,13 +45,13 @@ class SavedWidgetsManager(private val context: Context) {
             _savedWidgets.value = emptyList()
         }
     }
-    
+
     fun addWidget(widget: WidgetModel) {
         val currentWidgets = _savedWidgets.value.toMutableList()
         currentWidgets.add(widget)
         saveWidgets(currentWidgets)
     }
-    
+
     fun updateWidget(widgetId: String, updatedWidget: WidgetModel) {
         val currentWidgets = _savedWidgets.value.toMutableList()
         val index = currentWidgets.indexOfFirst { it.id == widgetId }
@@ -62,29 +62,29 @@ class SavedWidgetsManager(private val context: Context) {
 
        PeekTransitConstants.removeWidgetConfigurationConnectionIfNeeded(context)
     }
-    
+
     fun deleteWidget(widgetId: String) {
         val currentWidgets = _savedWidgets.value.toMutableList()
         currentWidgets.removeAll { it.id == widgetId }
         saveWidgets(currentWidgets)
     }
-    
+
     fun deleteWidgets(widgetIds: Set<String>) {
         val currentWidgets = _savedWidgets.value.toMutableList()
         currentWidgets.removeAll { it.id in widgetIds }
         saveWidgets(currentWidgets)
     }
-    
+
     fun getWidget(widgetId: String): WidgetModel? {
         return _savedWidgets.value.find { it.id == widgetId }
     }
-    
+
     fun isNameUnique(name: String, excludeId: String? = null): Boolean {
         return _savedWidgets.value.none { widget ->
             widget.widgetData["name"] as? String == name && widget.id != excludeId
         }
     }
-    
+
     private fun saveWidgets(widgets: List<WidgetModel>) {
         try {
             val json = gson.toJson(widgets)
@@ -95,7 +95,7 @@ class SavedWidgetsManager(private val context: Context) {
 
         }
     }
-    
+
     fun cacheWidgetData(widgetId: String, scheduleData: List<String>, lastUpdatedTime: Long) {
         try {
             val scheduleJson = gson.toJson(scheduleData)
@@ -107,32 +107,37 @@ class SavedWidgetsManager(private val context: Context) {
 
         }
     }
-    
+
     fun getCachedWidgetData(widgetId: String): Pair<List<String>?, Long?> {
         return try {
             val scheduleJson = sharedPreferences.getString("widget_cache_schedule_$widgetId", null)
             val lastUpdatedTime = sharedPreferences.getLong("widget_cache_updated_time_$widgetId", 0L)
-            
+
             val scheduleData = if (scheduleJson != null) {
                 val type = object : TypeToken<List<String>>() {}.type
                 gson.fromJson<List<String>>(scheduleJson, type)
             } else {
                 null
             }
-            
+
             Pair(scheduleData, if (lastUpdatedTime > 0) lastUpdatedTime else null)
         } catch (e: Exception) {
             Pair(null, null)
         }
     }
-    
+
+    fun clearAllData() {
+        sharedPreferences.edit { clear() }
+        _savedWidgets.value = emptyList()
+    }
+
     companion object {
         private const val PREFS_NAME = "peek_transit_widgets"
         private const val KEY_SAVED_WIDGETS = "saved_widgets"
-        
+
         @Volatile
         private var INSTANCE: SavedWidgetsManager? = null
-        
+
         fun getInstance(context: Context): SavedWidgetsManager {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: SavedWidgetsManager(context).also { INSTANCE = it }

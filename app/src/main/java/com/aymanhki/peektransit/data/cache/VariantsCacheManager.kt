@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.util.*
+import androidx.core.content.edit
 
 class VariantsCacheManager private constructor(context: Context) {
     
@@ -50,9 +51,9 @@ class VariantsCacheManager private constructor(context: Context) {
         set(value) {
             try {
                 val cacheJson = gson.toJson(value)
-                preferences.edit()
-                    .putString(cacheKey, cacheJson)
-                    .apply()
+                preferences.edit {
+                    putString(cacheKey, cacheJson)
+                }
             } catch (e: Exception) {
                 println("VariantsCacheManager encode error: ${e.message}")
             }
@@ -69,99 +70,14 @@ class VariantsCacheManager private constructor(context: Context) {
     }
     
     fun clearAllCaches() {
-        preferences.edit()
-            .remove(cacheKey)
-            .remove(lastUpdateKey)
-            .apply()
+        preferences.edit {
+            remove(cacheKey)
+                .remove(lastUpdateKey)
+        }
+    }
+
+    fun clearAllData() {
+        preferences.edit { clear() }
     }
 }
 
-class RouteCacheManager private constructor(context: Context) {
-    
-    companion object {
-        @Volatile
-        private var INSTANCE: RouteCacheManager? = null
-        
-        fun getInstance(context: Context): RouteCacheManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: RouteCacheManager(context.applicationContext).also { INSTANCE = it }
-            }
-        }
-    }
-    
-    private val preferences: SharedPreferences = context.getSharedPreferences(
-        "transit_route_cache", Context.MODE_PRIVATE
-    )
-    private val gson = Gson()
-    
-    private val cacheKey = "route_cache"
-    private val lastUpdateKey = "route_last_update"
-    
-    data class Route(
-        val key: String,
-        val name: String,
-        val number: String,
-        val backgroundColor: String?,
-        val textColor: String?,
-        val borderColor: String?
-    )
-    
-    fun getCachedRoute(routeKey: String): Route? {
-        val cacheJson = preferences.getString(cacheKey, null) ?: return null
-        
-        return try {
-            val type = object : TypeToken<Map<String, Route>>() {}.type
-            val cache: Map<String, Route> = gson.fromJson(cacheJson, type)
-            cache[routeKey]
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    fun cacheRoute(route: Route) {
-        try {
-            val cacheJson = preferences.getString(cacheKey, "{}")
-            val type = object : TypeToken<MutableMap<String, Route>>() {}.type
-            val cache: MutableMap<String, Route> = gson.fromJson(cacheJson, type) ?: mutableMapOf()
-            
-            cache[route.key] = route
-            
-            val updatedCacheJson = gson.toJson(cache)
-            preferences.edit()
-                .putString(cacheKey, updatedCacheJson)
-                .apply()
-                
-        } catch (e: Exception) {
-            println(e.message)
-        }
-    }
-    
-    fun getAllCachedRoutes(): Map<String, Route> {
-        val cacheJson = preferences.getString(cacheKey, null) ?: return emptyMap()
-        
-        return try {
-            val type = object : TypeToken<Map<String, Route>>() {}.type
-            gson.fromJson(cacheJson, type) ?: emptyMap()
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
-    
-    fun clearAllCaches() {
-        preferences.edit()
-            .remove(cacheKey)
-            .remove(lastUpdateKey)
-            .apply()
-    }
-    
-    fun getLastUpdateTime(): Date? {
-        val timestamp = preferences.getLong(lastUpdateKey, -1)
-        return if (timestamp != -1L) Date(timestamp) else null
-    }
-    
-    fun updateLastUpdateTime() {
-        preferences.edit()
-            .putLong(lastUpdateKey, System.currentTimeMillis())
-            .apply()
-    }
-}

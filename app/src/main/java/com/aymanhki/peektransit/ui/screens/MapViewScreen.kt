@@ -307,7 +307,7 @@ fun MapViewScreen(
                             state = markerState,
                             title = stop.name,
                             snippet = "Stop #${stop.number} - ${stop.direction}",
-                            anchor = Offset(0.5f, 1.0f),
+                            anchor = Offset(PeekTransitConstants.STOP_MARKER_ANCHOR_X_OFFSET, PeekTransitConstants.STOP_MARKER_ANCHOR_Y_OFFSET),
                             icon = getCustomMarkerIcon(context, stop.direction),
                             zIndex = 1.0f,
                             onClick = {
@@ -344,7 +344,7 @@ fun MapViewScreen(
                                 state = markerState,
                                 title = stop.name,
                                 snippet = "Stop #${stop.number} - ${stop.direction}",
-                                anchor = Offset(0.5f, 1.0f),
+                                anchor = Offset(PeekTransitConstants.STOP_MARKER_ANCHOR_X_OFFSET, PeekTransitConstants.STOP_MARKER_ANCHOR_Y_OFFSET),
                                 icon = getCustomMarkerIcon(context, stop.direction),
                                 zIndex = 2.0f,
                                 onClick = {

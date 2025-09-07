@@ -62,7 +62,9 @@ import com.aymanhki.peektransit.managers.FirstLaunchManager
 import com.aymanhki.peektransit.ui.components.BannerView
 import com.aymanhki.peektransit.ui.components.SplashScreen
 import com.aymanhki.peektransit.ui.components.SupportDevelopmentSheet
+import com.aymanhki.peektransit.ui.screens.FolderDetailsScreen
 import com.aymanhki.peektransit.utils.BannerType
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.model.AppUpdateType
@@ -315,6 +317,9 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
                     BookmarkedStopsScreen(
                         onNavigateToLiveStop = { stopNumber ->
                             navController.navigate("live_stop/$stopNumber")
+                        },
+                        onNavigateToFolder = { folderId ->
+                            navController.navigate("save_folder/$folderId")
                         }
                     )
                 }
@@ -333,12 +338,27 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
                         onNavigateToSupportDevelopment = {
                             val settingsManager = SettingsManager.getInstance(context)
                             settingsManager.userHasClickedSupportDevelopment = true
+                            mainViewModel.tipBannerWasTapped()
 
                             //    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/aymhki"))
                             //    context.startActivity(intent)
 
                             mainViewModel.showSupportSheet()
 
+                        },
+                        onClearCache = { clearSavedStops, clearMapSnapshotCache, clearSavedWidgets, clearLiveUpdatesPreferences, clearVariantCache, clearAllOtherSettingsOptions ->
+
+                            PeekTransitConstants.clearAllAppData(
+                                context,
+                                clearSavedStops = clearSavedStops,
+                                clearMapSnapshotCache = clearMapSnapshotCache,
+                                clearSavedWidgets = clearSavedWidgets,
+                                clearLiveUpdatesPreferences = clearLiveUpdatesPreferences,
+                                clearVariantCache = clearVariantCache,
+                                clearAllOtherSettingsOptions = clearAllOtherSettingsOptions
+                            )
+
+                            activity.finishAffinity()
                         }
                     )
                 }
@@ -350,6 +370,19 @@ fun MainScreen(activity: ComponentActivity, initialStopNumber: Int? = null) {
                     LiveBusStopScreen(
                         stopNumber = stopNumber,
                         onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    "save_folder/{folderId}",
+                    arguments = listOf(navArgument("folderId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val folderId = backStackEntry.arguments?.getString("folderId") ?: return@composable
+                    FolderDetailsScreen(
+                        folderId = folderId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToLiveStop = { stopNumber ->
+                            navController.navigate("live_stop/$stopNumber")
+                        }
                     )
                 }
                 composable("theme_selection") {

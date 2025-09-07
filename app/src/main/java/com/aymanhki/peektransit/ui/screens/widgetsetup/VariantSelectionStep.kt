@@ -314,7 +314,7 @@ private fun StopScheduleSection(
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Text(
-                                text = variant.key.split("-").first(),
+                                text = variant.key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).first().replace("BLUE", "B"),
                                 modifier = Modifier.weight(0.2f),
                                 fontWeight = FontWeight.Black,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -358,13 +358,13 @@ private fun convertVariantArrayToUniqueSet(variants: List<Variant>): Set<Variant
     for (variantRouteObjects in variants) {
         var key = variantRouteObjects.key
         
-        if (key.contains("-")) {
-            key = key.split("-").first()
-        }
-        
-        if (key.contains("BLUE")) {
-            key = "B"
-        }
+//        if (key.contains("-")) {
+//            key = key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).first()
+//        }
+//
+//        if (key.contains("BLUE")) {
+//            key = "B"
+//        }
         
         uniqueVariants.add(Variant(
             key = key,

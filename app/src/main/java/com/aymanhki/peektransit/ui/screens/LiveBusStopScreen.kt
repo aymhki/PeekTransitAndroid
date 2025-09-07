@@ -41,6 +41,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.aymanhki.peektransit.managers.SettingsManager
 import com.aymanhki.peektransit.utils.StopViewTheme
 import com.aymanhki.peektransit.utils.FontUtils
+import androidx.core.content.edit
 
 @Composable
 fun LiveBusStopScreen(
@@ -51,6 +52,7 @@ fun LiveBusStopScreen(
     val scope = rememberCoroutineScope()
     val api = WinnipegTransitAPI.getInstance()
     val savedStopsManager = remember { SavedStopsManager.getInstance(context) }
+
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
@@ -70,7 +72,12 @@ fun LiveBusStopScreen(
     var isLiveUpdatesEnabled by remember { mutableStateOf(true) }
     var scheduleData by remember { mutableStateOf<List<String>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
-    var isBookmarked by remember { mutableStateOf(false) }
+
+    val isBookmarked by produceState(initialValue = false, key1 = stopNumber) {
+        savedStopsManager.isStopSavedFlow(stopNumber.toString())
+            .collect { isSaved -> value = isSaved }
+    }
+
     var isRefreshCooldown by remember { mutableStateOf(false) }
     var isNetworkAvailable by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(true) }
@@ -78,9 +85,9 @@ fun LiveBusStopScreen(
     val cooldownDuration = 1000L
     
     fun saveLiveUpdatesPreference(enabled: Boolean) {
-        sharedPreferences.edit()
-            .putBoolean("live_updates_stop_$stopNumber", enabled)
-            .apply()
+        sharedPreferences.edit {
+            putBoolean("live_updates_stop_$stopNumber", enabled)
+        }
     }
     
     fun loadLiveUpdatesPreference(): Boolean {
@@ -117,8 +124,6 @@ fun LiveBusStopScreen(
                 stop = api.getStop(stopNumber)
                 if (stop == null) {
                     error = "Stop #$stopNumber not found"
-                } else {
-                    isBookmarked = savedStopsManager.isStopSaved(stop!!)
                 }
             } catch (e: Exception) {
                 error = e.message ?: "Failed to load stop data"
@@ -140,7 +145,7 @@ fun LiveBusStopScreen(
             error = null
             try {
                 val schedule = api.getStopSchedule(stopNumber)
-                val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MIXED)
+                val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MINUTES_ONLY, false)
                 scheduleData = cleanedSchedule
 
                 error = null
@@ -178,10 +183,10 @@ fun LiveBusStopScreen(
                 return@LaunchedEffect
             }
             stop = fetchedStop
-            isBookmarked = savedStopsManager.isStopSaved(fetchedStop)
+
 
             val schedule = api.getStopSchedule(stopNumber)
-            val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MIXED)
+            val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.MINUTES_ONLY, false)
             scheduleData = cleanedSchedule
 
         } catch (e: Exception) {
@@ -290,8 +295,7 @@ fun LiveBusStopScreen(
                     stop?.let { stopData ->
                         IconButton(
                             onClick = {
-                                savedStopsManager.toggleSavedStatus(stopData)
-                                isBookmarked = savedStopsManager.isStopSaved(stopData)
+                                stopData?.let { savedStopsManager.toggleSavedStatus(it) }
                             }
                         ) {
                             Icon(

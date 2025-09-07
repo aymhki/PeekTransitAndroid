@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
+import androidx.core.graphics.createBitmap
 
 @Composable
 fun RealMapPreview(
@@ -51,7 +52,7 @@ fun RealMapPreview(
     }
     
     val cameraPositionState = rememberCameraPositionState {
-        this.position = CameraPosition.fromLatLngZoom(position, 17f)
+        this.position = CameraPosition.fromLatLngZoom(position, 16.5f)
     }
     
     val mapStyle = if (isDarkTheme) {
@@ -59,7 +60,12 @@ fun RealMapPreview(
     } else {
         null
     }
-    
+
+    val markerState = remember(position) {
+        MarkerState(position = position)
+    }
+
+
     Box() {
         if (isMapsInitialized) {
             GoogleMap(
@@ -82,11 +88,11 @@ fun RealMapPreview(
             )
         ) {
             Marker(
-                state = MarkerState(position = position),
+                state = markerState,
                 title = "Bus Stop",
                 snippet = direction,
                 icon = getCustomMarkerIcon(context, direction),
-                anchor = Offset(0.5f, 1.0f)
+                anchor = Offset(PeekTransitConstants.STOP_MARKER_ANCHOR_X_OFFSET, PeekTransitConstants.STOP_MARKER_ANCHOR_Y_OFFSET)
             )
         }
         }
@@ -105,7 +111,7 @@ private fun getCustomMarkerIcon(context: Context, direction: String): com.google
     val drawable = ContextCompat.getDrawable(context, drawableId)
     drawable?.let {
         val targetSize =  (PeekTransitConstants.STOP_MARKER_SIZE_DP * context.resources.displayMetrics.density).toInt()
-        val bitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(targetSize, targetSize)
         val canvas = Canvas(bitmap)
         it.setBounds(0, 0, targetSize, targetSize)
         it.draw(canvas)

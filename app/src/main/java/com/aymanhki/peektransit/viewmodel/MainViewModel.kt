@@ -12,6 +12,7 @@ import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.TransitError
 import com.aymanhki.peektransit.data.repository.StopsDataStore
 import com.aymanhki.peektransit.managers.RateAppBannerManager
+import com.aymanhki.peektransit.managers.SavedStopsManager
 import com.aymanhki.peektransit.managers.TipBannerManager
 import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.aymanhki.peektransit.utils.location.LocationManagerProvider
@@ -172,10 +173,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (attemptedToStartTipBannerUsageTracking.value == false) {
-            tipBannerManager.startTrackingAppUsage()
+            // tipBannerManager.startTrackingAppUsage()
         }
 
-        //_isInitialized.postValue(true)
+        // initialize saved stops manager to trigger any migrations if needed
+        SavedStopsManager.getInstance(getApplication())
+
+        // _isInitialized.postValue(true)
     }
 
     fun onUpdateFlowStarted() {

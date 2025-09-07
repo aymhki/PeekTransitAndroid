@@ -7,8 +7,33 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.PowerManager
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.BeachAccess
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocalLibrary
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Nightlife
+import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Train
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -24,8 +49,11 @@ import com.aymanhki.peektransit.widgets.PeekTransitSmallWidgetProvider
 import com.aymanhki.peektransit.widgets.SavedWidgetSchedulesManager
 import com.aymanhki.peektransit.widgets.WidgetSchedule
 import com.aymanhki.peektransit.widgets.WidgetUpdateManager
-import kotlin.div
 import kotlin.math.roundToInt
+import androidx.core.content.edit
+import com.aymanhki.peektransit.data.cache.MapSnapshotCache
+import com.aymanhki.peektransit.data.cache.VariantsCacheManager
+import com.aymanhki.peektransit.managers.SavedStopsManager
 
 object PeekTransitConstants {
 
@@ -69,14 +97,46 @@ object PeekTransitConstants {
     const val LOCATION_REQUEST_TIMEOUT_MS = 15000L
     const val LOCATION_UPDATE_MIN_INTERVAL_MS = 500L
     const val CAMERA_DELAY_FOR_INITIAL_LOCATION_ZOOM_MS = 8000L
+
     const val DEFAULT_MAP_ZOOM = 16.5f
-    const val MAP_PREVIEW_WIDTH_SIZE_DP = 80
-    const val MAP_PREVIEW_HEIGHT_SIZE_DP = 160
-    const val MAP_PREVIEW_ZOOM_LEVEL = 16.5f
-    const val MAP_PREVIEW_RENDER_WIDTH_SIZE_DP = 80
-    const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP = 160
+
+    const val MAP_PREVIEW_WIDTH_SIZE_DP_IN_LIST = 100
+    const val MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST = 200
+    const val MAP_PREVIEW_ZOOM_LEVEL_IN_LIST = 16.0f
+    const val MAP_PREVIEW_RENDER_WIDTH_SIZE_DP_IN_LIST = MAP_PREVIEW_WIDTH_SIZE_DP_IN_LIST
+    const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP_IN_LIST = MAP_PREVIEW_HEIGHT_SIZE_DP_IN_LIST
+    const val MAP_PREVIEW_MARKER_SIZE_DP_IN_LIST = 28
+    const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_LIST = 0.18f
+    const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_LIST = 1f
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_LIST = true
+
+    const val MAP_PREVIEW_HEIGHT_SIZE_DP_IN_2X2_GRID = 180
+    const val MAP_PREVIEW_ZOOM_LEVEL_IN_2X2_GRID = 16.0f
+    const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP_IN_2X2_GRID = MAP_PREVIEW_HEIGHT_SIZE_DP_IN_2X2_GRID
+    const val MAP_PREVIEW_MARKER_SIZE_DP_IN_2X2_GRID = 28
+    const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_2X2_GRID = 0.18f
+    const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_2X2_GRID = 1f
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_2X2_GRID = true
+    const val TOTAL_GRID_CARD_HEIGHT_DP_IN_2X2_GRID_DP = 280
+
+    const val MAP_PREVIEW_HEIGHT_SIZE_DP_IN_3X3_GRID = 160
+    const val MAP_PREVIEW_ZOOM_LEVEL_IN_3X3_GRID = 16.5f
+    const val MAP_PREVIEW_RENDER_HEIGHT_SIZE_DP_IN_3X3_GRID = MAP_PREVIEW_HEIGHT_SIZE_DP_IN_3X3_GRID
+    const val MAP_PREVIEW_MARKER_SIZE_DP_IN_3X3_GRID = 28
+    const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_3X3_GRID = 0.21f
+    const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_3X3_GRID = 1f
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_3X3_GRID = true
+    const val TOTAL_GRID_CARD_HEIGHT_DP_IN_3X3_GRID_DP = 240
+
+    const val MAP_PREVIEW_MARKER_ANCHOR_X_OFFSET = 0.5f
+    const val MAP_PREVIEW_MARKER_ANCHOR_Y_OFFSET = 0.9f
+
+
     const val STOP_MARKER_SIZE_DP = 32
-    const val MAP_PREVIEW_MARKER_SIZE_DP = 32
+    const val STOP_MARKER_ANCHOR_X_OFFSET = 0.5f
+    const val STOP_MARKER_ANCHOR_Y_OFFSET = 0.9f
+
+
     const val GLOBAL_API_FOR_SHORT_USAGE = true
     const val STOP_NAME_MAX_PREFIX_LENGTH_FOR_WIDGET = 28
     const val NUM_CHARS_TO_UPDATE_ADDRESS_SEARCH_QUERY_AFTER = 3
@@ -97,6 +157,10 @@ object PeekTransitConstants {
     val USAGE_TIME_TO_SHOW_RATE_APP_BANNER_AFTER_IN_SECONDS = (60 * 3).toLong()
     val START_TRACKING_APP_USAGE_FOR_RATE_APP_BANNER_AFTER_THIS_MANY_LAUNCHES = 3
     val START_TRACKING_APP_USAGE_FOR_TIP_BANNER_AFTER_THIS_MANY_LAUNCHES = START_TRACKING_APP_USAGE_FOR_RATE_APP_BANNER_AFTER_THIS_MANY_LAUNCHES * 2
+    val UNCATEGORIZED_FOLDER_ID = "000000000000000000"
+    val UNKNOWN_VARIANT_NAME_TEXT = " N/A"
+    val VARIANT_KEY_SEPARATOR = "-"
+
 
     const val LONG_SCHEDULE_ENTRY_WITH_EARLY_FOR_TESTING = "671" + SCHEDULE_STRING_SEPARATOR + "University of Manitoba" + SCHEDULE_STRING_SEPARATOR + EARLY_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 PM"
     const val LONG_SCHEDULE_ENTRY_WITH_LATE_FOR_TESTING = "899" + SCHEDULE_STRING_SEPARATOR + "Kildonan Place" + SCHEDULE_STRING_SEPARATOR + LATE_STATUS_TEXT + SCHEDULE_STRING_SEPARATOR  + "12:55 AM"
@@ -476,9 +540,8 @@ object PeekTransitConstants {
 
     fun deleteWidgetConfigurationUsingWidgetId(context: Context, appWidgetId: Int) {
         val prefs = context.getSharedPreferences(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        with(prefs.edit()) {
+        prefs.edit(commit = true) {
             remove(SharedPreferencesKeys.WIDGET_DATA_ID_SHARED_PREFERENCES_KEY_PREFIX + appWidgetId)
-            commit()
         }
     }
 
@@ -636,6 +699,36 @@ object PeekTransitConstants {
         }
     }
 
+    fun getIconByName(name: String): ImageVector? {
+        return availableIcons.find { it.first == name }?.second
+    }
+
+    val availableIcons = listOf(
+        "Home" to Icons.Default.Home,
+        "Work" to Icons.Default.Work,
+        "School" to Icons.Default.School,
+        "Star" to Icons.Default.Star,
+        "Favorite" to Icons.Default.Favorite,
+        "LocationOn" to Icons.Default.LocationOn,
+        "DirectionsBus" to Icons.Default.DirectionsBus,
+        "Train" to Icons.Default.Train,
+        "Flight" to Icons.Default.Flight,
+        "Restaurant" to Icons.Default.Restaurant,
+        "ShoppingCart" to Icons.Default.ShoppingCart,
+        "SportsSoccer" to Icons.Default.SportsSoccer,
+        "MusicNote" to Icons.Default.MusicNote,
+        "Nightlife" to Icons.Default.Nightlife,
+        "Hotel" to Icons.Default.Hotel,
+        "LocalHospital" to Icons.Default.LocalHospital,
+        "AttachMoney" to Icons.Default.AttachMoney,
+        "AccountBalance" to Icons.Default.AccountBalance,
+        "LocalLibrary" to Icons.Default.LocalLibrary,
+        "Park" to Icons.Default.Park,
+        "BeachAccess" to Icons.Default.BeachAccess,
+        "LocalCafe" to Icons.Default.LocalCafe,
+        "Folder" to Icons.Default.Folder
+    )
+
 
 
     val updateActions = listOf(
@@ -669,6 +762,59 @@ object PeekTransitConstants {
     )
 
     const val ACTION_UPDATE_WIDGET = "com.aymanhki.peektransit.ACTION_UPDATE_WIDGET"
+
+
+    fun clearAllAppData(
+        context: Context,
+        clearSavedWidgets: Boolean,
+        clearSavedStops: Boolean,
+        clearVariantCache: Boolean,
+        clearLiveUpdatesPreferences: Boolean,
+        clearMapSnapshotCache: Boolean,
+        clearAllOtherSettingsOptions: Boolean
+    ) {
+
+
+        if (clearSavedWidgets) {
+            val savedWidgetsManager = SavedWidgetsManager.getInstance(context)
+            savedWidgetsManager.clearAllData()
+            removeWidgetConfigurationConnectionIfNeeded(context)
+            removeDeletedWidgetInstancesData(context, getAllActiveWidgetIds(context).toIntArray())
+            triggerAllWidgetsLooksUpdates(context)
+        }
+
+        if (clearSavedStops) {
+            val savedStopsManager = SavedStopsManager.getInstance(context)
+            savedStopsManager.clearAllData()
+        }
+
+        if (clearVariantCache) {
+            val variantCacheManager = VariantsCacheManager.getInstance(context)
+            variantCacheManager.clearAllData()
+        }
+
+        if (clearLiveUpdatesPreferences) {
+            val sharedPreferences = context.getSharedPreferences("peek_transit_prefs", Context.MODE_PRIVATE)
+            sharedPreferences.edit {
+
+                val allPrefs = sharedPreferences.all
+                for ((key, _) in allPrefs) {
+                    if (key.startsWith("live_updates_stop_")) {
+                        remove(key)
+                    }
+                }
+            }
+        }
+
+        if (clearMapSnapshotCache) {
+            MapSnapshotCache.clearAllData()
+        }
+
+        if (clearAllOtherSettingsOptions) {
+            val settingsManager = SettingsManager.getInstance(context)
+            settingsManager.clearAllData()
+        }
+    }
 }
 
 enum class DefaultTab(val index: Int, val displayName: String, val icon: String) {

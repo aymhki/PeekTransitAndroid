@@ -80,5 +80,10 @@ class SettingsManager private constructor(private val context: Context) {
             triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, false)
         }
 
+
+    fun clearAllData() {
+        sharedPreferences.edit { clear() }
+    }
+
 }
 

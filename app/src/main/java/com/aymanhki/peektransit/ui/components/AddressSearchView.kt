@@ -515,7 +515,7 @@ fun RouteItem(
                                     var textToDisplay: String = ""
 
                                     if (segment.variantKey != null) {
-                                        textToDisplay += segment.variantKey.split("-")[0]
+                                        textToDisplay += segment.variantKey.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR)[0]
                                     }
 
                                     if (segment.variantName != null && !segment.variantName.contains(textToDisplay)) {
@@ -531,7 +531,7 @@ fun RouteItem(
 
                                 } else {
                                     Text(
-                                        text = "${segment.variantKey.split("-")[0]} ${segment.variantName.replace(segment.variantKey.split("-")[0], "")}",
+                                        text = "${segment.variantKey.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR)[0]} ${segment.variantName.replace(segment.variantKey.split("-")[0], "")}",
                                         style = MaterialTheme.typography.bodyLarge
                                     )
                                 }

@@ -1,7 +1,9 @@
 package com.aymanhki.peektransit.data.models
 
+import com.aymanhki.peektransit.utils.PeekTransitConstants
 import com.google.gson.annotations.SerializedName
 import java.util.*
+import java.util.UUID
 
 data class DistanceInfo(
     val direct: Double = Double.POSITIVE_INFINITY,
@@ -116,16 +118,53 @@ data class Variant(
     }
     
     fun getRouteKey(): String {
-        return key.split("-").firstOrNull() ?: key
+        return key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: key
     }
 }
 
-data class Route(
-    val key: String,
+
+
+data class SavedStop(
+    val id: String,
+    val stopData: Stop,
+    val folderCategories: List<String>? = null
+) {
+    constructor(stopData: Stop, folderCategories: List<String>? = null) : this(
+        id = stopData.number.toString(),
+        stopData = stopData,
+        folderCategories = folderCategories
+    )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as SavedStop
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}
+
+data class FolderCategory(
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val textColor: String,
-    val backgroundColor: String,
-    val borderColor: String,
-    val variants: List<Variant>? = null
+    val icons: List<String> = listOf(),
+    val stopOrder: List<String> = emptyList(),
+    val viewMode: SavedStopsViewMode = SavedStopsViewMode.DEFAULT
 )
 
+enum class SavedStopsViewMode(val displayName: String, val columns: Int) {
+    LIST("List", 1),
+    GRID_2("Grid (2)", 2),
+    GRID_3("Grid (3)", 3);
+
+    companion object {
+        val DEFAULT = LIST
+
+        fun fromString(value: String?): SavedStopsViewMode {
+            return entries.find { it.name == value } ?: DEFAULT
+        }
+    }
+}

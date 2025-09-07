@@ -494,7 +494,7 @@ class CentralWidgetLooksUpdateManager
                                 val scheduleComponents = scheduleEntry.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
 
                                 val routeNumberResId = currentScheduleTextImagesResIds[0]
-                                val routeNumber = scheduleComponents.getOrNull(0) ?: "Unknown Route"
+                                val routeNumber = (scheduleComponents.getOrNull(0) ?: "Unknown Route").split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).first().replace("BLUE", "B")
                                 val routeNameResId = currentScheduleTextImagesResIds[1]
                                 val routeName = scheduleComponents.getOrNull(1) ?: "Unknown Route Name"
                                 val finalRouteName = routeName.take(1) + "."
@@ -675,7 +675,7 @@ class CentralWidgetLooksUpdateManager
                                         val scheduleComponents = currentWidgetScheduleEntrySchedule.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
                                         if (currentScheduleTextImagesResIds != null) {
                                             val routeNumberResId = currentScheduleTextImagesResIds[0]
-                                            val routeNumber = scheduleComponents.getOrNull(0) ?: "Unknown Route"
+                                            val routeNumber = (scheduleComponents.getOrNull(0) ?: "Unknown Route").split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).first().replace("BLUE", "B")
                                             val routeNameResId = currentScheduleTextImagesResIds[1]
                                             val routeName = scheduleComponents.getOrNull(1) ?: "Unknown Route Name"
                                             val finalRouteName = if (widgetSize == "lockscreen" || widgetSize == "small") {

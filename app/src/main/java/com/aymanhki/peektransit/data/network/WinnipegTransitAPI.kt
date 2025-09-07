@@ -244,10 +244,11 @@ class WinnipegTransitAPI private constructor() {
             val calendar = Calendar.getInstance()
             calendar.time = currentDate
             calendar.add(Calendar.MINUTE, -5)
+            // calendar.add(Calendar.HOUR, 12) // TODO: Remove this shit
             val startDate = calendar.time
             
             calendar.time = currentDate
-            calendar.add(Calendar.HOUR, PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS)
+            calendar.add(Calendar.HOUR,  PeekTransitConstants.TIME_PERIOD_ALLOWED_FOR_NEXT_BUS_ROUTES_IN_HOURS) // 36)
             val endDate = calendar.time
             
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -274,7 +275,11 @@ class WinnipegTransitAPI private constructor() {
         }
     }
 
-    fun cleanStopSchedule(schedule: JsonObject, timeFormat: TimeFormat): List<String> {
+    fun cleanStopSchedule(
+        schedule: JsonObject,
+        timeFormat: TimeFormat,
+        provideOriginalKeys: Boolean
+        ): List<String> {
         val busScheduleList = mutableListOf<String>()
         val currentDate = Date()
         val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -391,9 +396,9 @@ class WinnipegTransitAPI private constructor() {
                         finalArrivalText = "Time Unavailable"
                     }
 
-                    variantKey = variantKey.split("-").firstOrNull() ?: variantKey
+                    variantKey = if (provideOriginalKeys) { variantKey } else { variantKey.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: variantKey }
 
-                    if (variantKey.contains("BLUE")) {
+                    if (variantKey.contains("BLUE") && !provideOriginalKeys) {
                         variantKey = "B"
                     }
 
@@ -466,33 +471,72 @@ class WinnipegTransitAPI private constructor() {
         }
     }
     
+//    private fun compareClockTimes(timeA: String, timeB: String, currentDate: Date): Int {
+//        try {
+//            val calendar = Calendar.getInstance()
+//            calendar.time = currentDate
+//            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+//
+//            val timeFormatA = parseClockTime(timeA)
+//            val timeFormatB = parseClockTime(timeB)
+//
+//            if (timeFormatA == null || timeFormatB == null) return 0
+//
+//            var totalMinutesA = timeFormatA.first * 60 + timeFormatA.second
+//            var totalMinutesB = timeFormatB.first * 60 + timeFormatB.second
+//
+//            val isAMA = timeA.lowercase().contains("am")
+//            val isAMB = timeB.lowercase().contains("am")
+//
+//            if (currentHour >= 12) {
+//                if (isAMA) {
+//                    totalMinutesA += 24 * 60
+//                }
+//                if (isAMB) {
+//                    totalMinutesB += 24 * 60
+//                }
+//            }
+//
+//            return totalMinutesA.compareTo(totalMinutesB)
+//        } catch (e: Exception) {
+//            return 0
+//        }
+//    }
+
     private fun compareClockTimes(timeA: String, timeB: String, currentDate: Date): Int {
         try {
             val calendar = Calendar.getInstance()
             calendar.time = currentDate
-            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-            
-            val timeFormatA = parseClockTime(timeA)
-            val timeFormatB = parseClockTime(timeB)
-            
-            if (timeFormatA == null || timeFormatB == null) return 0
-            
-            var totalMinutesA = timeFormatA.first * 60 + timeFormatA.second
-            var totalMinutesB = timeFormatB.first * 60 + timeFormatB.second
-            
-            val isAMA = timeA.lowercase().contains("am")
-            val isAMB = timeB.lowercase().contains("am")
-            
-            if (currentHour >= 12) {
-                if (isAMA) {
-                    totalMinutesA += 24 * 60
+            val currentTotalMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+
+            fun getComparableTimeValue(time: String): Int? {
+                val parsedTime = parseClockTime(time) ?: return null
+                var hour = parsedTime.first
+                val minute = parsedTime.second
+                val isAM = time.lowercase().contains("am")
+
+                if (isAM) {
+                    if (hour == 12) hour = 0
+                } else {
+                    if (hour != 12) hour += 12
                 }
-                if (isAMB) {
-                    totalMinutesB += 24 * 60
+
+                var totalMinutes = hour * 60 + minute
+
+                if (totalMinutes < currentTotalMinutes) {
+                    totalMinutes += 24 * 60
                 }
+
+                return totalMinutes
             }
-            
-            return totalMinutesA.compareTo(totalMinutesB)
+
+            val valueA = getComparableTimeValue(timeA)
+            val valueB = getComparableTimeValue(timeB)
+
+            if (valueA == null || valueB == null) return 0
+
+            return valueA.compareTo(valueB)
+
         } catch (e: Exception) {
             return 0
         }
@@ -593,10 +637,10 @@ class WinnipegTransitAPI private constructor() {
                         for (variantElement in routeVariants) {
                             try {
                                 val variantObj = variantElement.asJsonObject
-                                
+                                val key = variantObj.get("key")?.asString ?: "Unknown"
                                 val variant = Variant(
-                                    key = variantObj.get("key")?.asString ?: "Unknown",
-                                    name = variantObj.get("name")?.asString ?: "Unknown",
+                                    key = key,
+                                    name = variantObj.get("name")?.asString ?: PeekTransitConstants.UNKNOWN_VARIANT_NAME_TEXT,
                                     effectiveFrom = effectiveFrom,
                                     effectiveTo = effectiveTo,
                                     backgroundColor = routeBackgroundColor,
@@ -679,7 +723,8 @@ class WinnipegTransitAPI private constructor() {
     }
 
     suspend fun cleanScheduleMixedTimeFormat(
-        schedule: JsonObject
+        schedule: JsonObject,
+        provideOriginalKeys: Boolean
     ): List<String> = withContext(Dispatchers.IO) {
         val busScheduleList = mutableListOf<String>()
         val currentDate = Date()
@@ -790,8 +835,9 @@ class WinnipegTransitAPI private constructor() {
                                     timeDifference
                                 }
 
-                                variantKey = variantKey.split("-").firstOrNull() ?: variantKey
-                                if (variantKey.contains("BLUE")) {
+                                variantKey = if (provideOriginalKeys) { variantKey } else { variantKey.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: variantKey }
+
+                                if (variantKey.contains("BLUE") && !provideOriginalKeys) {
                                     variantKey = "B"
                                 }
 
@@ -902,9 +948,10 @@ class WinnipegTransitAPI private constructor() {
                     
                     for (element in variantsArray) {
                         val variantObject = element.asJsonObject
+                        val key = variantObject.get("key")?.asString ?: "Unknown"
                         val variant = Variant(
-                            key = variantObject.get("key")?.asString ?: "Unknown",
-                            name = variantObject.get("name")?.asString ?: "Unknown",
+                            key = key,
+                            name = variantObject.get("name")?.asString ?: PeekTransitConstants.UNKNOWN_VARIANT_NAME_TEXT,
                             effectiveFrom = variantObject.get("effective-from")?.asString ?: "",
                             effectiveTo = variantObject.get("effective-to")?.asString ?: "",
                             backgroundColor = variantObject.get("background-color")?.asString,
@@ -1096,7 +1143,6 @@ class WinnipegTransitAPI private constructor() {
         date: Date? = null
     ): List<TripPlan> = withContext(Dispatchers.IO) {
         val allPlans = mutableListOf<TripPlan>()
-
 
         try {
             val initialResponse = apiService.findTrip(

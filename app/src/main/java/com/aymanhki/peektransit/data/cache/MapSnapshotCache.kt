@@ -3,6 +3,7 @@ package com.aymanhki.peektransit.data.cache
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.aymanhki.peektransit.data.models.SavedStopsViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -31,11 +32,11 @@ object MapSnapshotCache {
         cleanupDiskCache()
     }
     
-    private fun generateKey(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean): String {
+    private fun generateKey(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean, stopViewType: SavedStopsViewMode): String {
         val roundedLat = "%.4f".format(latitude)
         val roundedLng = "%.4f".format(longitude)
         val theme = if (isDarkMode) "dark" else "light"
-        return "${roundedLat}_${roundedLng}_${direction.lowercase()}_$theme"
+        return "${roundedLat}_${roundedLng}_${direction.lowercase()}_${theme}_${stopViewType.name.lowercase()}"
     }
     
     private fun generateFileName(key: String): String {
@@ -44,10 +45,10 @@ object MapSnapshotCache {
         return hashBytes.joinToString("") { "%02x".format(it) } + ".png"
     }
     
-    suspend fun getCachedSnapshot(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean): Bitmap? {
+    suspend fun getCachedSnapshot(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean, stopViewType: SavedStopsViewMode): Bitmap? {
         if (!isInitialized) return null
         
-        val key = generateKey(latitude, longitude, direction, isDarkMode)
+        val key = generateKey(latitude, longitude, direction, isDarkMode, stopViewType)
         
         memoryCache[key]?.let { return it }
         return withContext(Dispatchers.IO) {
@@ -69,10 +70,10 @@ object MapSnapshotCache {
         }
     }
     
-    suspend fun cacheSnapshot(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean, bitmap: Bitmap) {
+    suspend fun cacheSnapshot(latitude: Double, longitude: Double, direction: String, isDarkMode: Boolean, stopViewType: SavedStopsViewMode, bitmap: Bitmap) {
         if (!isInitialized) return
         
-        val key = generateKey(latitude, longitude, direction, isDarkMode)
+        val key = generateKey(latitude, longitude, direction, isDarkMode, stopViewType)
         
         addToMemoryCache(key, bitmap)
         withContext(Dispatchers.IO) {
@@ -84,6 +85,7 @@ object MapSnapshotCache {
                     bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
                 }
             } catch (e: Exception) {
+
             }
         }
     }
@@ -114,6 +116,19 @@ object MapSnapshotCache {
                     currentSize -= file.length()
                     file.delete()
                 }
+            }
+        } catch (e: Exception) {
+            println(e.message)
+        }
+    }
+
+    fun clearAllData() {
+        memoryCache.clear()
+        try {
+            val dir = cacheDir ?: return
+            val files = dir.listFiles() ?: return
+            for (file in files) {
+                file.delete()
             }
         } catch (e: Exception) {
             println(e.message)

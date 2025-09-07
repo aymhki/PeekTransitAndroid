@@ -30,9 +30,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-
+import androidx.compose.material.icons.filled.DeleteSweep
 
 data class SettingsSection(
     val title: String,
@@ -47,6 +49,8 @@ data class SettingsItem(
     val endContent: @Composable (() -> Unit)? = null
 )
 
+
+
 data class WidgetUpdateMode(val isManual: Boolean)
 
 sealed class SettingsAction {
@@ -55,6 +59,7 @@ sealed class SettingsAction {
     object Credits : SettingsAction()
     object TermsAndPrivacy : SettingsAction()
     object SupportDevelopment : SettingsAction()
+    object ClearCache : SettingsAction()
 }
 
 @Composable
@@ -63,13 +68,24 @@ fun MoreScreen(
     onNavigateToAbout: () -> Unit = {},
     onNavigateToCredits: () -> Unit = {},
     onNavigateToTermsAndPrivacy: () -> Unit = {},
-    onNavigateToSupportDevelopment: () -> Unit = {}
+    onNavigateToSupportDevelopment: () -> Unit = {},
+    onClearCache: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { clearSavedStops, clearMapSnapshotCache, clearSavedWidgets, clearLiveUpdatesPreferences, clearVariantCache, clearAllOtherSettingsOptions ->
+
+    }
 ) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     var selectedDefaultTab by remember { mutableStateOf(settingsManager.defaultTab) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    var showClearCacheDialog by remember { mutableStateOf(false) }
+
+    var clearSavedStops by remember { mutableStateOf(false) }
+    var clearMapSnapshotCache by remember { mutableStateOf(false) }
+    var clearSavedWidgets by remember { mutableStateOf(false) }
+    var clearLiveUpdatesPreferences by remember { mutableStateOf(false) }
+    var clearVariantCache by remember { mutableStateOf(false) }
+    var clearAllOtherSettingsOptions by remember { mutableStateOf(false) }
 
     val settingsSections = listOf(
         SettingsSection(
@@ -135,6 +151,12 @@ fun MoreScreen(
                     iconColor = Color(0xFF4CAF50),
                     text = "Widget Updates",
                     action = SettingsAction.ThemeSelection
+                ),
+                SettingsItem(
+                    icon = Icons.Default.DeleteSweep,
+                    iconColor = Color(0xFFFF9800),
+                    text = "Clear Data",
+                    action = SettingsAction.ClearCache
                 )
             )
         ),
@@ -422,6 +444,7 @@ fun MoreScreen(
                                                 SettingsAction.Credits -> onNavigateToCredits()
                                                 SettingsAction.TermsAndPrivacy -> onNavigateToTermsAndPrivacy()
                                                 SettingsAction.SupportDevelopment -> onNavigateToSupportDevelopment()
+                                                SettingsAction.ClearCache -> { showClearCacheDialog = true }
                                             }
                                         }
                                         .padding(vertical = 8.dp),
@@ -442,6 +465,156 @@ fun MoreScreen(
                     }
                 }
             }
+        }
+
+        if (showClearCacheDialog) {
+
+            val hasAnyOptionSelected = clearSavedStops || clearMapSnapshotCache || clearSavedWidgets || clearLiveUpdatesPreferences || clearVariantCache || clearAllOtherSettingsOptions
+
+            AlertDialog(
+                onDismissRequest = { showClearCacheDialog = false },
+                title = { Text("Clear Data") },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 333.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+
+                    ) {
+                        Text("Select which data to clear:")
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Note: The app will close to reset.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Delete All")
+                            Switch(
+                                checked = clearSavedStops && clearMapSnapshotCache && clearSavedWidgets && clearLiveUpdatesPreferences && clearVariantCache && clearAllOtherSettingsOptions,
+                                onCheckedChange = {
+                                    val newValue = it
+                                    clearSavedStops = newValue
+                                    clearMapSnapshotCache = newValue
+                                    clearSavedWidgets = newValue
+                                    clearLiveUpdatesPreferences = newValue
+                                    clearVariantCache = newValue
+                                    clearAllOtherSettingsOptions = newValue
+                                }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Saved stops")
+                            Switch(
+                                checked = clearSavedStops,
+                                onCheckedChange = { clearSavedStops = it }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Saved widgets")
+                            Switch(
+                                checked = clearSavedWidgets,
+                                onCheckedChange = { clearSavedWidgets = it }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Live updates preferences")
+                            Switch(
+                                checked = clearLiveUpdatesPreferences,
+                                onCheckedChange = { clearLiveUpdatesPreferences = it }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Saved Stop Routes")
+                            Switch(
+                                checked = clearVariantCache,
+                                onCheckedChange = { clearVariantCache = it }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Map snapshot cache")
+                            Switch(
+                                checked = clearMapSnapshotCache,
+                                onCheckedChange = { clearMapSnapshotCache = it }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Other settings")
+                            Switch(
+                                checked = clearAllOtherSettingsOptions,
+                                onCheckedChange = { clearAllOtherSettingsOptions = it }
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearCacheDialog = false
+                            onClearCache(
+                                clearSavedStops,
+                                clearMapSnapshotCache,
+                                clearSavedWidgets,
+                                clearLiveUpdatesPreferences,
+                                clearVariantCache,
+                                clearAllOtherSettingsOptions
+                            )
+                        },
+                        enabled = hasAnyOptionSelected
+                    ) {
+                        Text("Clear")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showClearCacheDialog = false }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }
