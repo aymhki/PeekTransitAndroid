@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +52,8 @@ fun CreateFolderBottomSheet(
     var folderName by remember { mutableStateOf(initialName) }
     var selectedIcons by remember { mutableStateOf(initialIcons) }
     val availableIcons = remember { PeekTransitConstants.availableIcons }
+    val focusManager = LocalFocusManager.current
+
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -129,7 +133,9 @@ fun CreateFolderBottomSheet(
                     )
 
                     TextButton(
+
                         onClick = {
+                            focusManager.clearFocus()
                             if (folderName.isNotBlank()) {
                                 onCreateFolder(folderName, selectedIcons)
                                 onDismiss()
@@ -220,7 +226,16 @@ fun CreateFolderBottomSheet(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                if (folderName.isNotBlank()) {
+                                    onCreateFolder(folderName, selectedIcons)
+                                    onDismiss()
+                                }
+                            }
+                        )
                     )
 
                     Text(

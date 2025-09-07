@@ -592,10 +592,10 @@ object WidgetUpdateManager {
             }
 
             if (isMultipleEntriesPerVariant) {
-                cleanedSchedules = api.cleanScheduleMixedTimeFormat(schedules, true)
+                cleanedSchedules = api.cleanScheduleMixedTimeFormat(schedules, widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers)
                 maxVariants = PeekTransitConstants.getMaxVariantsAllowedForMultipleEntries(widgetConfig.widgetData["size"] as? String ?: "medium")
             } else {
-                cleanedSchedules = api.cleanStopSchedule(schedules, timeFormat, true)
+                cleanedSchedules = api.cleanStopSchedule(schedules, timeFormat, widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers)
                 maxVariants = PeekTransitConstants.getMaxVariantsAllowed(widgetConfig.widgetData["size"] as? String ?: "medium")
             }
 
@@ -841,7 +841,7 @@ object WidgetUpdateManager {
                         matchingNearbyStop = preferredStop
 
                         val schedule = api.getStopSchedule(matchingNearbyStop.number)
-                        val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
+                        val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers)
                         val currentStopVariants = mutableSetOf<String>()
 
                         for (scheduleString in cleanedSchedule) {
@@ -891,7 +891,7 @@ object WidgetUpdateManager {
 
                 try {
                     val schedule = api.getStopSchedule(stop.number)
-                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
+                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers)
 
                     val stopVariants = mutableSetOf<String>()
 
@@ -963,7 +963,7 @@ object WidgetUpdateManager {
 
                 try {
                     val schedule = api.getStopSchedule(stop.number)
-                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, true)
+                    val cleanedSchedule = api.cleanStopSchedule(schedule, TimeFormat.DEFAULT, widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers)
 
                     val stopVariants = mutableSetOf<String>()
 
