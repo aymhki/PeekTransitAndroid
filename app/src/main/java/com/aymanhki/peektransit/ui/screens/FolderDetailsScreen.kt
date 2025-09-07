@@ -285,7 +285,7 @@ fun FolderDetailsScreen(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "No Saved Stops",
+                                text = "No Saved Stops in this folder",
                                 style = MaterialTheme.typography.headlineSmall,
                                 textAlign = TextAlign.Center
                             )
@@ -317,7 +317,7 @@ fun FolderDetailsScreen(
                                                 verticalArrangement = Arrangement.Center
                                             ) {
                                                 Text(
-                                                    text = "No saved stops found for \"$searchQuery\"",
+                                                    text = "No saved stops found for \"$searchQuery\" in this folder",
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     textAlign = TextAlign.Center
                                                 )
@@ -411,7 +411,7 @@ fun FolderDetailsScreen(
                                                 verticalArrangement = Arrangement.Center
                                             ) {
                                                 Text(
-                                                    text = "No saved stops found for \"$searchQuery\"",
+                                                    text = "No saved stops found for \"$searchQuery\" in this folder",
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     textAlign = TextAlign.Center
                                                 )
