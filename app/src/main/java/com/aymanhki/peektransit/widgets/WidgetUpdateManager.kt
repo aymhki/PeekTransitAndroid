@@ -614,6 +614,7 @@ object WidgetUpdateManager {
             val selectedVariantsForThisStop = widgetConfig.widgetData["selectedVariants"] as? Map<String, List<Variant>> ?: emptyMap()
             val isClosestStop = widgetConfig.widgetData["isClosestStop"] as? Boolean ?: false
             val preferredStops = widgetConfig.widgetData["preferredStops"] as? List<Stop> ?: emptyList()
+            val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val cleanedSchedules: List<String>
             val maxVariants: Int
 
@@ -668,7 +669,7 @@ object WidgetUpdateManager {
                             }
 
                             val entriesToAdd = if (isMultipleEntriesPerVariant) {
-                                variantEntries.take(2)
+                                variantEntries.take(if (widgetSize == "medium-large") 3 else 2)
                             } else {
                                 variantEntries.take(1)
                             }
@@ -710,7 +711,7 @@ object WidgetUpdateManager {
                     }
 
                     val entriesToAdd = if (isMultipleEntriesPerVariant) {
-                        matchingSchedules.take(2)
+                        matchingSchedules.take(if (widgetSize == "medium-large") 3 else 2)
                     } else {
                         matchingSchedules.take(1)
                     }

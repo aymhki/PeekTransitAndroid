@@ -434,7 +434,7 @@ private fun WidgetSizeSelector(
     val sizes = listOf(
         "small" to "Small (2x2)",
         "medium" to "Medium (4x2)",
-        //"medium-large" to "Medium Large (4x4)",
+        "medium-large" to "Medium Large (4x4)",
         "large" to "Large (4x4)",
         "lockscreen" to "Lock Screen (2x1)",
     )

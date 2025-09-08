@@ -20,6 +20,7 @@ object WidgetPreviewHelper {
     ): PreviewResult? {
         val previewSchedules = mutableListOf<String>()
         val updatedWidgetData = widgetData.toMutableMap()
+        val widgetSize = widgetData["size"] as? String ?: "medium"
         
         val timeFormatTextToUse = when (timeFormat) {
             "minutes" -> "X(X) ${PeekTransitConstants.MINUTES_REMAINING_TEXT}"
@@ -65,6 +66,16 @@ object WidgetPreviewHelper {
                                     PeekTransitConstants.OK_STATUS_TEXT,
                                     "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
                                 ))
+
+                                if (widgetSize == "medium-large") {
+                                    previewSchedules.add(generatePreviewEntry(
+                                        key,
+                                        name,
+                                        PeekTransitConstants.OK_STATUS_TEXT,
+                                        "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
+                                    ))
+                                }
+
                             } else {
                                 previewSchedules.add(generatePreviewEntry(
                                     key,
@@ -75,7 +86,6 @@ object WidgetPreviewHelper {
                             }
                         }
                     } else {
-                        val widgetSize = widgetData["size"] as? String ?: "medium"
                         val maxVariants = if (multipleEntriesPerVariant) {
                             PeekTransitConstants.getMaxVariantsAllowedForMultipleEntries(widgetSize)
                         } else {
@@ -103,6 +113,15 @@ object WidgetPreviewHelper {
                                     PeekTransitConstants.OK_STATUS_TEXT,
                                     "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
                                 ))
+
+                                if (widgetSize == "medium-large") {
+                                    previewSchedules.add(generatePreviewEntry(
+                                        PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                        PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                        PeekTransitConstants.OK_STATUS_TEXT,
+                                        "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
+                                    ))
+                                }
                             } else {
                                 previewSchedules.add(generatePreviewEntry(
                                     PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
@@ -126,7 +145,6 @@ object WidgetPreviewHelper {
                     }
                 }
             } else {
-                val widgetSize = widgetData["size"] as? String ?: "medium"
                 val maxStops = if (multipleEntriesPerVariant) {
                     PeekTransitConstants.getMaxStopsAllowedForMultipleEntries(widgetSize)
                 } else {
@@ -164,6 +182,15 @@ object WidgetPreviewHelper {
                                 PeekTransitConstants.OK_STATUS_TEXT,
                                 "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
                             ))
+
+                            if (widgetSize == "medium-large") {
+                                previewSchedules.add(generatePreviewEntry(
+                                    PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                    PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                    PeekTransitConstants.OK_STATUS_TEXT,
+                                    "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
+                                ))
+                            }
                         } else {
                             previewSchedules.add(generatePreviewEntry(
                                 PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
@@ -188,7 +215,6 @@ object WidgetPreviewHelper {
                 updatedWidgetData["stops"] = generatedStops
             }
         } else {
-            val widgetSize = widgetData["size"] as? String ?: "medium"
             val maxStops = if (multipleEntriesPerVariant) {
                 PeekTransitConstants.getMaxStopsAllowedForMultipleEntries(widgetSize)
             } else {
@@ -226,6 +252,16 @@ object WidgetPreviewHelper {
                             PeekTransitConstants.OK_STATUS_TEXT,
                             "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
                         ))
+
+                        if (widgetSize == "medium-large") {
+                            previewSchedules.add(generatePreviewEntry(
+                                PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,
+                                PeekTransitConstants.OK_STATUS_TEXT,
+                                "HH:MM ${PeekTransitConstants.GLOBAL_AM_TEXT}/${PeekTransitConstants.GLOBAL_PM_TEXT}"
+                            ))
+                        }
+
                     } else {
                         previewSchedules.add(generatePreviewEntry(
                             PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER,

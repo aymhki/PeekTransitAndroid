@@ -68,6 +68,17 @@
         </activity>
 
         <activity
+            android:name=".widgets.PeekTransitMediumLargeWidgetConfigurationActivity"
+            android:exported="true"
+            android:label="Medium-Large Widget Configuration"
+            android:theme="@style/Theme.PeekTransit"
+            >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".widgets.PeekTransitLargeWidgetConfigurationActivity"
             android:exported="true"
             android:label="Large Widget Configuration"
@@ -92,7 +103,9 @@
 
         <receiver
             android:name=".widgets.PeekTransitSmallWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/peek_transit_small_widget_label">
+
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
@@ -127,7 +140,9 @@
 
         <receiver
             android:name=".widgets.PeekTransitMediumWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/peek_transit_medium_widget_label"
+            >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
@@ -161,8 +176,10 @@
         </receiver>
 
         <receiver
-            android:name=".widgets.PeekTransitLargeWidgetProvider"
-            android:exported="true">
+            android:name=".widgets.PeekTransitMediumLargeWidgetProvider"
+            android:exported="true"
+            android:label="@string/peek_transit_medium_large_widget_label"
+            >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
@@ -187,7 +204,43 @@
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
                 <action android:name="android.intent.action.PACKAGE_VERIFIED" />
                 <action android:name="android.intent.action.PACKAGE_RESTARTED" />
+            </intent-filter>
 
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/peek_transit_medium_large_widget_provider" />
+        </receiver>
+
+
+        <receiver
+            android:name=".widgets.PeekTransitLargeWidgetProvider"
+            android:exported="true"
+            android:label="@string/peek_transit_large_widget_label"
+            >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
+                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="android.intent.action.SCREEN_OFF" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.MY_PACKAGE_UNSUSPENDED" />
+                <action android:name="android.intent.action.MY_PACKAGE_SUSPENDED" />
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_CHANGED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
+                <action android:name="android.intent.action.PACKAGE_INSTALL" />
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_VERIFIED" />
+                <action android:name="android.intent.action.PACKAGE_RESTARTED" />
             </intent-filter>
 
             <meta-data
@@ -197,7 +250,9 @@
 
         <receiver
             android:name=".widgets.PeekTransitLockScreenWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/peek_transit_lockscreen_widget_label"
+            >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
@@ -235,6 +290,7 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.aymanhki.peektransit.ACTION_UPDATE_WIDGET" />
+                <action android:name="com.aymanhki.peektransit.actions.MANUAL_REFRESH_WIDGET" />
             </intent-filter>
         </receiver>
 
@@ -267,6 +323,8 @@
                 android:value="androidx.startup"
             />
         </provider>
+
+
     </application>
 
 </manifest>

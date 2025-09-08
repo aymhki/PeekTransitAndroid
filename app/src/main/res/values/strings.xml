@@ -3,8 +3,14 @@
 
     <string name="peek_transit_small_description">Show up to 2 bus stops with 1 bus arrival times each</string>
     <string name="peek_transit_medium_description">Show up to 2 bus stops with 2 bus arrival times each</string>
+    <string name="peek_transit_medium_large_description">Show up to 2 bus stops with 3 bus arrival times each</string>
     <string name="peek_transit_large_description">Show up to 3 bus stops with 2 bus arrival times each</string>
     <string name="peek_transit_lockscreen_description">Show up to 2 bus stops with 1 bus arrival times each</string>
+    <string name="peek_transit_lockscreen_widget_label">Peek Transit Lock Screen</string>
+    <string name="peek_transit_small_widget_label">Peek Transit Small</string>
+    <string name="peek_transit_medium_widget_label">Peek Transit Medium</string>
+    <string name="peek_transit_medium_large_widget_label">Peek Transit Medium Large</string>
+    <string name="peek_transit_large_widget_label">Peek Transit Large</string>
     <string name="select_a_widget_configuration_to_get_started">Select a widget configuration to get started</string>
     <string name="configure">Configure</string>
     <string name="peek_transit_logo">Peek Transit Logo</string>
@@ -18,6 +24,10 @@
     <string name="bus_stop_1_schedule_entry_2_route_name_text_image">Bus Stop 1 Schedule Entry 2 Route Name Text Image</string>
     <string name="bus_stop_1_schedule_entry_2_status_text_image">Bus Stop 1 Schedule Entry 2 Status Text Image</string>
     <string name="bus_stop_1_schedule_entry_2_arrival_time_text_image">Bus Stop 1 Schedule Entry 2 Arrival Time Text Image</string>
+    <string name="bus_stop_1_schedule_entry_3_route_number_text_image">Bus Stop 1 Schedule Entry 3 Route Number Text Image</string>
+    <string name="bus_stop_1_schedule_entry_3_route_name_text_image">Bus Stop 1 Schedule Entry 3 Route Name Text Image</string>
+    <string name="bus_stop_1_schedule_entry_3_status_text_image">Bus Stop 1 Schedule Entry 3 Status Text Image</string>
+    <string name="bus_stop_1_schedule_entry_3_arrival_time_text_image">Bus Stop 1 Schedule Entry 3 Arrival Time Text Image</string>
     <string name="bus_stop_2_title_text_image">Bus Stop 2 Title Text Image</string>
     <string name="bus_stop_2_schedule_entry_1_route_number_text_image">Bus Stop 2 Schedule Entry 1 Route Number Text Image</string>
     <string name="bus_stop_2_schedule_entry_1_route_name_text_image">Bus Stop 2 Schedule Entry 1 Route Name Text Image</string>
@@ -27,6 +37,10 @@
     <string name="bus_stop_2_schedule_entry_2_route_name_text_image">Bus Stop 2 Schedule Entry 2 Route Name Text Image</string>
     <string name="bus_stop_2_schedule_entry_2_status_text_image">Bus Stop 2 Schedule Entry 2 Status Text Image</string>
     <string name="bus_stop_2_schedule_entry_2_arrival_time_text_image">Bus Stop 2 Schedule Entry 2 Arrival Time Text Image</string>
+    <string name="bus_stop_2_schedule_entry_3_route_number_text_image">Bus Stop 2 Schedule Entry 3 Route Number Text Image</string>
+    <string name="bus_stop_2_schedule_entry_3_route_name_text_image">Bus Stop 2 Schedule Entry 3 Route Name Text Image</string>
+    <string name="bus_stop_2_schedule_entry_3_status_text_image">Bus Stop 2 Schedule Entry 3 Status Text Image</string>
+    <string name="bus_stop_2_schedule_entry_3_arrival_time_text_image">Bus Stop 2 Schedule Entry 3 Arrival Time Text Image</string>
     <string name="bus_stop_3_title_text_image">Bus Stop 3 Title Text Image</string>
     <string name="bus_stop_3_schedule_entry_1_route_number_text_image">Bus Stop 3 Schedule Entry 1 Route Number Text Image</string>
     <string name="bus_stop_3_schedule_entry_1_route_name_text_image">Bus Stop 3 Schedule Entry 1 Route Name Text Image</string>

@@ -45,8 +45,15 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     override fun onDisabled(context: Context?) {
         super.onDisabled(context)
         if (context == null) return
-        WidgetUpdateManager.stopUpdates(context)
-        WidgetLocationManager.cleanup()
+
+        if (!PeekTransitConstants.AreThereAnyActiveWidgets(context)) {
+            WidgetUpdateManager.stopUpdates(context)
+
+        }
+
+        if (!PeekTransitConstants.isThereActiveWidgetsWithLocationAccessNeeded(context)) {
+            WidgetLocationManager.cleanup()
+        }
     }
 
     override fun onDeleted(context: Context?, appWidgetIds: IntArray?) {

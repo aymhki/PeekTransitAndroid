@@ -65,14 +65,14 @@ fun FolderGridItem(
                     Icon(
                         Icons.Default.Folder,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.5f else 0.7f),
+                        modifier = Modifier.fillMaxSize(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.3f else 0.5f),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 } else if (folder.icons.size == 1) {
                     Icon(
                         PeekTransitConstants.getIconByName(folder.icons[0]) ?: Icons.Default.Folder,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.5f else 0.7f),
+                        modifier = Modifier.fillMaxSize(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.3f else 0.5f),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 } else {
@@ -80,7 +80,7 @@ fun FolderGridItem(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp)
-                            .fillMaxHeight(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.5f else 0.7f),
+                            .fillMaxHeight(if (stopViewMode == SavedStopsViewMode.GRID_2) 0.3f else 0.5f),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {

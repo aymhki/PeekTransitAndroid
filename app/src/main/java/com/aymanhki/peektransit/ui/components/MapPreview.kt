@@ -72,10 +72,11 @@ fun MapPreview(
         StopViewTheme.MODERN -> systemDarkTheme
     }
 
+    val key = "$latitude-$longitude-$direction-$isDarkMode-$stopViewMode"
     val scope = rememberCoroutineScope()
-    var snapshotBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
+    var snapshotBitmap by remember(key) { mutableStateOf<Bitmap?>(null) }
+    var isLoading by remember(key) { mutableStateOf(true) }
+    var hasError by remember(key) { mutableStateOf(false) }
     var isMapsInitialized by remember { mutableStateOf(false) }
     
     LaunchedEffect(latitude, longitude, direction, isDarkMode, stopViewMode) {

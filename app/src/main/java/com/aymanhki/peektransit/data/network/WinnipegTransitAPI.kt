@@ -411,97 +411,65 @@ class WinnipegTransitAPI private constructor() {
             return emptyList()
         }
 
-        return busScheduleList.sortedWith { str1, str2 ->
-            val componentsA = str1.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-            val componentsB = str2.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
+        data class TempScheduleEntry(
+            val fullString: String,
+            val statusString: String,
+            val timeString: String
+        )
 
-            val timeA = componentsA[3]
-            val timeB = componentsB[3]
+        val tempEntries = busScheduleList.map {
+            val components = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
+            TempScheduleEntry(fullString = it, statusString = components[2], timeString = components[3])
+        }
 
-            when {
-                timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB != PeekTransitConstants.DUE_STATUS_TEXT -> -1
-                timeB == PeekTransitConstants.DUE_STATUS_TEXT && timeA != PeekTransitConstants.DUE_STATUS_TEXT -> 1
-                timeA == PeekTransitConstants.DUE_STATUS_TEXT && timeB == PeekTransitConstants.DUE_STATUS_TEXT -> 0
-                else -> {
-                    val isMinutesA = timeA.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
-                    val isMinutesB = timeB.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
+        val sortedEntries = tempEntries.sortedWith { a, b ->
+            val timeA = a.timeString
+            val timeB = b.timeString
 
-                    when {
-                        isMinutesA && isMinutesB -> {
-                            val minutesA = timeA.split(" ")[0].toIntOrNull() ?: 0
-                            val minutesB = timeB.split(" ")[0].toIntOrNull() ?: 0
-
-                            if (minutesA != minutesB) {
-                                minutesA.compareTo(minutesB)
-                            } else {
-                                val stateA = componentsA[2]
-                                val stateB = componentsB[2]
-
-                                compareByStatus(stateA, stateB)
-                            }
-                        }
-                        isMinutesA -> -1
-                        isMinutesB -> 1
-                        else -> {
-                            val timeComponentsA = timeA.split(" ")
-                            val timeComponentsB = timeB.split(" ")
-
-                            if (timeComponentsA.size == 2 && timeComponentsB.size == 2) {
-                                compareClockTimes(timeA, timeB, currentDate)
-                            } else {
-                                0
-                            }
-                        }
-                    }
-                }
+            val isDueA = timeA == PeekTransitConstants.DUE_STATUS_TEXT
+            val isDueB = timeB == PeekTransitConstants.DUE_STATUS_TEXT
+            if (isDueA != isDueB) {
+                return@sortedWith if (isDueA) -1 else 1
             }
+
+            val isMinutesA = timeA.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
+            val isMinutesB = timeB.endsWith(PeekTransitConstants.MINUTES_REMAINING_TEXT)
+            if (isMinutesA && isMinutesB) {
+                val minutesA = timeA.split(" ").firstOrNull()?.toIntOrNull() ?: Int.MAX_VALUE
+                val minutesB = timeB.split(" ").firstOrNull()?.toIntOrNull() ?: Int.MAX_VALUE
+                val comparison = minutesA.compareTo(minutesB)
+
+                return@sortedWith if (comparison != 0) comparison else compareByStatus(a.statusString, b.statusString)
+            }
+            if (isMinutesA) return@sortedWith -1
+            if (isMinutesB) return@sortedWith 1
+
+            val isClockTimeA = ':' in timeA
+            val isClockTimeB = ':' in timeB
+            if (isClockTimeA && isClockTimeB) {
+                return@sortedWith compareClockTimes(timeA, timeB, currentDate)
+            }
+            if (isClockTimeA) return@sortedWith -1
+            if (isClockTimeB) return@sortedWith 1
+
+            return@sortedWith 0
+        }
+
+        return sortedEntries.map { it.fullString }
+    }
+
+    private fun getStatusPriority(status: String): Int {
+        return when (status) {
+            PeekTransitConstants.EARLY_STATUS_TEXT -> 1
+            PeekTransitConstants.OK_STATUS_TEXT -> 2
+            PeekTransitConstants.LATE_STATUS_TEXT -> 3
+            else -> 4
         }
     }
-    
+
     private fun compareByStatus(statusA: String, statusB: String): Int {
-        return when {
-            statusA == statusB -> 0
-            statusA == PeekTransitConstants.OK_STATUS_TEXT -> -1
-            statusB == PeekTransitConstants.OK_STATUS_TEXT -> 1
-            statusA == PeekTransitConstants.EARLY_STATUS_TEXT -> -1
-            statusB == PeekTransitConstants.EARLY_STATUS_TEXT -> 1
-            statusA == PeekTransitConstants.LATE_STATUS_TEXT -> -1
-            statusB == PeekTransitConstants.LATE_STATUS_TEXT -> 1
-            else -> 0
-        }
+        return getStatusPriority(statusA).compareTo(getStatusPriority(statusB))
     }
-    
-//    private fun compareClockTimes(timeA: String, timeB: String, currentDate: Date): Int {
-//        try {
-//            val calendar = Calendar.getInstance()
-//            calendar.time = currentDate
-//            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-//
-//            val timeFormatA = parseClockTime(timeA)
-//            val timeFormatB = parseClockTime(timeB)
-//
-//            if (timeFormatA == null || timeFormatB == null) return 0
-//
-//            var totalMinutesA = timeFormatA.first * 60 + timeFormatA.second
-//            var totalMinutesB = timeFormatB.first * 60 + timeFormatB.second
-//
-//            val isAMA = timeA.lowercase().contains("am")
-//            val isAMB = timeB.lowercase().contains("am")
-//
-//            if (currentHour >= 12) {
-//                if (isAMA) {
-//                    totalMinutesA += 24 * 60
-//                }
-//                if (isAMB) {
-//                    totalMinutesB += 24 * 60
-//                }
-//            }
-//
-//            return totalMinutesA.compareTo(totalMinutesB)
-//        } catch (e: Exception) {
-//            return 0
-//        }
-//    }
 
     private fun compareClockTimes(timeA: String, timeB: String, currentDate: Date): Int {
         try {

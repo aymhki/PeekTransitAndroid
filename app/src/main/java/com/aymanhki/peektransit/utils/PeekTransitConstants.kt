@@ -54,6 +54,7 @@ import androidx.core.content.edit
 import com.aymanhki.peektransit.data.cache.MapSnapshotCache
 import com.aymanhki.peektransit.data.cache.VariantsCacheManager
 import com.aymanhki.peektransit.managers.SavedStopsManager
+import com.aymanhki.peektransit.widgets.PeekTransitMediumLargeWidgetProvider
 
 object PeekTransitConstants {
 
@@ -108,7 +109,7 @@ object PeekTransitConstants {
     const val MAP_PREVIEW_MARKER_SIZE_DP_IN_LIST = 28
     const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_LIST = 0.18f
     const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_LIST = 1f
-    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_LIST = true
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_LIST = false
 
     const val MAP_PREVIEW_HEIGHT_SIZE_DP_IN_2X2_GRID = 180
     const val MAP_PREVIEW_ZOOM_LEVEL_IN_2X2_GRID = 16.0f
@@ -116,7 +117,7 @@ object PeekTransitConstants {
     const val MAP_PREVIEW_MARKER_SIZE_DP_IN_2X2_GRID = 28
     const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_2X2_GRID = 0.18f
     const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_2X2_GRID = 1f
-    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_2X2_GRID = true
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_2X2_GRID = false
     const val TOTAL_GRID_CARD_HEIGHT_DP_IN_2X2_GRID_DP = 280
 
     const val MAP_PREVIEW_HEIGHT_SIZE_DP_IN_3X3_GRID = 160
@@ -125,7 +126,7 @@ object PeekTransitConstants {
     const val MAP_PREVIEW_MARKER_SIZE_DP_IN_3X3_GRID = 28
     const val MAP_PREVIEW_BOTTOM_BANNER_PERCENTAGE_IN_3X3_GRID = 0.21f
     const val MAP_PREVIEW_BOTTOM_BANNER_OPACITY_IN_3X3_GRID = 1f
-    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_3X3_GRID = true
+    const val MAP_PREVIEW_SHOW_BOTTOM_BANNER_IN_3X3_GRID = false
     const val TOTAL_GRID_CARD_HEIGHT_DP_IN_3X3_GRID_DP = 240
 
     const val MAP_PREVIEW_MARKER_ANCHOR_X_OFFSET = 0.5f
@@ -190,7 +191,8 @@ object PeekTransitConstants {
 
     fun getMaxPreferredStopsInClosestStops(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small", "lockscreen", "medium", "large" -> 5
+            "small", "lockscreen", "medium", "large", "medium-large" -> 5
+
             else -> 1
         }
     }
@@ -200,6 +202,7 @@ object PeekTransitConstants {
             "small" -> 2
             "medium" -> 2
             "large" -> 3
+            "medium-large" -> 2
             "lockscreen" -> 2
             else -> 1
         }
@@ -209,6 +212,7 @@ object PeekTransitConstants {
         return when (widgetSize.lowercase()) {
             "small", "lockscreen" -> 1
             "medium" -> 2
+            "medium-large" -> 2
             "large" -> 3
             else -> 1
         }
@@ -219,6 +223,7 @@ object PeekTransitConstants {
             "small" -> 1
             "medium" -> 2
             "large" -> 2
+            "medium-large" -> 3
             "lockscreen" -> 1
             else -> 2
         }
@@ -226,7 +231,7 @@ object PeekTransitConstants {
     
     fun getMaxVariantsAllowedForMultipleEntries(widgetSize: String): Int {
         return when (widgetSize.lowercase()) {
-            "small", "lockscreen", "medium", "large" -> 1
+            "small", "lockscreen", "medium", "large", "medium-large" -> 1
             else -> 1
         }
     }
@@ -236,6 +241,7 @@ object PeekTransitConstants {
             "small" -> 12f
             "medium" -> 13f
             "large" -> 14f
+            "medium-large" -> 14f
             "lockscreen" -> 12f
             else -> 10f
         }
@@ -246,6 +252,7 @@ object PeekTransitConstants {
             "small" -> 9f
             "medium" -> 11f
             "large" -> 11f
+            "medium-large" -> 11f
             "lockscreen" -> 9f
             else -> 8f
         }
@@ -256,6 +263,7 @@ object PeekTransitConstants {
             "small" -> 12f
             "medium" -> 14f
             "large" -> 14f
+            "medium-large" -> 14f
             "lockscreen" -> 12f
             else -> 14f
         }
@@ -266,6 +274,7 @@ object PeekTransitConstants {
             "small" -> 12f
             "medium" -> 12f
             "large" -> 12f
+            "medium-large" -> 12f
             "lockscreen" -> 12f
             else -> 12f
         }
@@ -276,6 +285,7 @@ object PeekTransitConstants {
             "small" -> 180
             "medium" -> 400
             "large" -> 400
+            "medium-large" -> 400
             "lockscreen" -> 180
             else -> 110
         }
@@ -292,6 +302,7 @@ object PeekTransitConstants {
             "small" -> 220
             "medium" -> 220
             "large" -> 400
+            "medium-large" -> 400
             "lockscreen" -> 110
             else -> 110
         }
@@ -308,6 +319,7 @@ object PeekTransitConstants {
             "small" -> 40
             "medium" -> 50
             "large" -> 50
+            "medium-large" -> 50
             "lockscreen" -> 40
             else -> 50
         }
@@ -318,6 +330,7 @@ object PeekTransitConstants {
             "small" -> 30
             "medium" -> 100
             "large" -> 100
+            "medium-large" -> 100
             "lockscreen" -> 30
             else -> 100
         }
@@ -328,6 +341,7 @@ object PeekTransitConstants {
             "small" -> 14f
             "medium" -> 16f
             "large" -> 16f
+            "medium-large" -> 16f
             "lockscreen" -> 14f
             else -> 14f
         }
@@ -339,6 +353,7 @@ object PeekTransitConstants {
             "small" -> 180
             "medium" -> 380
             "large" -> 380
+            "medium-large" -> 380
             "lockscreen" -> 180
             else -> 100
         }
@@ -414,7 +429,7 @@ object PeekTransitConstants {
     fun getStopTitleTextSizeForWidget(widgetSize: String, currentTheme: StopViewTheme, maxWidgetWidth: Int, maxWidgetHeight: Int): Float {
         return when (widgetSize.lowercase()) {
             "small", "lockscreen" -> 16f
-            "medium", "large" -> 14f
+            "medium", "large", "medium-large" -> 14f
             else -> 14f
         }
     }
@@ -439,7 +454,7 @@ object PeekTransitConstants {
                 val percentage = scaleFactor / availableWidth
                 (percentage * availableWidth).coerceIn(0.07f * availableWidth, 0.1f * availableWidth)
             }
-            "medium", "large" -> {
+            "medium", "large", "medium-large" -> {
                 (0.05f * availableWidth)
             }
             else -> 18f
@@ -655,6 +670,11 @@ object PeekTransitConstants {
         return toReturn
     }
 
+    fun AreThereAnyActiveWidgets(context: Context): Boolean {
+        val activeWidgetIds = getAllActiveWidgetIds(context)
+        return activeWidgetIds.isNotEmpty()
+    }
+
     fun removeDeletedWidgetInstancesData(context: Context, appWidgetIds: IntArray) {
         appWidgetIds.forEach { appWidgetId ->
             deleteWidgetScheduleUsingAppWidgetId(context, appWidgetId)
@@ -693,6 +713,10 @@ object PeekTransitConstants {
                     removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
                 }
 
+            } else if (widgetSize == "medium-large") {
+                if (actualProviderClass != PeekTransitMediumLargeWidgetProvider::class.java.name) {
+                    removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
+                }
             } else {
                 removeDeletedWidgetInstancesData(context, intArrayOf(appWidgetId))
             }
@@ -889,8 +913,9 @@ object SharedPreferencesKeys {
 val allWidgetProviders = listOf(
     PeekTransitSmallWidgetProvider::class.java,
     PeekTransitMediumWidgetProvider::class.java,
+    PeekTransitMediumLargeWidgetProvider::class.java,
     PeekTransitLargeWidgetProvider::class.java,
-    PeekTransitLockScreenWidgetProvider::class.java
+    PeekTransitLockScreenWidgetProvider::class.java,
 )
 
 enum class BannerType {

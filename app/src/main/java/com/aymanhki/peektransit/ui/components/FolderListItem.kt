@@ -50,15 +50,24 @@ fun FolderListItem(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    folder.icons.take(2).forEach { iconName ->
-                        val icon = availableIcons.find { it.first == iconName }?.second
-                        icon?.let {
-                            Icon(
-                                it,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                    if (folder.icons.isEmpty()) {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        folder.icons.take(2).forEach { iconName ->
+                            val icon = availableIcons.find { it.first == iconName }?.second
+                            icon?.let {
+                                Icon(
+                                    it,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }

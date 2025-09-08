@@ -11,6 +11,12 @@ class PeekTransitMediumWidgetConfigurationActivity : BaseWidgetConfigurationActi
     override val configurationTitle: String = "Configure Medium Widget"
 }
 
+class PeekTransitMediumLargeWidgetConfigurationActivity : BaseWidgetConfigurationActivity() {
+    override val widgetSize: String = "medium-large"
+    override val configurationTitle: String = "Configure Medium Large Widget"
+}
+
+
 class PeekTransitLargeWidgetConfigurationActivity : BaseWidgetConfigurationActivity() {
     override val widgetSize: String = "large"
     override val configurationTitle: String = "Configure Large Widget"
@@ -20,3 +26,4 @@ class PeekTransitLockScreenWidgetConfigurationActivity : BaseWidgetConfiguration
     override val widgetSize: String = "lockscreen"
     override val configurationTitle: String = "Configure Lock Screen Widget"
 }
+

@@ -214,15 +214,19 @@ class CentralWidgetLooksUpdateManager
                                 action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
                             }
                         } else if (widgetSize.equals("medium", true)) {
-                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                            Intent(context, PeekTransitMediumWidgetProvider::class.java).apply {
                                 action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
                             }
                         } else if (widgetSize.equals("small", true)) {
-                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                            Intent(context, PeekTransitSmallWidgetProvider::class.java).apply {
                                 action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
                             }
                         } else if (widgetSize.equals("lockscreen", true)) {
                             Intent(context, PeekTransitLockScreenWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        } else if (widgetSize.equals("medium-large", true)) {
+                            Intent(context, PeekTransitMediumLargeWidgetProvider::class.java).apply {
                                 action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
                             }
                         } else {
@@ -566,7 +570,7 @@ class CentralWidgetLooksUpdateManager
 
                     val busStopSchedules = busStopAndScheduleLayoutComponentResIds.values.firstOrNull()
                     if (busStopSchedules != null) {
-                        val stopEntries = widgetSchedules.entries.take(2).toList()
+                        val stopEntries = widgetSchedules.entries.take(if (widgetSize == "medium-large") 3 else 2).toList()
 
                         var schedulesIndex = 0
                         for (busStopSchedulesIndex in busStopSchedules) {

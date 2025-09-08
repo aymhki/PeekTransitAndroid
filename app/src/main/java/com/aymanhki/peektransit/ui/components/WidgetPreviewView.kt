@@ -247,6 +247,7 @@ private fun PreviewWidgetStopView(
             val stopHeaderText = when (widgetSize) {
                 "small" -> "• $stopNamePrefix - ${if (stopNumber == -1) PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER else stopNumber}"
                 "large" -> "• $stopNamePrefix - ${if (stopNumber == -1) PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER else stopNumber}"
+                "medium-large" -> "• $stopNamePrefix - ${if (stopNumber == -1) PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER else stopNumber}"
                 else -> "• $stopNamePrefix - ${if (stopNumber == -1) PeekTransitConstants.WIDGET_TEXT_PLACEHOLDER else stopNumber}"
             }
 
@@ -260,7 +261,7 @@ private fun PreviewWidgetStopView(
                     .fillMaxWidth()
                     .padding(
                         bottom = when (widgetSize) {
-                            "small", "large" -> 4.dp
+                            "small", "large", "medium-large" -> 4.dp
                             else -> 1.dp
                         },
                     )
@@ -292,7 +293,7 @@ private fun PreviewWidgetStopView(
                     }
 
                     val schedulesToShow = if (multipleEntriesPerVariant) {
-                        matchingSchedules.take(2)
+                        matchingSchedules.take(if (widgetSize == "medium-large") 3 else 2)
                     } else {
                         matchingSchedules.take(1)
                     }

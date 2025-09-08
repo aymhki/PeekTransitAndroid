@@ -24,4 +24,6 @@
     android:widgetCategory="home_screen|keyguard"
     android:widgetFeatures="configuration_optional|reconfigurable"
     android:description="@string/peek_transit_lockscreen_description"
-/>
+    android:label="@string/peek_transit_lockscreen_widget_label"
+
+    />
