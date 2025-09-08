@@ -44,7 +44,8 @@ data class WidgetModel(
             val selectedStops = widgetData["stops"] as? List<Stop> ?: emptyList()
             val preferredStops = widgetData["preferredStops"] as? List<Stop> ?: emptyList()
             val selectedVariants = widgetData["selectedVariants"] as? Map<String, List<Variant>> ?: emptyMap()
-            
+            val showRefreshButton = widgetData["showRefreshButton"] as? Boolean ?: false
+
             return WidgetConfiguration(
                 size = size,
                 name = name,
@@ -55,7 +56,8 @@ data class WidgetModel(
                 noSelectedVariants = noSelectedVariants,
                 stops = selectedStops,
                 preferredStops = preferredStops,
-                selectedVariants = selectedVariants
+                selectedVariants = selectedVariants,
+                showRefreshButton = showRefreshButton
             )
         }
         
@@ -72,7 +74,8 @@ data class WidgetConfiguration(
     val noSelectedVariants: Boolean,
     val stops: List<Stop>,
     val preferredStops: List<Stop>,
-    val selectedVariants: Map<String, List<Variant>>
+    val selectedVariants: Map<String, List<Variant>>,
+    val showRefreshButton: Boolean = false
 ) {
     fun toWidgetData(): Map<String, Any> {
         val data = mutableMapOf<String, Any>()
@@ -84,6 +87,7 @@ data class WidgetConfiguration(
         data["isClosestStop"] = isClosestStop
         data["noSelectedVariants"] = noSelectedVariants
         data["createdAt"] = System.currentTimeMillis()
+        data["showRefreshButton"] = showRefreshButton
         
         if (stops.isNotEmpty()) {
             val stopsWithVariants = stops.map { stop ->

@@ -44,7 +44,7 @@ fun WidgetSetupView(
     var noSelectedVariants by remember { mutableStateOf(existingConfig?.noSelectedVariants ?: false) }
     var selectedVariants by remember { mutableStateOf(existingConfig?.selectedVariants ?: emptyMap<String, List<Variant>>()) }
     var widgetName by remember { mutableStateOf(existingConfig?.name ?: "") }
-    
+    var showRefreshButton by remember { mutableStateOf(existingConfig?.showRefreshButton ?: false) }
     var showDuplicateNameDialog by remember { mutableStateOf(false) }
     var showNoServiceDialog by remember { mutableStateOf(false) }
     
@@ -104,7 +104,8 @@ fun WidgetSetupView(
             noSelectedVariants = noSelectedVariants,
             stops = if (!isClosestStop) selectedStops else emptyList(),
             preferredStops = if (isClosestStop) preferredStops else emptyList(),
-            selectedVariants = if (!noSelectedVariants) selectedVariants else emptyMap()
+            selectedVariants = if (!noSelectedVariants) selectedVariants else emptyMap(),
+            showRefreshButton = showRefreshButton
         )
         
         val widgetData = configuration.toWidgetData()
@@ -257,7 +258,12 @@ fun WidgetSetupView(
                         if (it && timeFormat == "default") {
                             timeFormat = "mixed"
                         }
-                    }
+                    },
+                    onShowRefreshButtonChange = {
+                        showRefreshButton = it
+                    },
+                    showRefreshButton = showRefreshButton,
+                    isEditing = editingWidget != null
                 )
                 
                 1 -> StopSelectionStep(
@@ -307,7 +313,8 @@ fun WidgetSetupView(
                     multipleEntriesPerVariant = multipleEntriesPerVariant,
                     showLastUpdatedStatus = showLastUpdatedStatus,
                     noSelectedVariants = noSelectedVariants,
-                    selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops
+                    selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops,
+                    showRefreshButton = showRefreshButton
                 )
             }
         }

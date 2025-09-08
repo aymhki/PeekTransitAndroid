@@ -199,6 +199,7 @@ class CentralWidgetLooksUpdateManager
             if (refreshButtonResId != -1 && loadingIndicatorResId != -1) {
                 if (showRefreshButton) {
                     val isLoading = WidgetUpdateManager.isUpdateInProgress()
+                    views.setViewVisibility(refreshBackgroundFrameResId, VISIBLE)
 
                     if (isLoading) {
                         views.setViewVisibility(refreshButtonResId, GONE)

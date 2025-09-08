@@ -3,6 +3,7 @@ package com.aymanhki.peektransit.ui.screens.widgetsetup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.rememberScrollState
@@ -33,8 +34,33 @@ fun SizeSelectionStep(
     timeFormat: String,
     onTimeFormatChange: (String) -> Unit,
     multipleEntriesPerVariant: Boolean,
-    onMultipleEntriesPerVariantChange: (Boolean) -> Unit
+    onMultipleEntriesPerVariantChange: (Boolean) -> Unit,
+    onShowRefreshButtonChange: (Boolean) -> Unit,
+    showRefreshButton: Boolean,
+    isEditing: Boolean
 ) {
+
+    LaunchedEffect(widgetSize) {
+        if (!isEditing) {
+            if (widgetSize != "small" && widgetSize != "lockscreen") {
+                onShowRefreshButtonChange(true)
+                onShowLastUpdatedStatusChange(true)
+            } else {
+                onShowRefreshButtonChange(false)
+            }
+        }
+    }
+
+    LaunchedEffect(showRefreshButton, widgetSize) {
+        if (!isEditing) {
+            if (showRefreshButton && (widgetSize == "small" || widgetSize == "lockscreen")) {
+                onShowLastUpdatedStatusChange(false)
+            }
+        }
+    }
+
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -252,6 +278,23 @@ fun SizeSelectionStep(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
+
+        val showWarningLastUpdatedStatus = !showLastUpdatedStatus && showRefreshButton && widgetSize != "small" && widgetSize != "lockscreen"
+
+        if (showWarningLastUpdatedStatus) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = "Showing the refresh button while not showing the last updated status in the medium or large sized widgets could potentially hide the last bus arrival time due to the lack of space in the time area.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Card(
@@ -304,6 +347,82 @@ fun SizeSelectionStep(
                 }
             }
         }
+
+
+        Text(
+            text = "Refresh Button",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+
+        val showWarningRefreshButton = showRefreshButton && (widgetSize == "small" || widgetSize == "lockscreen")
+
+        if (showWarningRefreshButton) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = "Showing the refresh button in the small or lockscreen sized widgets could potentially hide the last updated time or the last bus arrival time due to the lack of space in the time area.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onShowRefreshButtonChange(true) },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularCheckbox(
+                        checked = showRefreshButton,
+                        onCheckedChange = { onShowRefreshButtonChange(true) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Show Refresh Button",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onShowRefreshButtonChange(false) },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularCheckbox(
+                        checked = !showRefreshButton,
+                        onCheckedChange = { onShowRefreshButtonChange(false) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Don't show Refresh Button",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -313,16 +432,17 @@ private fun WidgetSizeSelector(
     onSizeChange: (String) -> Unit
 ) {
     val sizes = listOf(
-        "small" to "Small",
-        "medium" to "Medium",
-        "large" to "Large",
-        "lockscreen" to "Lock Screen"
+        "small" to "Small (2x2)",
+        "medium" to "Medium (4x2)",
+        //"medium-large" to "Medium Large (4x4)",
+        "large" to "Large (4x4)",
+        "lockscreen" to "Lock Screen (2x1)",
     )
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min),
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         sizes.forEach { (value, label) ->
@@ -331,8 +451,6 @@ private fun WidgetSizeSelector(
                 selected = selectedSize == value,
                 onClick = { onSizeChange(value) },
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
             )
         }
     }
@@ -394,7 +512,8 @@ private fun WidgetPreviewCard(
         "selectedStops" to emptyList<Any>(),
         "preferredStops" to emptyList<Any>(),
         "selectedVariants" to emptyMap<String, List<Any>>(),
-        "stops" to emptyList<Any>()
+        "stops" to emptyList<Any>(),
+        "showRefreshButton" to false
     )
     
     val previewResult = WidgetPreviewHelper.generatePreviewSchedule(

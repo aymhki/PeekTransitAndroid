@@ -30,7 +30,8 @@ fun NameConfigurationStep(
     multipleEntriesPerVariant: Boolean,
     showLastUpdatedStatus: Boolean,
     noSelectedVariants: Boolean,
-    selectedPerferredStopsInClosestStops: Boolean
+    selectedPerferredStopsInClosestStops: Boolean,
+    showRefreshButton: Boolean
 ) {
     val defaultName = remember(selectedStops, selectedVariants, isClosestStop, preferredStops, widgetSize, timeFormat, multipleEntriesPerVariant, showLastUpdatedStatus, noSelectedVariants, selectedPerferredStopsInClosestStops) {
         generateDefaultWidgetName(
@@ -43,7 +44,8 @@ fun NameConfigurationStep(
             multipleEntriesPerVariant = multipleEntriesPerVariant,
             showLastUpdatedStatus = showLastUpdatedStatus,
             noSelectedVariants = noSelectedVariants,
-            selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops
+            selectedPerferredStopsInClosestStops = selectedPerferredStopsInClosestStops,
+            showRefreshButton = showRefreshButton
         )
     }
     
@@ -143,7 +145,8 @@ private fun generateDefaultWidgetName(
     multipleEntriesPerVariant: Boolean,
     showLastUpdatedStatus: Boolean,
     noSelectedVariants: Boolean,
-    selectedPerferredStopsInClosestStops: Boolean
+    selectedPerferredStopsInClosestStops: Boolean,
+    showRefreshButton: Boolean = false
 ): String {
     val timeFormatDisplay = if (multipleEntriesPerVariant) {
         "Mixed Time Format"
@@ -166,6 +169,12 @@ private fun generateDefaultWidgetName(
         "Show Last Updated Status"
     } else {
         "Don't Show Last Updated Status"
+    }
+
+    val showRefreshButtonDisplay = if (showRefreshButton) {
+        "Show Refresh Button"
+    } else {
+        "Don't Show Refresh Button"
     }
     
     val mainName = when {
@@ -192,5 +201,5 @@ private fun generateDefaultWidgetName(
         }
     }
     
-    return "$mainName - $widgetSize - $timeFormatDisplay - $entriesPerVariantDisplay - $lastUpdatedStatusDisplay"
+    return "$mainName - $widgetSize - $timeFormatDisplay - $entriesPerVariantDisplay - $lastUpdatedStatusDisplay - $showRefreshButtonDisplay"
 }

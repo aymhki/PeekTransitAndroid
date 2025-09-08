@@ -2,7 +2,6 @@ package com.aymanhki.peektransit.utils
 
 import com.aymanhki.peektransit.data.models.Stop
 import com.aymanhki.peektransit.data.models.Variant
-import com.aymanhki.peektransit.data.models.WidgetConfiguration
 
 object WidgetPreviewHelper {
     
