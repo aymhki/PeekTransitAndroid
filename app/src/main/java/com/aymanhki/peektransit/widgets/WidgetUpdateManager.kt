@@ -448,11 +448,14 @@ object WidgetUpdateManager {
         needsBackgroundLocation: Boolean
     ) {
         val widgetConfigId = widgetConfig.id
-        val finalWidgetScheduleData = PeekTransitConstants.getWidgetSchedule(
+
+        val previousWidgetSchedule = PeekTransitConstants.getWidgetSchedule(
             context,
             appWidgetId.toString(),
             widgetConfigId
-        ) ?: WidgetSchedule(
+        )
+
+        val finalWidgetScheduleData = previousWidgetSchedule?.copy() ?: WidgetSchedule(
             widgetAppId = appWidgetId.toString(),
             widgetConfigId = widgetConfigId,
             userLocationLon = "",
@@ -479,10 +482,13 @@ object WidgetUpdateManager {
         }
 
         val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
+        var updateSucceeded = false
 
         try {
             if (needsBackgroundLocation) {
+
                 if (userLocation != null) {
+
                     finalWidgetScheduleData.userLocationLon = "${userLocation.latitude}"
                     finalWidgetScheduleData.userLocationLat = "${userLocation.longitude}"
                     val nearbyStops = api.getNearbyStops(userLocation, PeekTransitConstants.GLOBAL_API_FOR_SHORT_USAGE)
@@ -490,56 +496,86 @@ object WidgetUpdateManager {
 
                     if (filteredStops.isEmpty() && thisIsTheFirstUpdateForTheWidget) {
                         finalWidgetScheduleData.errorMsg = "No nearby bus stops were found near your location. Are you sure you are in winnipeg?"
-
                     } else {
                         finalWidgetScheduleData.scheduleData = getStopsScheduleData(filteredStops, widgetConfig)
                     }
+
                 } else {
+
                     if (finalWidgetScheduleData.scheduleData.isEmpty() || thisIsTheFirstUpdateForTheWidget) {
                         finalWidgetScheduleData.errorMsg = "Unable to fetch user location. Please check your location settings."
+
                         if (!locationError.isNullOrEmpty()) {
                             finalWidgetScheduleData.errorMsg += " Error: $locationError"
                         }
+
                     }
+
                 }
+
             } else {
                 val selectedStops = widgetConfig.widgetData["stops"] as? List<Stop> ?: emptyList()
                 val schedules = getStopsScheduleData(selectedStops, widgetConfig)
                 finalWidgetScheduleData.scheduleData = schedules
             }
+
+            updateSucceeded = true
+
         } catch (e: Exception) {
+
             Log.e(TAG, "Error fetching schedules for widget $appWidgetId", e)
+            updateSucceeded = false
+
             if (thisIsTheFirstUpdateForTheWidget) {
                 var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection or your power saving mode settings."
+
                 if (needsBackgroundLocation) {
                     finalErrorMsg += ". And make sure location services are enabled for this widget."
                 } else {
                     finalErrorMsg += "."
                 }
+
                 finalErrorMsg += " " + estimateWhenTheNextUpdateWillBe(context)
                 finalWidgetScheduleData.errorMsg = finalErrorMsg
             }
+
         }
 
-        var lastUpdatedTimeString: String = finalWidgetScheduleData.lastUpdatedTime
+        if (thisIsTheFirstUpdateForTheWidget) {
 
-        if (!thisIsTheFirstUpdateForTheWidget && WidgetSchedule.theTwoHaveDifferentSchedules(finalWidgetScheduleData, PeekTransitConstants.getWidgetSchedule(context, appWidgetId.toString(), widgetConfigId))) {
-            lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
-        } else if (!thisIsTheFirstUpdateForTheWidget) {
-            if (widgetSize == "lockscreen" || widgetSize == "small") {
-                if (!lastUpdatedTimeString.contains(" O.")) {
-                    lastUpdatedTimeString += " O."
-                }
+            if (updateSucceeded && finalWidgetScheduleData.errorMsg.isEmpty()) {
+
+                finalWidgetScheduleData.lastUpdatedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+
             } else {
-                if (!lastUpdatedTimeString.contains(" Old")) {
-                    lastUpdatedTimeString += " Old"
-                }
+
+                finalWidgetScheduleData.lastUpdatedTime = ""
+
             }
-        } else if (finalWidgetScheduleData.errorMsg.isEmpty()) {
-            lastUpdatedTimeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+
+        } else {
+            if (updateSucceeded) {
+
+                finalWidgetScheduleData.lastUpdatedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))
+
+            } else {
+
+                var timeToUpdate = finalWidgetScheduleData.lastUpdatedTime
+
+                if (widgetSize == "lockscreen" || widgetSize == "small") {
+                    if (!timeToUpdate.contains(" O.")) {
+                        timeToUpdate += " O."
+                    }
+                } else {
+                    if (!timeToUpdate.contains(" Old")) {
+                        timeToUpdate += " Old"
+                    }
+                }
+
+                finalWidgetScheduleData.lastUpdatedTime = timeToUpdate
+            }
         }
 
-        finalWidgetScheduleData.lastUpdatedTime = lastUpdatedTimeString
         PeekTransitConstants.savedWidgetSchedule(context, finalWidgetScheduleData)
     }
 
@@ -1031,6 +1067,9 @@ object WidgetUpdateManager {
 
         return filteredStops
     }
+
+    fun isUpdateInProgress(): Boolean = isUpdateInProgress.get()
+
 
     fun checkForWidgetErrors(
         context: Context,

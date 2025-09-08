@@ -2,18 +2,17 @@
 
 
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/peek_transit_large_layout_frame"
->
+    android:id="@+id/peek_transit_large_layout_frame">
 
     <ImageView
         android:id="@+id/peek_transit_large_widget_background_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@string/background_image"
-        android:scaleType="fitXY"
-    />
+        android:scaleType="fitXY" />
 
     <LinearLayout
         android:orientation="vertical"
@@ -21,8 +20,7 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:id="@+id/peek_transit_large_widget_layout"
-        android:background="@drawable/widget_rounded_corner"
-    >
+        android:background="@drawable/widget_rounded_corner">
 
         <!-- User location coordinates -->
         <LinearLayout
@@ -31,8 +29,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_weight="1"
-            android:padding="@dimen/location_coordinates_layout_padding"
-        >
+            android:padding="@dimen/location_coordinates_layout_padding">
+
             <ImageView
                 android:id="@+id/peek_transit_large_widget_user_location_coordinates_text_image"
                 android:layout_width="wrap_content"
@@ -49,8 +47,7 @@
             android:orientation="vertical"
             android:layout_weight="1"
             android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_medium_and_large_widgets"
-            android:paddingTop="@dimen/first_stop_entry_layout_top_padding_in_medium_and_large_widgets"
-            >
+            android:paddingTop="@dimen/first_stop_entry_layout_top_padding_in_medium_and_large_widgets">
 
             <LinearLayout
                 android:id="@+id/peek_transit_large_widget_bus_stop_1_title_layout"
@@ -63,8 +60,7 @@
                     android:id="@+id/peek_transit_large_widget_bus_stop_1_title_text_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/bus_stop_1_title_text_image"
-                    />
+                    android:contentDescription="@string/bus_stop_1_title_text_image" />
 
             </LinearLayout>
 
@@ -152,8 +148,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_weight="1"
-            android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_medium_and_large_widgets"
-            >
+            android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_medium_and_large_widgets">
 
             <LinearLayout
                 android:id="@+id/peek_transit_large_widget_bus_stop_2_title_layout"
@@ -166,8 +161,7 @@
                     android:id="@+id/peek_transit_large_widget_bus_stop_2_title_text_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/bus_stop_2_title_text_image"
-                    />
+                    android:contentDescription="@string/bus_stop_2_title_text_image" />
 
             </LinearLayout>
 
@@ -255,8 +249,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_weight="1"
-            android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_medium_and_large_widgets"
-            >
+            android:paddingHorizontal="@dimen/stop_entry_layout_horizontal_padding_in_medium_and_large_widgets">
 
             <LinearLayout
                 android:id="@+id/peek_transit_large_widget_bus_stop_3_title_layout"
@@ -269,8 +262,7 @@
                     android:id="@+id/peek_transit_large_widget_bus_stop_3_title_text_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/bus_stop_3_title_text_image"
-                    />
+                    android:contentDescription="@string/bus_stop_3_title_text_image" />
 
             </LinearLayout>
 
@@ -359,18 +351,68 @@
             android:layout_gravity="center"
             android:layout_weight="1"
             android:weightSum="1"
-            android:id="@+id/peek_transit_large_widget_last_updated_status_layout"
-            >
+            android:id="@+id/peek_transit_large_widget_last_updated_status_layout">
+
             <ImageView
                 android:id="@+id/peek_transit_large_widget_last_updated_status_text_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:contentDescription="@string/last_updated_status_text_image"  />
+                android:contentDescription="@string/last_updated_status_text_image" />
 
         </LinearLayout>
 
     </LinearLayout>
+
+<!--    <ImageView-->
+<!--        android:id="@+id/peek_transit_large_widget_refresh_button"-->
+<!--        android:layout_width="50dp"-->
+<!--        android:layout_height="50dp"-->
+<!--        android:layout_gravity="bottom|end"-->
+<!--        android:layout_marginEnd="12dp"-->
+<!--        android:layout_marginBottom="8dp"-->
+<!--        android:src="@android:drawable/ic_menu_rotate"-->
+<!--        android:contentDescription="@string/refresh_widget_button_image"-->
+<!--        android:background="?android:attr/selectableItemBackgroundBorderless"-->
+
+<!--        />-->
+
+    <FrameLayout
+        android:id="@+id/peek_transit_large_widget_refresh_button_frame"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/refresh_button_background"
+        android:clickable="true"
+        android:focusable="true"
+    >
+        <Button
+            android:id="@+id/peek_transit_large_widget_refresh_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:background="@drawable/refresh_button_background"
+            android:contentDescription="@string/refresh_widget_button_image"
+            android:drawableTop="@drawable/ic_refresh"
+            android:drawableTint="@android:color/white"
+            android:text=""
+            style="?android:attr/borderlessButtonStyle"
+            android:scaleType="center"
+        />
+
+        <ProgressBar
+            android:id="@+id/peek_transit_large_widget_loading_indicator"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:background="@drawable/refresh_button_background"
+            android:indeterminateTint="@android:color/white"
+        />
+
+    </FrameLayout>
 
 </FrameLayout>
 

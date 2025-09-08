@@ -18,6 +18,9 @@ class PeekTransitSmallWidgetProvider : BaseWidgetProvider() {
     override val errorLayoutResId: Int = R.layout.peek_transit_small_widget_error_layout
     override val errorTextResId: Int = R.id.peek_transit_small_widget_error_message_text_view
     override val configurationActivityClass: Class<*> = PeekTransitSmallWidgetConfigurationActivity::class.java
+    override val refreshBackgroundFrameResId: Int = R.id.peek_transit_small_widget_refresh_button_frame
+    override val refreshButtonResId: Int = R.id.peek_transit_small_widget_refresh_button
+    override val loadingIndicatorResId: Int = R.id.peek_transit_small_widget_loading_indicator
     override val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>> = mapOf(
         R.id.peek_transit_small_widget_bus_stop_1_layout to mapOf(
             Pair (R.id.peek_transit_small_widget_bus_stop_1_title_layout, R.id.peek_transit_small_widget_bus_stop_1_title_text_image) to mapOf(
@@ -34,7 +37,6 @@ class PeekTransitSmallWidgetProvider : BaseWidgetProvider() {
                     R.id.peek_transit_small_widget_bus_stop_1_schedule_entry_2_arrival_time_text_image
                 )
             ),
-
         )
     )
     override val logTag: String = "SmallWidgetProvider"
@@ -54,6 +56,9 @@ class PeekTransitMediumWidgetProvider : BaseWidgetProvider() {
     override val errorLayoutResId: Int = R.layout.peek_transit_medium_widget_error_layout
     override val errorTextResId: Int = R.id.peek_transit_medium_widget_error_message_text_view
     override val configurationActivityClass: Class<*> = PeekTransitMediumWidgetConfigurationActivity::class.java
+    override val refreshBackgroundFrameResId: Int = R.id.peek_transit_medium_widget_refresh_button_frame
+    override val refreshButtonResId: Int = R.id.peek_transit_medium_widget_refresh_button
+    override val loadingIndicatorResId: Int = R.id.peek_transit_medium_widget_loading_indicator
     override val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>> = mapOf(
         R.id.peek_transit_medium_widget_bus_stop_1_layout to mapOf(
             Pair (R.id.peek_transit_medium_widget_bus_stop_1_title_layout, R.id.peek_transit_medium_widget_bus_stop_1_title_text_image) to mapOf(
@@ -105,6 +110,9 @@ class PeekTransitLargeWidgetProvider : BaseWidgetProvider() {
     override val errorLayoutResId: Int = R.layout.peek_transit_large_widget_error_layout
     override val errorTextResId: Int = R.id.peek_transit_large_widget_error_message_text_view
     override val configurationActivityClass: Class<*> = PeekTransitLargeWidgetConfigurationActivity::class.java
+    override val refreshBackgroundFrameResId: Int = R.id.peek_transit_large_widget_refresh_button_frame
+    override val refreshButtonResId: Int = R.id.peek_transit_large_widget_refresh_button
+    override val loadingIndicatorResId: Int = R.id.peek_transit_large_widget_loading_indicator
     override val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>> = mapOf(
         R.id.peek_transit_large_widget_bus_stop_1_layout to mapOf(
             Pair (R.id.peek_transit_large_widget_bus_stop_1_title_layout, R.id.peek_transit_large_widget_bus_stop_1_title_text_image) to mapOf(
@@ -171,6 +179,9 @@ class PeekTransitLockScreenWidgetProvider : BaseWidgetProvider() {
     override val configureButtonResId: Int = R.id.configure_lockscreen_widget_btn
     override val errorLayoutResId: Int = R.layout.peek_transit_lockscreen_widget_error_layout
     override val errorTextResId: Int = R.id.peek_transit_lockscreen_widget_error_message_text_view
+    override val refreshBackgroundFrameResId: Int = R.id.peek_transit_lockscreen_widget_refresh_button_frame
+    override val refreshButtonResId: Int = R.id.peek_transit_lockscreen_widget_refresh_button
+    override val loadingIndicatorResId: Int = R.id.peek_transit_lockscreen_widget_loading_indicator
     override val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>> = mapOf(
         R.id.peek_transit_lockscreen_widget_bus_stop_1_layout to mapOf(
             Pair (R.id.peek_transit_lockscreen_widget_bus_stop_1_title_layout, R.id.peek_transit_lockscreen_widget_bus_stop_1_title_text_image) to mapOf(

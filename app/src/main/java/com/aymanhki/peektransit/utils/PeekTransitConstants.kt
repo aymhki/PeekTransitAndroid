@@ -740,6 +740,7 @@ object PeekTransitConstants {
         Intent.ACTION_SCREEN_ON,
         Intent.ACTION_SCREEN_OFF,
         Intent.ACTION_BOOT_COMPLETED,
+        ACTION_MANUAL_REFRESH_WIDGET
     )
 
     val replacePackageUpdateActions = listOf(
@@ -762,6 +763,8 @@ object PeekTransitConstants {
     )
 
     const val ACTION_UPDATE_WIDGET = "com.aymanhki.peektransit.ACTION_UPDATE_WIDGET"
+    const val ACTION_MANUAL_REFRESH_WIDGET = "com.aymanhki.peektransit.actions.MANUAL_REFRESH_WIDGET"
+
 
 
     fun clearAllAppData(

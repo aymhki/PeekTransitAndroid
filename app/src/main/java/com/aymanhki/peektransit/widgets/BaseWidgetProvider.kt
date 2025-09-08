@@ -25,6 +25,9 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     protected abstract val configurationActivityClass: Class<*>
     protected open val logTag: String = "BaseWidgetProvider"
     protected abstract val busSchedulesComponentsResIds: Map<Int, Map<Pair<Int, Int>, Map<Int, List<Int>>>>
+    protected abstract val refreshBackgroundFrameResId: Int
+    protected abstract val refreshButtonResId: Int
+    protected abstract val loadingIndicatorResId: Int
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
 
@@ -63,7 +66,7 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
         val action = intent.action
 
         if (action in PeekTransitConstants.updateActions) {
-            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, true)
+            PeekTransitConstants.triggerWidgetCoreUpdatesManagerWithUserSettings(context, true, action != PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET)
         }
     }
 
@@ -104,7 +107,10 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
             dimensions.first,
             dimensions.second,
             mainLayoutFrameResId,
-            backgroundImageResId
+            backgroundImageResId,
+            refreshBackgroundFrameResId,
+            refreshButtonResId,
+            loadingIndicatorResId
         )
         appWidgetManager.updateAppWidget(appWidgetId, finalView)
     }

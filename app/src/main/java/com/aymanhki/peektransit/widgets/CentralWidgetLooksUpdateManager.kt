@@ -58,7 +58,10 @@ class CentralWidgetLooksUpdateManager
             maxWidgetWidth: Int,
             maxWidgetHeight: Int,
             mainLayoutFrameResId: Int,
-            backgroundImageResId: Int
+            backgroundImageResId: Int,
+            refreshBackgroundFrameResId: Int,
+            refreshButtonResId: Int,
+            loadingIndicatorResId: Int
         ): RemoteViews {
             var views: RemoteViews
 
@@ -71,7 +74,7 @@ class CentralWidgetLooksUpdateManager
                     views.setTextViewText(errorTextId, errorMsg)
                 } else {
                     views = RemoteViews(context.packageName, layoutId)
-                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData, maxWidgetWidth, maxWidgetHeight,  mainLayoutFrameResId, backgroundImageResId)
+                    views = updateWidgetLooks(context, views, appWidgetId, widgetConfig, layoutId, mainLayoutContainerResId, busSchedulesComponentsResIds, locationCoordinatesLayoutResId, locationCoordinatesTextImagedResId, lastUpdatedLayoutResId, lastUpdatedTextImageResId, widgetScheduleData, maxWidgetWidth, maxWidgetHeight,  mainLayoutFrameResId, backgroundImageResId, refreshBackgroundFrameResId, refreshButtonResId, loadingIndicatorResId)
                 }
             } else {
                 views = RemoteViews(context.packageName, initialLayoutId)
@@ -103,7 +106,10 @@ class CentralWidgetLooksUpdateManager
             maxWidgetWidth: Int,
             maxWidgetHeight: Int,
             mainLayoutFrameResId: Int,
-            backgroundImageResId: Int
+            backgroundImageResId: Int,
+            refreshBackgroundFrameResId: Int,
+            refreshButtonResId: Int,
+            loadingIndicatorResId: Int
         ): RemoteViews {
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val showLastUpdatedStatus = widgetConfig.widgetData["showLastUpdatedStatus"] as? Boolean ?: false
@@ -112,8 +118,9 @@ class CentralWidgetLooksUpdateManager
             val settingsManager = SettingsManager.getInstance(context)
             val currentTheme = settingsManager.stopViewTheme
             val isNightMode = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-
+            val showRefreshButton = widgetConfig.widgetData["showRefreshButton"] as? Boolean ?: false
             updateBackgroundColor(context, views, currentTheme, isNightMode, mainLayoutContainerResId, mainLayoutFrameResId, backgroundImageResId, maxWidgetWidth, maxWidgetHeight)
+
 
             updateLocationCoordinates(
                 context,
@@ -163,6 +170,82 @@ class CentralWidgetLooksUpdateManager
                 maxWidgetWidth,
                 maxWidgetHeight
             )
+
+            updateWidgetRefreshButtonLooks(
+                context,
+                views,
+                appWidgetId,
+                refreshBackgroundFrameResId,
+                refreshButtonResId,
+                loadingIndicatorResId,
+                widgetSize,
+                showRefreshButton
+            )
+
+            return views
+        }
+
+        fun updateWidgetRefreshButtonLooks(
+            context: Context,
+            views: RemoteViews,
+            appWidgetId: Int,
+            refreshBackgroundFrameResId: Int,
+            refreshButtonResId: Int,
+            loadingIndicatorResId: Int,
+            widgetSize: String,
+            showRefreshButton: Boolean
+        ): RemoteViews {
+
+            if (refreshButtonResId != -1 && loadingIndicatorResId != -1) {
+                if (showRefreshButton) {
+                    val isLoading = WidgetUpdateManager.isUpdateInProgress()
+
+                    if (isLoading) {
+                        views.setViewVisibility(refreshButtonResId, GONE)
+                        views.setViewVisibility(loadingIndicatorResId, VISIBLE)
+                        views.setOnClickPendingIntent(refreshBackgroundFrameResId, null)
+                    } else {
+                        views.setViewVisibility(refreshButtonResId, VISIBLE)
+                        views.setViewVisibility(loadingIndicatorResId, GONE)
+
+                        val refreshIntent = if (widgetSize.equals("large", true)) {
+                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        } else if (widgetSize.equals("medium", true)) {
+                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        } else if (widgetSize.equals("small", true)) {
+                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        } else if (widgetSize.equals("lockscreen", true)) {
+                            Intent(context, PeekTransitLockScreenWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        } else {
+                            Intent(context, PeekTransitLargeWidgetProvider::class.java).apply {
+                                action = PeekTransitConstants.ACTION_MANUAL_REFRESH_WIDGET
+                            }
+                        }
+
+                        val refreshPendingIntent = PendingIntent.getBroadcast(
+                            context,
+                            appWidgetId,
+                            refreshIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+
+                        views.setOnClickPendingIntent(refreshButtonResId, refreshPendingIntent)
+                        views.setOnClickPendingIntent(refreshBackgroundFrameResId, refreshPendingIntent)
+                    }
+                } else {
+                    views.setViewVisibility(refreshButtonResId, GONE)
+                    views.setViewVisibility(loadingIndicatorResId, GONE)
+                    views.setViewVisibility(refreshBackgroundFrameResId, GONE)
+                }
+            }
 
             return views
         }

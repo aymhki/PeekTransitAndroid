@@ -39,4 +39,5 @@
     <string name="last_updated_status_text_image">Last Updated Status Text Image</string>
     <string name="error_loading_widget_open_app">Error Loading Widget, Open App</string>
     <string name="background_image">Background Image</string>
+    <string name="refresh_widget_button_image">Refresh Widget Button Image</string>
 </resources>
