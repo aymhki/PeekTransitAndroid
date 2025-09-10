@@ -530,7 +530,7 @@ object WidgetUpdateManager {
                 var finalErrorMsg = "An error occurred while fetching schedules. Check your internet connection or your power saving mode settings."
 
                 if (needsBackgroundLocation) {
-                    finalErrorMsg += ". And make sure location services are enabled for this widget."
+                    finalErrorMsg += " And make sure location services are enabled for this widget."
                 } else {
                     finalErrorMsg += "."
                 }
@@ -617,15 +617,21 @@ object WidgetUpdateManager {
             val widgetSize = widgetConfig.widgetData["size"] as? String ?: "medium"
             val cleanedSchedules: List<String>
             val maxVariants: Int
+            var finalSchedulesForThisStop = emptyList<String>()
+            val autoPopulateVariants = isNoSelectedVariants || selectedVariantsForThisStop.isEmpty() || (isClosestStop && preferredStops.isEmpty())
 
 
-            for(variant in selectedVariantsForThisStop[currentStop.number.toString()] as? List<Variant> ?: emptyList()) {
-                val variantKey = variant.key as? String
+            if (!autoPopulateVariants) {
+                for (variant in selectedVariantsForThisStop[currentStop.number.toString()] as? List<Variant> ?: emptyList()) {
+                    val variantKey = variant.key as? String
 
-                if ( !variantKey.isNullOrEmpty() && variantKey.contains(PeekTransitConstants.VARIANT_KEY_SEPARATOR) ) {
-                    widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = true
-                    break
+                    if (!variantKey.isNullOrEmpty() && variantKey.contains(PeekTransitConstants.VARIANT_KEY_SEPARATOR)) {
+                        widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = true
+                        break
+                    }
                 }
+            } else {
+                widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers = true
             }
 
             if (isMultipleEntriesPerVariant) {
@@ -636,8 +642,6 @@ object WidgetUpdateManager {
                 maxVariants = PeekTransitConstants.getMaxVariantsAllowed(widgetConfig.widgetData["size"] as? String ?: "medium")
             }
 
-            var finalSchedulesForThisStop = emptyList<String>()
-            val autoPopulateVariants = isNoSelectedVariants || selectedVariantsForThisStop.isEmpty() || (isClosestStop && preferredStops.isEmpty())
 
             if (autoPopulateVariants) {
                 val selectedVariants = mutableListOf<Variant>()
@@ -648,24 +652,11 @@ object WidgetUpdateManager {
 
                     if (components.size > 2) {
                         val variantKey = components[0]
-                        val variantName = components[1]
-                        val variantIdentifier: String
 
-                        if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
-                            variantIdentifier = variantKey
-                        } else {
-                            variantIdentifier = "${variantKey}${PeekTransitConstants.COMPOSITE_KEY_LINKER_FOR_DICTIONARIES}${variantName}"
-                        }
-
-                        if (!processedVariants.contains(variantIdentifier)) {
+                        if (!processedVariants.contains(variantKey)) {
                             val variantEntries = cleanedSchedules.filter {
                                 val entryComponents = it.split(PeekTransitConstants.SCHEDULE_STRING_SEPARATOR)
-
-                                if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
-                                    return@filter entryComponents.size >= 1 && entryComponents[0] == variantKey
-                                } else {
-                                    return@filter entryComponents.size >= 2 && entryComponents[0] == variantKey && variantName.contains(entryComponents[1])
-                                }
+                                return@filter entryComponents.size >= 1 && entryComponents[0] == variantKey
                             }
 
                             val entriesToAdd = if (isMultipleEntriesPerVariant) {
@@ -675,15 +666,11 @@ object WidgetUpdateManager {
                             }
 
                             finalSchedulesForThisStop = finalSchedulesForThisStop.plus(entriesToAdd)
-
-                            if (widgetIsSavedAfterTheNewUpdateThatMakesTheKeysIdentifiers) {
-                                selectedVariants.add(Variant(key = variantKey, name = variantKey))
-                            } else {
-                                selectedVariants.add(Variant(key = variantKey, name = variantName))
-                            }
+                            selectedVariants.add(Variant(key = variantKey, name = variantKey))
 
 
-                            processedVariants = processedVariants.plus(variantIdentifier)
+
+                            processedVariants = processedVariants.plus(variantKey)
 
                             if (selectedVariants.size >= maxVariants) {
                                 break

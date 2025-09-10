@@ -77,11 +77,11 @@ fun CreditsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
-                text = "Built using Jetpack Compose and Winnipeg Transit API",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+//            Text(
+//                text = "Built using Kotlin Jetpack Compose and Winnipeg Transit API",
+//                fontSize = 16.sp,
+//                color = MaterialTheme.colorScheme.onSurface
+//            )
         }
     }
 }

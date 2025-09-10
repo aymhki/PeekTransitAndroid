@@ -118,7 +118,7 @@ data class Variant(
     }
     
     fun getRouteKey(): String {
-        return key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull() ?: key
+        return key.split(PeekTransitConstants.VARIANT_KEY_SEPARATOR).firstOrNull()?.replace("BLUE", "B") ?: key
     }
 }
 
