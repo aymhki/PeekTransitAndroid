@@ -65,7 +65,10 @@ object WidgetUpdateManager {
         if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
             PeekTransitConstants.initAPIKey(context)
             registerBatteryReceiver(context)
-            updateBasedOnBatteryStatusAndUserPerfrence(context)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                updateBasedOnBatteryStatusAndUserPerfrence(context)
+            }
 
             Log.d(TAG, "Started widget updates, manual updates: ${userOptedInForManualUpdates}, " +
                     "manual updates in low power: ${userOptedInForManualUpdatesInLowPower}, " +
@@ -81,38 +84,40 @@ object WidgetUpdateManager {
         userOptedInForManualUpdatesInLowPower: Boolean = true,
         debugIntervalMinutes: Int = PeekTransitConstants.HOW_OFTEN_TO_UPDATE_WIDGET_IN_DEBUG_MODE_IN_MINUTES_BY_DEFAULT
     ) {
-        val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
-        val shouldDoManualUpdates = (debugging || userOptedInForManualUpdates)
-        val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
+        CoroutineScope(Dispatchers.IO).launch {
+            val powerSavingActive = isLowBattery(context) || isPowerSaveMode(context)
+            val shouldDoManualUpdates = (debugging || userOptedInForManualUpdates)
+            val shouldUseAlarmBasedWorkManager = shouldDoManualUpdates && (!powerSavingActive || userOptedInForManualUpdatesInLowPower)
 
 
-        if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
-            PeekTransitConstants.initAPIKey(context)
+            if (PeekTransitConstants.appHasAnyActiveWidgets(context)) {
+                PeekTransitConstants.initAPIKey(context)
 
-            if (shouldUseAlarmBasedWorkManager) {
-                if (!checkAlarmUpdatesAreRunning(context) || this.debugUpdateIntervalMinutes != debugIntervalMinutes) {
-                    this.debugUpdateIntervalMinutes = debugIntervalMinutes
-                    stopProductionModeUpdates(context)
-                    startDebugModeUpdates(context)
-                } else if ( (isBackgroundRestricted(context) || powerSavingActive)  ) {
-                    CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                        workToUpdateWidgetCoreData(context)
-                        broadcastWidgetLooksUpdate(context)
+                if (shouldUseAlarmBasedWorkManager) {
+                    if (!checkAlarmUpdatesAreRunning(context) || this@WidgetUpdateManager.debugUpdateIntervalMinutes != debugIntervalMinutes) {
+                        this@WidgetUpdateManager.debugUpdateIntervalMinutes = debugIntervalMinutes
+                        stopProductionModeUpdates(context)
+                        startDebugModeUpdates(context)
+                    } else if ((isBackgroundRestricted(context) || powerSavingActive)) {
+                        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                            workToUpdateWidgetCoreData(context)
+                            broadcastWidgetLooksUpdate(context)
+                        }
+                    }
+                } else {
+                    if (!checkProductionModeUpdatesAreRunning(context)) {
+                        stopAlarmUpdates(context)
+                        startProductionModeUpdates(context)
+                    } else if ((isBackgroundRestricted(context) || powerSavingActive) && userOptedInForManualUpdatesInLowPower) {
+                        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                            workToUpdateWidgetCoreData(context)
+                            broadcastWidgetLooksUpdate(context)
+                        }
                     }
                 }
             } else {
-                if (!checkProductionModeUpdatesAreRunning(context)) {
-                    stopAlarmUpdates(context)
-                    startProductionModeUpdates(context)
-                } else if ( (isBackgroundRestricted(context) || powerSavingActive) && userOptedInForManualUpdatesInLowPower ) {
-                    CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                        workToUpdateWidgetCoreData(context)
-                        broadcastWidgetLooksUpdate(context)
-                    }
-                }
+                stopUpdates(context)
             }
-        } else {
-            stopUpdates(context)
         }
     }
 
@@ -325,7 +330,14 @@ object WidgetUpdateManager {
     class BatteryStatusReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action in PeekTransitConstants.batterStatusActions) {
-                updateBasedOnBatteryStatusAndUserPerfrence(context)
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        updateBasedOnBatteryStatusAndUserPerfrence(context)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
             }
         }
     }
@@ -383,6 +395,8 @@ object WidgetUpdateManager {
             Log.d(TAG, "Update already in progress. Skipping.")
             return
         }
+
+        // broadcastWidgetLooksUpdate(context)
 
         try {
 

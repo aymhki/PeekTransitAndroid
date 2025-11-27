@@ -7,6 +7,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.aymanhki.peektransit.utils.PeekTransitConstants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 abstract class BaseWidgetProvider : AppWidgetProvider() {
 
@@ -31,8 +34,19 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
 
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+
+        val pendingResult = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                for (appWidgetId in appWidgetIds) {
+                    updateAppWidget(context, appWidgetManager, appWidgetId)
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "Error updating widget: ${e.message}")
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
@@ -85,11 +99,22 @@ abstract class BaseWidgetProvider : AppWidgetProvider() {
     ) {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
         if (context == null || appWidgetManager == null) return
-        updateAppWidget(context, appWidgetManager, appWidgetId)
+
+        val pendingResult = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                updateAppWidget(context, appWidgetManager, appWidgetId)
+            } catch (e: Exception) {
+                Log.e(logTag, "Error updating widget on options changed: ${e.message}")
+            } finally {
+                pendingResult.finish()
+            }
+        }
     }
 
 
-    fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+    suspend fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val widgetConfig = PeekTransitConstants.getWidgetConfigUsingAppWidgetId(context, appWidgetId)
 
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
