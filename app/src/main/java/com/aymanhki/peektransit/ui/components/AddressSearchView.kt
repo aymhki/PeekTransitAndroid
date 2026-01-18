@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -340,11 +341,21 @@ fun SearchResultsView(
     onResultSelected: (AutocompletePrediction) -> Unit
 ) {
     LazyColumn {
-        items(results) { prediction ->
-            SearchResultItem(prediction = prediction, onClick = { onResultSelected(prediction) })
+        items(
+            items = results,
+            key = { prediction -> prediction.placeId }
+        ) { prediction ->
+            SearchResultItem(
+                prediction = prediction,
+                onClick = { onResultSelected(prediction) }
+            )
 
             if (prediction != results.last()) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = DividerDefaults.Thickness, color = DividerDefaults.color)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = DividerDefaults.Thickness,
+                    color = DividerDefaults.color
+                )
             }
         }
     }
@@ -390,8 +401,10 @@ fun RouteDetailsView(
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        items(routes.size) { index ->
-            val route = routes[index]
+        itemsIndexed(
+            items = routes,
+            key = { index, route -> route.hashCode() + index }
+        ) { index, route ->
             RouteItem(
                 route = route,
                 index = index + 1,
@@ -401,7 +414,11 @@ fun RouteDetailsView(
             )
 
             if (index < routes.size - 1) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = DividerDefaults.Thickness, color = DividerDefaults.color)
+                HorizontalDivider(
+                    modifier = Modifier. padding(horizontal = 16.dp),
+                    thickness = DividerDefaults. Thickness,
+                    color = DividerDefaults.color
+                )
             }
         }
     }
