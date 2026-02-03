@@ -169,7 +169,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         checkIfThereIsAnUpdate()
 
         if (attemptedToStartRateAppBannerUsageTracking.value == false) {
-            rateAppBannerManager.startTrackingAppUsage()
+            // rateAppBannerManager.startTrackingAppUsage()
         }
 
         if (attemptedToStartTipBannerUsageTracking.value == false) {

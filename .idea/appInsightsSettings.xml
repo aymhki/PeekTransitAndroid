@@ -14,6 +14,9 @@
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="SIXTY_DAYS" />
+              <option name="versions">
+                <list />
+              </option>
               <option name="visibilityType" value="ALL" />
             </InsightsFilterSettings>
           </value>
